@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="billing.zadmin.cmsbank">
+	
+	<!-- EB11 log 목록 -->
+	<select id="getEB11LogList" resultClass="java.util.HashMap">
+		SELECT 
+			C.*
+		FROM
+			(
+				SELECT 
+					ROWNUM AS RNUM
+					, B.*
+	  			FROM
+					(
+						SELECT 
+							*
+						FROM 
+							tbl_cmsEA11data_log A 
+						WHERE 
+							NUMID is not null
+						ORDER BY 
+							numid desc
+					) B
+			) C
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+		ORDER BY
+			FILENAME DESC
+	</select>
+	
+	<!-- EB11 log 갯수 -->
+	<select id="getEB11LogCount" resultClass="int">
+		SELECT 
+			count(*) as recCount
+		FROM 
+			tbl_cmsEA11data_log
+		WHERE 
+			numid IS NOT NULL
+	</select>
+	
+	<!-- EB11 log 정보 -->
+	<select id="getEA11LogInfo" resultClass="java.util.HashMap">
+		SELECT *
+		FROM (
+			SELECT 
+				*
+			FROM 
+				tbl_cmsEA11data_log 
+			WHERE 
+				numid = #numid#
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	<!-- EB11 상세 목록  -->
+	<select id="getEA11List" resultClass="java.util.HashMap">
+		SELECT 
+			A.*
+			, substr(A.NUMBER_,7,5) AS users_serial
+		FROM 
+			tbl_cmsEA11data A
+		WHERE 
+			A.FILENAME = #FILENAME#
+		ORDER BY
+			A.serial
+	</select>
+	
+	<!-- 입력받은 날짜에 파일이 유무 검사 -->
+	<select id="getEB11FileName" resultClass="string">
+		SELECT 
+			filename
+		FROM 
+			tbl_cmsEA11data_log
+		WHERE
+			cmsdate = #cmsdate#
+	</select>
+	
+	<insert id="insertCmsEA11Data">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_cmsEA11data
+		</selectKey>
+		INSERT INTO tbl_cmsEA11data ( 
+			numid
+			, rtype
+			, serial
+			, filename
+			, rdate
+			, type
+			, number_
+			, bank_code
+			, bank_numb
+			, bank_jumin
+			, ccode
+			, mtype
+			, result
+			, tmp
+			, indate
+			, chk_id  
+		) VALUES ( 
+			#numid#
+			, #rtype#
+			, #serial#
+			, #filename#
+			, #rdate#
+			, #type#
+			, #number#
+			, #bank_code#
+			, #bank_numb#
+			, #bank_jumin#
+			, #ccode#
+			, #mtype#
+			, #result#
+			, #tmp#
+			, sysdate
+			, #chk_id#  
+		)
+	</insert>
+	
+	<insert id="insertCmsEA11DataResult">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_cmsEA11data_log
+		</selectKey>
+		INSERT INTO tbl_cmsEA11data_log ( 
+			numid
+			, rtype
+			, code
+			, filename
+			, cmsdate
+			, totals
+			, type1
+			, type2
+			, type3
+			, type4
+			, indate
+			, chk_id
+		) VALUES ( 
+			#numid#
+			, #rtype#
+			, #code#
+			, #filename#
+			, #cmsdate#
+			, #totals#
+			, #type1#
+			, #type2#
+			, #type3#
+			, #type4#
+			, sysdate
+			, #chk_id#  
+		)
+	</insert>
+		
+	<!-- tbl_cmsEA11data 목록 -->
+	<select id="getCmsEA11DataList" resultClass="java.util.HashMap">
+		SELECT
+			*
+    	FROM 
+    		tbl_cmsEA11data
+    	WHERE
+    		filename = #filename#
+    		and
+			rdate = #cmsdate#
+    	ORDER BY
+    		serial
+	</select>
+	
+	<!-- tbl_cmsEA11data 갯수 -->
+	<select id="getCmsEA11DataCount" resultClass="int">
+		SELECT 
+			count(*)
+		FROM 
+			tbl_cmsEA11data
+		WHERE
+			filename = #filename#
+			and
+			rdate = #cmsdate#
+			and
+            ( 
+              trim(result) = ''
+              or
+              TRIM(result) IS NULL
+            )
+	</select>
+	
+	<!-- tbl_cmsEA11data 정보 -->
+	<select id="getCmsEA11DataInfo" resultClass="java.util.HashMap">
+		SELECT
+			*
+    	FROM 
+    		tbl_cmsEA11data
+    	WHERE
+    		filename = #filename#
+    		and
+    		rdate = #cmsdate#
+    		and 
+    		serial = #serial#
+	</select>
+	
+	<!-- 독자번호 조회 -->
+	<select id="getReaderNo" resultClass="string">
+		SELECT 
+			readno
+		FROM
+			TBL_USERS
+		WHERE
+			jikuk = #jikuk#
+			and serial = #serial#
+			AND status='EA21'
+	</select>
+	
+	<select id="getReaderNoStu" resultClass="string">
+		SELECT 
+			readno
+		FROM
+			TBL_USERS_STU
+		WHERE
+			numid = #serial#
+			AND status='EA21'
+	</select>
+	
+	<!-- 독자 정보 -->
+	<select id="getReaderInfo" resultClass="java.util.HashMap">
+		SELECT 
+			*
+		FROM
+			TM_READER
+		WHERE
+			readno = trim(#readno#)
+	</select>
+	
+	<!-- 자동이체 독자정보 유무 -->
+	<select id="existTblUsers" resultClass="int">
+		SELECT 
+			count(*)
+		FROM
+			TBL_USERS
+		WHERE
+			jikuk = #jikuk#
+			and
+			readno = #readno#
+	</select>
+	
+	<!-- tbl_users 에 insert 하기 위해 정보 가져오기 -->
+	<select id="getReaderInfoForNew" resultClass="java.util.HashMap">
+		SELECT 
+			*
+		FROM 
+			( 
+		    	SELECT 
+		        	A.*
+		            ,(SELECT realjikuk FROM TBL_USERS WHERE jikuk = substr(A.NUMBER_,0,6) AND serial = substr(A.NUMBER_,7,5) ) AS boseq
+		            ,(SELECT readno FROM TBL_USERS WHERE jikuk = substr(A.NUMBER_,0,6) AND serial = substr(A.NUMBER_,7,5) ) AS readno
+		    	FROM TBL_CMSEA11DATA A
+		         
+		    ) B
+		    LEFT OUTER JOIN 
+		    (SELECT * FROM TM_READER_NEWS WHERE NEWSCD = #NEWSCD# AND SGTYPE != #SGTYPE#) C
+		    ON B.readno = C.readno AND B.boseq = C.boseq
+		WHERE 
+			B.filename = #filename#
+			and
+			B.rdate = #cmsdate#
+			and
+			B.serial = #serial#
+	</select>
+	
+	<!-- tbl_users 입력 -->
+	<insert id="insertTblUsers">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_users
+		</selectKey>
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_users
+		</selectKey>
+		INSERT INTO tbl_users ( 
+			numid
+			, jikuk
+			, intype
+			, username
+			, saup
+			<isNotEmpty property="zip1">
+				, zip1
+			</isNotEmpty>
+			<isNotEmpty property="zip2">
+				, zip2
+			</isNotEmpty>			
+			, addr1
+			, addr2
+			, phone
+			, handy
+			, levels
+			, diff
+			, indate
+			, lastdate
+			, rdate
+			, counters
+			, logs
+			, memo
+			, sdate
+			, whostep
+			, bank
+			, bank_num
+			, bank_name
+			, bank_money
+			, busu
+			, status
+			, readno
+			, realjikuk
+			, serial
+		) VALUES ( 
+			#numid#
+			, #jikuk#
+			, #intype#
+			, #username#
+			, #saup#
+			<isNotEmpty property="zip1">
+				, #zip1#
+			</isNotEmpty>
+			<isNotEmpty property="zip2">
+				, #zip2#
+			</isNotEmpty>
+			, #addr1#
+			, #addr2#
+			, #phone#
+			, #handy#
+			, #levels#
+			, 'b'
+			, sysdate
+			, sysdate
+			, sysdate
+			, 0
+			, '//'
+			, #memo#
+			, to_date(#sdate#, 'YYYYMMDD')
+			, '1'
+			, #bank#
+			, #bank_num#
+			, #bank_name#
+			, #bank_money#
+			, '1'
+			, #status#
+			, #readno#
+			, #realjikuk#
+			, #serial#
+		)
+	</insert>
+	
+	
+	<!-- 구독정보에 수금방법  update -->
+	<update id="updateReaderNewsSgtype">
+	 	UPDATE 
+			TM_READER_NEWS
+	 	SET
+	 		SGTYPE = #SGTYPE_NEW#
+	 	WHERE 
+	 		NEWSCD = #NEWSCD# 
+	 		<isNotEmpty property="SGTYPE_NOT" prepend=" AND ">
+	 			SGTYPE != #SGTYPE_NOT#
+	 		</isNotEmpty>
+	 		<isNotEmpty property="SGTYPE" prepend=" AND ">
+	 			SGTYPE = #SGTYPE#
+	 		</isNotEmpty>
+	 		AND
+	 		READNO = #READNO#
+	</update>
+	
+	
+	<!-- 해지 처리시 tbl_users 중지처리 -->
+	<delete id="updateTblUsers">
+		update tbl_users
+		set
+			status = #status#
+			
+			<isEqual property="status" compareValue="EA99">  <!-- 중지이면 R_OUT_DATE 입력(2012.07.10 박윤철 -->		
+				, R_OUT_DATE = TO_DATE(#rOutDate#,'yyyyMMdd')
+			</isEqual>
+			
+			<isEqual property="status" compareValue="EB13-">  <!-- 해지신청이면 R_OUT_DATE 입력(2012.07.10 박윤철 -->		
+				, R_OUT_DATE = TO_DATE(#rOutDate#,'yyyyMMdd')
+			</isEqual>
+			
+			<isNotEmpty property="levels">
+				, levels = #levels#
+			</isNotEmpty>
+			<isNotEmpty property="saup">
+				, saup = #saup#
+			</isNotEmpty>
+			<isNotEmpty property="bank">
+				, bank = #bank#
+			</isNotEmpty>
+			<isNotEmpty property="bank_num">
+				, bank_num = #bank_num#
+			</isNotEmpty>
+		where
+			jikuk = #jikuk#
+			and
+			serial = #serial#
+			AND status='EA21'
+	</delete>
+	
+	<delete id="updateTblStuUsers">
+		update tbl_users_stu
+		set
+			status = #status#
+			
+			<isEqual property="status" compareValue="EA99">  <!-- 중지이면 R_OUT_DATE 입력(2012.07.10 박윤철 -->		
+				, R_OUT_DATE = TO_DATE(#rOutDate#,'yyyyMMdd')
+			</isEqual>
+			
+			<isEqual property="status" compareValue="EB13-">  <!-- 해지신청이면 R_OUT_DATE 입력(2012.07.10 박윤철 -->		
+				, R_OUT_DATE = TO_DATE(#rOutDate#,'yyyyMMdd')
+			</isEqual>
+			
+			<isNotEmpty property="levels">
+				, levels = #levels#
+			</isNotEmpty>
+			<isNotEmpty property="saup">
+				, saup = #saup#
+			</isNotEmpty>
+			<isNotEmpty property="bank">
+				, bank = #bank#
+			</isNotEmpty>
+			<isNotEmpty property="bank_num">
+				, bank_num = #bank_num#
+			</isNotEmpty>
+		where
+			numid = #serial#
+			AND status='EA21'
+	</delete>
+	
+	<!-- EB11 상세 테이블 update -->
+	<update id="updateCmsEA11data">
+	 	UPDATE 
+			tbl_cmsEA11data
+	 	SET
+	 		result = #result#
+	 	WHERE 
+	 		filename = #filename#
+			and
+			rdate = #cmsdate#
+			and
+			serial = #serial#
+	</update>
+	
+	
+	<insert id="insertEB12Log">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_EA12_log
+		</selectKey>
+		INSERT INTO tbl_EA12_log ( 
+			numid
+			, logdate
+			, memo
+			, err_str
+			, adminid
+		) VALUES ( 
+			#numid#
+			, sysdate
+			, #memo#
+			, #err_str#
+			, #adminid#
+		)
+	</insert>
+	
+	
+	<!-- result map -->
+	<resultMap id="EA12LogMap" class="hashmap">
+		<result property="NUMID" column="NUMID" />
+		<result property="LOGDATE" column="LOGDATE" />
+		<result property="MEMO" column="MEMO" jdbcType="CLOB" javaType="string" />
+		<result property="ERR_STR" column="ERR_STR" jdbcType="CLOB" javaType="string" />
+		<result property="ADMINID" column="ADMINID" />
+	</resultMap>
+
+	<!-- EB12 log 목록 -->
+	<select id="getEB12LogList" resultClass="map" resultMap="EA12LogMap">
+		SELECT 
+			C.*
+		FROM
+			(
+				SELECT 
+					ROWNUM AS RNUM
+					, B.*
+	  			FROM
+					(
+						SELECT 
+							*
+						FROM 
+							tbl_EA12_log A 
+						WHERE 
+							NUMID is not null
+						ORDER BY 
+							numid desc
+					) B
+			) C
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- EB12 log 갯수 -->
+	<select id="getEB12LogCount" resultClass="int">
+		SELECT 
+			count(*) as recCount
+		FROM 
+			tbl_EA12_log
+		WHERE 
+			numid IS NOT NULL
+	</select>
+	
+	<!-- EB12 log 정보 -->
+	<select id="getEB12LogInfo" resultClass="map" resultMap="EA12LogMap">
+		SELECT *
+		FROM (
+			SELECT 
+				*
+			FROM 
+				tbl_EA12_log 
+			WHERE 
+				numid = #numid#
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	<insert id="stuCloneBankInfo">
+		INSERT INTO TBL_USERS_STU
+			(NUMID, JIKUK, INTYPE, USERNAME, USERID, PASSWD, JUMIN1, JUMIN2, SAUP, GUBUN, EMAIL, ZIP1, ZIP2, ADDR1, ADDR2, PHONE, HANDY, BIRTHD, SL,
+			LEVELS, DIFF, INDATE, LASTDATE, COUNTERS, LOGS, MEMO, SDATE, WHOSTEP, RDATE, RDATE_RESULT, BANK, BANK_NUM, BANK_NAME, REL, BANK_MONEY, BUSU,
+			R_OUT_DATE, R_OUT_RESULT, STATUS, TRASHS, STU_SCH, STU_PART, STU_CLASS, STU_PROF, STU_ADM, STU_CALLER, READNO, REALJIKUK, SERIAL, NEWADDR, BDMNGNO)
+		SELECT
+			(SELECT nvl(max(NUMID), 0)+1 FROM TBL_USERS_STU), JIKUK, INTYPE, USERNAME, USERID, PASSWD, JUMIN1, JUMIN2, SAUP, GUBUN, EMAIL, ZIP1, ZIP2, ADDR1, ADDR2, PHONE, HANDY, BIRTHD, SL,
+			LEVELS, DIFF, INDATE, SYSDATE, COUNTERS, LOGS, MEMO, SDATE, WHOSTEP, RDATE, RDATE_RESULT, BANK, BANK_NUM, BANK_NAME, REL, BANK_MONEY, BUSU,
+			TO_DATE(#rOutDate#,'yyyyMMdd'), R_OUT_RESULT, #status#, TRASHS, STU_SCH, STU_PART, STU_CLASS, STU_PROF, STU_ADM, STU_CALLER, READNO, REALJIKUK, SERIAL, NEWADDR, BDMNGNO
+		FROM
+			TBL_USERS_STU WHERE NUMID = #serial#
+	</insert>
+	
+	<select id="stuNewNumId" resultClass="int">
+	SELECT nvl(max(NUMID), 0)+1 FROM TBL_USERS_STU
+	</select>
+	
+	
+		<!-- 기존 데이터 복사 복사데이터를 해지상태로 변경 -->
+	<insert id="cloneBankInfo">
+	INSERT INTO TBL_USERS
+		(NUMID, JIKUK, INTYPE, USERNAME, USERID, PASSWD, JUMIN1, JUMIN2, SAUP, GUBUN, EMAIL, ZIP1, ZIP2, ADDR1, ADDR2, PHONE, HANDY, BIRTHD, SL,
+		LEVELS, DIFF, INDATE, LASTDATE, COUNTERS, LOGS, MEMO, SDATE, WHOSTEP, RDATE, RDATE_RESULT, BANK, BANK_NUM, BANK_NAME, REL, BANK_MONEY, BUSU,
+		R_OUT_DATE, R_OUT_RESULT, STATUS, TRASHS, READNO, REALJIKUK, SERIAL, NEWADDR, BDMNGNO)
+	SELECT
+		(SELECT nvl(max(NUMID), 0)+1 FROM TBL_USERS), JIKUK, INTYPE, USERNAME, USERID, PASSWD, JUMIN1, JUMIN2, SAUP, GUBUN, EMAIL, ZIP1, ZIP2, ADDR1, ADDR2, PHONE, HANDY, BIRTHD, SL,
+		LEVELS, DIFF, INDATE, SYSDATE, COUNTERS, LOGS, MEMO, SDATE, WHOSTEP, RDATE, RDATE_RESULT, BANK, BANK_NUM, BANK_NAME, REL, BANK_MONEY, BUSU,
+		TO_DATE(#rOutDate#,'yyyyMMdd'), R_OUT_RESULT, #status#, TRASHS, READNO, REALJIKUK, SERIAL, NEWADDR, BDMNGNO
+	FROM
+		TBL_USERS WHERE SERIAL = #serial# AND JIKUK=#jikuk# AND STATUS='EA21'
+	</insert>
+	
+		<!-- numid조회 -->
+	<select id="newNumId" resultClass="String">
+		SELECT NVL(max(NUMID), 0)+1 FROM TBL_USERS
+	</select>
+	
+		<!-- 계좌정보 변경  -->
+	<update id="updateBankInfo">
+	UPDATE 
+		TBL_USERS
+	SET
+		LASTDATE = SYSDATE,
+		SAUP = #saup# , 
+		HANDY = #handy# ,
+		BANK = #bankInfo# ,
+		BANK_NUM = #bankNum# ,
+		BANK_NAME = #bankName# ,
+		BANK_MONEY = #bankMoney#
+		<isNotEmpty property="status" prepend=",">
+		STATUS = #status#,
+		SERIAL = (SELECT LPAD(NVL(MAX(SERIAL),0)+1,5,'0') FROM TBL_USERS WHERE JIKUK = #realJikuk# AND LENGTH(SERIAL) = 5 AND SERIAL &lt; '90000')
+		</isNotEmpty>
+	WHERE
+		NUMID = #numId#
+	</update>
+	
+	<select id="getTblUsersStu" resultClass="java.util.HashMap">
+		SELECT * FROM TBL_USERS_STU WHERE numid=#serial# AND STATUS='EA21'
+	</select>
+	<select id="getTblUsers" resultClass="java.util.HashMap">
+		SELECT * FROM TBL_USERS WHERE SERIAL = #serial# AND JIKUK=#jikuk# AND STATUS='EA21'
+	</select>
+
+</sqlMap>

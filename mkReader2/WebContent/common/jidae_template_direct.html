@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="ko">
+<title>지대통보서</title>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=800">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Pragma" content="no-cache">
+<style>
+@CHARSET "UTF-8";
+
+/** common */
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-size: 12px;
+	font-family: 돋움, Dotum, AppleGothic, sans-serif;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+a {
+	color: #333;
+	text-decoration: none;
+}
+
+a:visited {
+	color: #333;
+}
+
+a:hover {
+	color: #333;
+}
+
+a.no-uline {
+	text-decoration: none
+}
+
+li {
+	list-style: none;
+}
+
+ol, ul, li, dl, dt, dd {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+}
+
+img, fieldset, iframe {
+	border: 0;
+}
+
+table {
+	padding: 0;
+	margin: 0;
+}
+
+th, td {
+	height: 18px;
+	font-size: 12px;
+	font-family: 돋움, Dotum, AppleGothic, sans-serif; /*line-height:16px;*/
+}
+
+.tb_edit_4 {
+	margin: 0 auto;
+	text-align: center;
+	border-collapse: collapse;
+	font: normal 12px Gulim, "굴림", Verdana, Geneva;
+}
+
+.tb_edit_4 th, .tb_edit_4 td {
+	padding: 4px 1px;
+}
+
+.tb_edit_4 th {
+	text-align: center;
+	border: 1px solid #c0c0c0;
+	background-color: #eeeeee;
+	font-weight: bold;
+}
+
+.tb_edit_4 td {
+	text-align: center;
+	border: 1px solid #c0c0c0;
+	background-color: #fff;
+}
+</style>
+</head>
+<body>
+	<div style="width: 800px;position: relative;margin: 50px auto 0 auto;padding: 0;">
+		<div style="font-weight: bold; font-size: 23px; padding-bottom: 3px;text-align:center">지대 납부금 통지서</div>
+		<div style="font-weight: bold; font-size: 18px; padding-bottom: 3px;text-align:center">(보관용)</div>
+		<div style="width: 800px; text-align: left;padding-top:20px; padding-bottom: 10px; font-weight: bold; font-size: 1.3em;">&nbsp;${year}년 ${month} 월분<div>
+		<table class="tb_edit_4" style="width: 800px">
+			<colgroup>
+				<col width="150px">
+				<col width="250px">
+				<col width="150px">
+				<col width="250px">
+			</colgroup>
+			<tr>
+				<th>지 국 명</th>
+				<td>${boseqnm}</td>
+				<th>코드번호</th>
+				<td>${boseqcode}</td>
+			</tr>
+			<tr>
+				<th>소&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;속</th>
+				<td>${type}</td>
+				<th>지국장명</th>
+				<td>${agencynm}</td>
+			</tr>
+		</table>
+		<!-- 지대내역 -->
+		<div style="padding-top: 30px;">
+			<div style="font-weight: bold; font-size: 15px; padding-bottom: 3px">1. 지대내역</div>
+			<table class="tb_edit_4" style="width: 800px">
+				<colgroup>
+					<col width="200px">
+					<col width="200px">
+					<col width="200px">
+					<col width="200px">
+				</colgroup>
+				<tr>
+					<th>구&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;분</th>
+					<th>금&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;액</th>
+					<th>구&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;분</th>
+					<th>금&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;액</th>
+				</tr>
+				<tr>
+					<th>전월이월액</th>
+					<td>${misu}</td>
+					<th>당월조정액</th>
+					<td>${custom}</td>
+				</tr>
+				<tr>
+					<th colspan="4">본사 입금 현황</th>
+				</tr>
+				<tr>
+					<th>배달장려금</th>
+					<td>${etcgrant}</td>
+					<th>통 장</th>
+					<td>${bank}</td>
+				</tr>
+				<tr>
+					<th>교&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;육&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;용</th>
+					<td>${edu}</td>
+					<th>지 로</th>
+					<td>${giro}</td>
+				</tr>
+				<tr>
+					<th>카&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;드</th>
+					<td>${card}</td>
+					<th></th>
+					<td></td>
+				</tr>
+				<tr>
+					<th>자&nbsp;&nbsp;&nbsp;동&nbsp;&nbsp;&nbsp;이&nbsp;&nbsp;&nbsp;체</th>
+					<td>${autobill}</td>
+					<th></th>
+					<td></td>
+				</tr>
+				<tr>
+					<th>학&nbsp;&nbsp;&nbsp;생&nbsp;&nbsp;&nbsp;배&nbsp;&nbsp;&nbsp;달</th>
+					<td>${stu}</td>
+					<th></th>
+					<td></td>
+				</tr>
+				<tr>
+					<th>소외계층,NIE</th>
+					<td>${tmp1}</td>
+					<th>판매수수료(VAT)</th>
+					<td>${tmp6}</td>
+				</tr>
+				<tr>
+					<th>본&nbsp;&nbsp;&nbsp;사&nbsp;&nbsp;&nbsp;사&nbsp;&nbsp;&nbsp;원</th>
+					<td>${tmp3}</td>
+					<th>소&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;계</th>
+					<td>${total}</td>
+				</tr>
+			</table>
+		</div>
+		<!-- //지대내역 -->
+		<!-- 당월지대납부내역 -->
+		<div style="padding-top: 30px;">
+			<div style="font-weight: bold; font-size: 15px; padding-bottom: 3px">2. 당월 지대 납부내역</div>
+			<table class="tb_edit_4" style="width: 800px">
+				<colgroup>
+					<col width="200px">
+					<col width="200px">
+					<col width="200px">
+					<col width="200px">
+				</colgroup>
+				<tr>
+					<th>항&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;목</th>
+					<th>금&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;액</th>
+					<th>항&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;목</th>
+					<th>금&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;액</th>
+				</tr>
+				<tr>
+					<th>당월지대납입액</th>
+					<td style="font-weight: bold;">${j_realamt}</td>
+					<th></th>
+					<td></td>
+				</tr>
+			</table>
+		</div>
+		<!-- //당월지대납부내역 -->
+		<!-- 보증금 현황 -->
+		<div style="padding-top: 30px;">
+			<div style="font-weight: bold; font-size: 15px; padding-bottom: 3px">3. 기타</div>
+			<table class="tb_edit_4" style="width: 800px">
+				<colgroup>
+					<col width="200px">
+					<col width="200px">
+					<col width="200px">
+					<col width="200px">
+				</colgroup>
+				<tr>
+					<th>항&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;목</th>
+					<th>이 코 노 미</th>
+					<th>씨&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;티</th>
+					<th>&nbsp;</th>
+				</tr>
+				<tr>
+					<td style="height: 15px">금&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;액</td>
+					<td>${economy}</td>
+					<td>${city}</td>
+					<td></td>
+				</tr>
+			</table>
+			<div style="padding-top: 15px;text-align:center;font-weight:noraml">상기 금액을 조정 통지하오니 상위할 경우 이의 신청하여 주시기 바랍니다.</div>
+		</div>
+		<!-- //보증금 현황 -->
+		<div style="padding-top:20px;text-align:center">서울 특별시 중구 퇴계로 190</div>
+		<div style="padding-top:15px;text-align:center;font-family:궁서체;font-size:25px;">(주)매일경제신문사</div>
+		<div style="padding-top:15px;text-align:center">독자마케팅국장 정현권</div>
+	</div>
+</body>
+</html>

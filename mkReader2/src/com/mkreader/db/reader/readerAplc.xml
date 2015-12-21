@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="reader.readerAplc">
+		
+	<sql id="aplc_search">
+		<isNotEmpty property="READNM" prepend="AND" >
+				READNM LIKE '%'||#READNM#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="HOMETEL1">
+				<isNotEmpty property="HOMETEL2">
+					<isNotEmpty property="HOMETEL3">
+						AND (HOMETEL1||HOMETEL2||HOMETEL3 = #HOMETEL1#||#HOMETEL2#||#HOMETEL3#
+						OR  MOBILE1||MOBILE2||MOBILE3 =  #HOMETEL1#||#HOMETEL2#||#HOMETEL3#)
+					</isNotEmpty>
+				</isNotEmpty>
+			</isNotEmpty>
+			<isEmpty property="HOMETEL1">
+			<isNotEmpty property="HOMETEL2">
+					<isNotEmpty property="HOMETEL3">
+						AND (HOMETEL1||HOMETEL2||HOMETEL3 = #HOMETEL1#||#HOMETEL2#||#HOMETEL3#
+						OR  MOBILE1||MOBILE2||MOBILE3 =  #HOMETEL1#||#HOMETEL2#||#HOMETEL3#)
+					</isNotEmpty>
+				</isNotEmpty>
+			</isEmpty>
+			<isNotEmpty property="AGNM" prepend="AND" >
+				BOSEQ IN (SELECT SERIAL FROM TM_AGENCY WHERE NAME LIKE '%'||#AGNM#||'%' )   
+			</isNotEmpty>
+			<isNotEmpty property="INCMGPERSNM" prepend="AND" >
+				INPS LIKE '%'||#INCMGPERSNM#||'%'
+			</isNotEmpty>
+			
+			<isEqual prepend="AND" property="READTYPE" compareValue="1"> 
+				DECODE(READNO, '', '2', '1') = '1'
+			</isEqual>
+			<isEqual prepend="AND" property="READTYPE" compareValue="2"> 
+				DECODE(READNO, '', '2', '1') = '2'
+			</isEqual>
+			<isEqual prepend="AND" property="ISCK" compareValue="1"> 
+				DECODE(BOACPTDT, '', '2', '1') = '1'
+			</isEqual>
+			<isEqual prepend="AND" property="ISCK" compareValue="2"> 
+				DECODE(BOACPTDT, '', '2', '1') = '2'
+			</isEqual>
+			<isEqual prepend="AND" property="ISCK" compareValue="3"> 
+				NVL(DELYN, 'N') = 'Y'
+			</isEqual>		
+			<isNotEmpty property="STDT">
+				<isNotEmpty property="ETDT">
+					AND APLCDT BETWEEN #STDT# AND #ETDT#
+				</isNotEmpty>
+			</isNotEmpty>
+		      ORDER BY INDT DESC
+	</sql>
+	
+	<!-- 구독신청 리스트 -->
+	<select id="getAplcList" resultClass="java.util.HashMap">
+	SELECT B.*
+	    FROM ( SELECT ROWNUM RNUM, A.* 
+	     	         FROM ( SELECT /*+ index_desc(TM_READER_APLC TM_READER_APLC_PK) */ 
+					   					FUNC_AGENT_NM(BOSEQ) AGNAME, APLCDT, APLCNO, READNO, NEWSCD, BOSEQ, BOREADNO, READTYPECD, READNM, BIDT, LUSOCLSFCD, OFFINM, EMAIL, HOMETEL1, HOMETEL2, HOMETEL3, 
+		       							MOBILE1, MOBILE2, MOBILE3, DLVZIP, DLVADRS1, DLVADRS2, DLVSTRNM, DLVSTRNO, APTCD, APTAREA, APTDONG, APTHO, SGINFO, SGTEL1, SGTEL2, SGTEL3, UPRICE, NVL(TRIM(QTY), 1) QTY, TASKCD, INTFLDCD, SGTYPECD, RSDTYPECD,
+		       							DLVTYPECD, DLVPOSICD, HJDT, HJPATHCD, NVL2(HJPATHCD, FUNC_COMMON_CDNM('013',HJPATHCD),'') HJPATHNM,
+		       							HJTYPECD, HJPSREGCD, HJPSNM, HJPS_HOMETEL1, HJPS_HOMETEL2, HJPS_HOMETEL3, HJPS_MOBILE1, HJPS_MOBILE2, HJPS_MOBILE3, HJPS_REMK, SGBGMM, SGEDMM,
+		       							SGCYCLE, BOACPTSTAT, BOACPTDT, REMK, TO_CHAR(INDT, 'YYYY/MM/DD HH24:MI:SS')  INDT, INPS, TO_CHAR(CHGDT, 'YYYY/MM/DD HH24:MI:SS') CHGDT, CHGPS, DELYN, FUNC_USER_NM(INPS) NAME, NEWADDR, BDMNGNO
+								FROM TM_READER_APLC
+							  WHERE APLCDT != ' '
+				<include refid="aplc_search"/>	
+				 ) A
+			              ) B
+	    WHERE RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		   AND RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	
+	<!-- 구독신청 리스트 총 카운트 -->
+	<select id="getAplcListCnt" resultClass="int">
+		SELECT COUNT(1) COUNT
+         FROM TM_READER_APLC
+		WHERE APLCDT != ' '
+		<include refid="aplc_search"/>	
+	</select>
+	
+	<!-- 구독신청 리스트 총 부수 -->
+	<select id="getAplcListQty" resultClass="int">
+		SELECT NVL(SUM(NVL(TRIM(QTY), 1)),0)
+         FROM TM_READER_APLC
+		WHERE APLCDT != ' '
+		<include refid="aplc_search"/>	
+	</select>
+	
+	
+	<!-- 구독신청 독자상세 조회 -->
+	<select id="getAplcReader" resultClass="java.util.HashMap">
+		SELECT APLCDT, APLCNO, READNO, NEWSCD, BOSEQ, BOREADNO, READTYPECD, READNM, BIDT, LUSOCLSFCD, OFFINM, EMAIL, HOMETEL1, HOMETEL2, HOMETEL3, 
+		       MOBILE1, MOBILE2, MOBILE3, DLVZIP, DLVADRS1, DLVADRS2, DLVSTRNM, DLVSTRNO, APTCD, APTAREA, APTDONG, APTHO, SGINFO, SGTEL1, SGTEL2, SGTEL3, UPRICE, NVL(TRIM(QTY), 1) QTY, TASKCD, INTFLDCD, SGTYPECD, RSDTYPECD,
+		       DLVTYPECD, DLVPOSICD, SUBSTR(HJDT,1,4)||'-'||SUBSTR(HJDT,5,2)||'-'||SUBSTR(HJDT,7,2) HJDT, HJPATHCD, HJTYPECD, HJPSREGCD, HJPSNM, HJPS_HOMETEL1, HJPS_HOMETEL2, HJPS_HOMETEL3, HJPS_MOBILE1, HJPS_MOBILE2, HJPS_MOBILE3, HJPS_REMK, SGBGMM, SGEDMM,
+		       SGCYCLE, BOACPTSTAT, BOACPTDT, REMK, TO_CHAR(INDT, 'YYYY/MM/DD HH24:MI:SS')  INDT, INPS, CHGDT, CHGPS, DELYN, FUNC_USER_NM(INPS) NAME, NEWADDR, BDMNGNO,
+		       (SELECT JIKUK_TEL FROM TM_AGENCY WHERE USERID = A.BOSEQ) AS JIKUK_TEL,
+		       (SELECT JIKUK_HANDY FROM TM_AGENCY WHERE USERID = A.BOSEQ) AS JIKUK_HANDY,
+		       (SELECT NAME FROM TM_AGENCY WHERE USERID = A.BOSEQ) AS JIKUK_NAME
+		FROM TM_READER_APLC A
+	  WHERE APLCDT =  #aplcDt#
+		 AND APLCNO =  #aplcNo#
+	</select>
+	
+	
+	<!-- 사원확장요원 전체 조회(TM_USER테이블 미관리로 본사구독 독자로 추출 -->
+	<select id="hjPsNmList" resultClass="java.util.HashMap">
+		SELECT DISTINCT SABUN HJPSREGCD, 
+			       TRIM(READNM) HJPSNM
+		 FROM TM_READER_NEWS
+		WHERE READTYPECD = '016'
+		ORDER BY HJPSNM
+	</select>
+
+	
+	 <!-- 매체코드 전체 조회 -->
+	<select id="getNewsCode" resultClass="java.util.HashMap">
+		SELECT CDCLSF, 
+				   CODE,
+				   CNAME ,
+				   YNAME
+		  FROM TC_COMMON
+		WHERE  USEYN = 'Y'
+	 	    AND CDCLSF = '100'
+		ORDER BY SORTFD, CNAME, CODE
+	</select>
+	
+	<!-- 우편번호 조회 -->
+	<select id="retrieveAgency" resultClass="java.util.HashMap">
+		SELECT 
+			ZIP,
+			SIDO||' '||GUGUN||(CASE WHEN UPDONG IS NOT NULL THEN ' '||UPDONG END )||(CASE WHEN RI IS NOT NULL THEN ' '||RI END )||(CASE WHEN DOSU IS NOT NULL THEN ' '||DOSU END )||(CASE WHEN INSTR(apt,' ',1) !=0 THEN ' '||SUBSTR(apt,0,INSTR(apt,' ')) ELSE ' '||apt end ) ADDR,
+			TXT,
+			JIKUK,
+			JISERIAL,
+			FUNC_AGENT_INFO(JISERIAL) AGINFO
+		FROM 
+			TM_ZIPCODE 
+		WHERE 
+			UPDONG like '%'||#search#||'%'
+			AND DELYN = 'N'
+			ORDER BY ZIP
+	</select>
+
+	<!-- 구독신청정보 등록 -->
+	<insert id="insertAplcInfo" > 	
+			INSERT INTO TM_READER_APLC ( APLCDT, APLCNO,  
+														  NEWSCD, BOSEQ,  
+														  READTYPECD, READNM, BIDT, 
+														  EMAIL, HOMETEL1, HOMETEL2, HOMETEL3, 
+														  MOBILE1, MOBILE2, MOBILE3, 
+														  DLVZIP, DLVADRS1, DLVADRS2, 
+														  UPRICE, QTY, TASKCD, 
+														  INTFLDCD, SGTYPECD, RSDTYPECD, DLVTYPECD, 
+														  DLVPOSICD, HJDT, HJPATHCD, 
+														  HJPSREGCD, HJPSNM, HJPS_REMK, SGBGMM, 
+														  INDT, INPS, CHGDT, CHGPS, NEWADDR, BDMNGNO) 
+			VALUES (#today#, FUNC_APLC_APLCNO_SEQ(#today#), 
+						#newsCd#, #boseq#,  
+						#readTypeCd#, #readNm#, #bidt#, 
+						#eMail#, #homeTel1#, #homeTel2#, #homeTel3#, 
+						#mobile1#, #mobile2#, #mobile3#, 
+						#dlvZip#, #dlvAdrs1#, #dlvAdrs2#,  
+						#uPrice#, #qty#, #taskCd#, 
+						#intFldCd#, #sgType#, #rsdTypeCd#, #dlvTypeCd#, 
+						#dlvPosiCd#, #hjDt#, #hjPathCd#,  
+						#hjPsregCd#, #hjPsnm#, #hjpsRemk#, #sgBgmm#,  
+						SYSDATE, #inps#, SYSDATE,#chgPs#, #newaddr#, #bdMngNo#)
+	</insert>	
+	
+
+	<update id="updateAplcInfo" >
+		UPDATE TM_READER_APLC
+			  SET NEWSCD 		  = #newsCd#,
+			  		BOSEQ       	  = #boseq#,
+		       		READTYPECD    = #readTypeCd#,
+			        READNM          = #readNm#,
+			        BIDT		          = #bidt#,
+			        EMAIL     	      = #eMail#,
+			        HOMETEL1       = #homeTel1#,
+			        HOMETEL2       = #homeTel2#,
+			        HOMETEL3       = #homeTel3#,
+			        MOBILE1          = #mobile1#,
+			        MOBILE2     	  = #mobile2#,
+			        MOBILE3    	  = #mobile3#,
+			        DLVZIP      	  = #dlvZip#,
+			        DLVADRS1      = #dlvAdrs1#,
+			        DLVADRS2      = #dlvAdrs2#,
+			        UPRICE       	 = #uPrice#,
+			        QTY          		 = #qty#,
+			        TASKCD          = #taskCd#,
+			        INTFLDCD       = #intFldCd#,
+			        SGTYPECD       = #sgType#,
+			        RSDTYPECD     = #rsdTypeCd#,
+			        DLVTYPECD     = #dlvTypeCd#,
+			        DLVPOSICD     = #dlvPosiCd#,
+			        HJDT          	 = #hjDt#,
+			        HJPATHCD      = #hjPathCd#,
+			        HJPSREGCD     = #hjPsregCd#,
+			        HJPSNM         = #hjPsnm#,
+			        HJPS_REMK     = #hjpsRemk#,
+			        SGBGMM        = #sgBgmm#,
+			        INPS			     = DECODE(INPS,'MKWEB',#chgPs#,INPS),
+			        CHGDT           = SYSDATE,
+			        CHGPS           = #chgPs#,
+			        NEWADDR = #newaddr# ,
+					BDMNGNO = #bdMngNo# 
+		WHERE  APLCDT          = #aplcDt#
+			AND APLCNO          = #aplcNo#
+	</update>
+	
+	
+	<update id="delAplcInfo" >
+		UPDATE TM_READER_APLC
+			  SET DELYN = #delYn#,
+			  	<isEqual property="delYn" compareValue="Y">
+					BOACPTSTAT = '03',
+					BOACPTDT = SYSDATE,
+				</isEqual>
+				<isNotEqual property="delYn" compareValue="Y">
+					BOACPTSTAT = '',
+					BOACPTDT = '',
+				</isNotEqual>
+	       			CHGDT   = SYSDATE,
+	       			CHGPS   = #chgPs#
+		 WHERE APLCDT  = #aplcDt#
+			AND APLCNO  = #aplcNo#
+	</update>
+	
+	<update id="updateHjRemk" >
+		UPDATE TM_READER_APLC
+			  SET HJPS_REMK   = #hjpsRemk#,
+		      	    CHGDT         = SYSDATE,
+		       		CHGPS         = #CHGPS#
+		 WHERE APLCDT        = #aplcDt#
+		    AND APLCNO       = #aplcNo#
+	</update>
+
+</sqlMap>

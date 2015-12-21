@@ -1,0 +1,1274 @@
+
+
+
+
+
+
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=euc-kr">
+<script type="text/javascript" src="/js/prototype.js"></script>
+<script type="text/javascript" src="/js/common.js"></script>
+<title>매일경제 독자 프로그램</title>
+<link rel='stylesheet' type='text/css' href='/css/mkcrm.css'>
+
+<style type=text/css>
+<!--
+A:link {text-decoration: none}
+A:visited {text-decoration: none}
+A:hover {color: red; text-decoration: underline}
+.blinespace { line-height: 150% }
+-->
+</style>
+
+<SCRIPT LANGUAGE="JavaScript">
+
+function newImage(arg) {
+	if (document.images) {
+		rslt = new Image();
+		rslt.src = arg;
+		return rslt;
+	}
+}
+
+function changeImages() {
+	if (document.images && (preloadFlag == true)) {
+		for (var i=0; i<changeImages.arguments.length; i+=2) {
+			document[changeImages.arguments[i]].src = changeImages.arguments[i+1];
+		}
+	}
+}
+
+var preloadFlag = false;
+function preloadImages() {
+	if (document.images) {
+		m_01_over = newImage("/zadmin/images/m_01-over.gif");
+		m_01_m_02_over = newImage("/zadmin/images/m_01-m_02_over.gif");
+		m_02_m_01_over = newImage("/zadmin/images/m_02-m_01_over.gif");
+		m_02_over = newImage("/zadmin/images/m_02-over.gif");
+		m_02_m_03_over = newImage("/zadmin/images/m_02-m_03_over.gif");
+		m_03_m_02_over = newImage("/zadmin/images/m_03-m_02_over.gif");
+		m_03_over = newImage("/zadmin/images/m_03-over.gif");
+		preloadFlag = true;
+	}
+}
+
+function showmenu(m) {
+	menu=eval("document.all.menu"+m+".style");
+	if(menu.display=="none") {
+		for(i=1;i<6;i++) {
+			if((i==3)||(i==5)){
+				menu=eval("document.all.menu"+i+".style");
+				
+				if(m==i) {
+					menu.display="";
+					alert(i);
+				} else {
+					menu.display="none";
+				}
+			}
+		}
+	}
+	else {
+		menu.display="none";
+	}
+}
+
+</SCRIPT>
+</head>
+
+<!-- 
+<body bgcolor="white" text="black" link="blue" vlink="deeppink" alink="pink" leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" ONLOAD="preloadImages();">
+ -->
+<body topmargin="0" leftmargin="0">
+<!--top 메뉴 롤오버 및 인클루드원함 될 예정 아직 미완성-->
+<table width="1200" height="80" border="0" cellspacing="0" cellpadding="0" background="/images/bg_topmenu.gif">
+	<tr>
+		<td width="200" align="center"><a href="/"><img src="/images/l_logo.gif" border="0" align="absmiddle"></a></td>
+		<!-- 탑메뉴-->
+		<td width="1000" height="80" align="left">
+			<table width="1000" border="0" cellspacing="0" cellpadding="0">
+				<tr>
+					<td height="38" align="right" colspan="2"> <font class="logf"> HOME</font> <font size="1px;" color="d5d5d5">│</font> <font class="logf">LOGIN</font>&nbsp;&nbsp;&nbsp;</td>
+				</tr>
+				<tr>
+					<td height="20" style="padding-left:50px;">
+					<a href="/reader/readerManage/readerList.do"><img src="/images/bt_top01_on.gif" border="0" align="absmiddle"></a><img src="/images/bt_top_line.gif" border="0" align="absmiddle">
+					<a href="/test/main.do?no=2"><img src="/images/bt_top02_off.gif" border="0" align="absmiddle"></a><img src="/images/bt_top_line.gif" border="0" align="absmiddle">
+					<a href="/test/main.do?no=3"><img src="/images/bt_top03_off.gif" border="0" align="absmiddle"></a><img src="/images/bt_top_line.gif" border="0" align="absmiddle">
+					<a href="/test/main.do?no=4"><img src="/images/bt_top04_off.gif" border="0" align="absmiddle"></a><img src="/images/bt_top_line.gif" border="0" align="absmiddle">
+					<a href="/test/main.do?no=5"><img src="/images/bt_top05_off.gif" border="0" align="absmiddle"></a><img src="/images/bt_top_line.gif" border="0" align="absmiddle">
+					<a href="/test/main.do?no=6"><img src="/images/bt_top06_off.gif" border="0" align="absmiddle"></a><img src="/images/bt_top_line.gif" border="0" align="absmiddle">
+					<a href="/test/main.do?no=7"><img src="/images/bt_top07_off.gif" border="0" align="absmiddle"></a><img src="/images/bt_top_line.gif" border="0" align="absmiddle">
+					<a href="/management/adminManage/agencyList.do"><img src="/images/bt_top08_off.gif" border="0" align="absmiddle"></a><img src="/images/bt_top_line.gif" border="0" align="absmiddle">
+					<a href="/billing/zadmin/cmsrequest/main.do"><img src="/images/bt_top09_off.gif" border="0" align="absmiddle"></a>
+								
+					</td>
+					<td align="right">
+					<font class="bname">백운재님</font> 환영합니다.&nbsp;&nbsp;&nbsp;
+					</td>
+				</tr>
+				<tr>
+					<td height="18" colspan="2"></td>
+				</tr>
+			</table>
+
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" height="12" bgcolor="f48d2e" align="center"><!--<b>MAEIL BUSINESS NEWSPAPER</b>--></td>
+	</tr>
+</table>
+
+<!-- 메인-->
+<table width="1200" height="80" border="0" cellspacing="0" cellpadding="0">
+	<tr>
+		<!-- left 메뉴 인클루드 원함-->
+		<td width="143" bgcolor="e3e3e3" valign="top">
+	
+			<table width="100%" cellpadding="0" cellspacing="0" border="0">
+				<!-- 각 LNB 메뉴의 코드를 비교한다. -->
+				<!-- 메뉴 - 독자 -->
+				
+				
+					<tr><td><img src="/images/tt_left01.gif" border="0" align="absmiddle"></td></tr>
+					<tr><td class="box_m" height="35"><a href="/reader/readerManage/readerList.do" OnFocus="this.blur()">독자관리</a></td></tr>
+					<tr class="line_m01" height="1"><td></td></tr>
+					<tr class="line_m02" height="1"><td></td></tr>
+					
+					<tr><td class="box_m" height="35"><a href="/reader/readerManage/searchReader.do" OnFocus="this.blur()">독자찾기</a></td></tr>
+					<tr class="line_m01" height="1"><td></td></tr>
+					<tr class="line_m02" height="1"><td></td></tr>
+					
+					<tr><td class="box_m" height="35"><a href="#" OnFocus="this.blur()">독자원장</a></td></tr>
+					<tr class="line_m01" height="1"><td></td></tr>
+					<tr class="line_m02" height="1"><td></td></tr>
+					
+					<tr><td class="box_m" height="35"><a href="#" OnFocus="this.blur()">배달명단</a></td></tr>
+					<tr class="line_m01" height="1"><td></td></tr>
+					<tr class="line_m02" height="1"><td></td></tr>
+					
+					<tr><td class="box_m" height="35"><a href="#" OnFocus="this.blur()">자동이체독자</a></td></tr>
+					<tr class="line_m01" height="1"><td></td></tr>
+					<tr class="line_m02" height="1"><td></td></tr>
+				
+								
+				<!-- 메뉴 - 수금입력 -->
+				
+				
+								
+				<!-- 메뉴 - 인쇄 -->
+				
+				
+				
+				<!-- 메뉴 - 고지서출력 -->
+				
+				
+				
+				<!-- 메뉴 - 통계 -->
+				
+				
+				
+				<!-- 메뉴 - 기타작업 -->
+				
+				
+				
+				<!-- 메뉴 - 커뮤니티 -->
+				
+				
+				
+				<!-- 메뉴 - 관리 -->
+				
+				
+				
+				<!-- 메뉴 - 자동이체 -->
+				
+				
+				
+
+			</table>		
+		</td>
+
+		<!-- main 내용-->
+		<td width="1057" class="pad10" valign="top">
+		
+			
+
+
+
+
+<object id="factory" viewastext style="display: none"
+	classid="clsid:1663ed61-23eb-11d2-b92f-008048fdd814"
+	codebase="/uploadedfile/smsx.cab#Version=6,2,433,70"> </object>
+
+<style>
+#xlist {
+	width: 100%;
+	height: 230px;
+	overflow-y: auto;
+}
+</style>
+<script type="text/javascript" src="/js/ajaxUtil.js" charset="UTF-8"></script>
+<script type="text/javascript">
+	function printWindow(header) {
+		factory.printing.header = "머릿글" //머릿말 설정
+		factory.printing.footer = "바닥글" //꼬릿말 설정
+		factory.printing.portrait = true //출력방향 설정: true-가로, false-세로
+
+		if (window.XMLHttpRequest) { // milli
+			// IE 7, mozilla, safari, opera 9
+			factory.printing.leftMargin = 5.0;//마진값은 적당하게 주시면 됩니다.
+			factory.printing.topMargin = 5.0;
+			factory.printing.rightMargin = 5.0;
+			factory.printing.bottomMargin = 5.0;
+		} else { // inch
+			// IE6, older browsers
+			factory.printing.leftMargin = 0.22;
+			factory.printing.topMargin = 0.22;
+			factory.printing.rightMargin = 0.22;
+			factory.printing.bottomMargin = 0.22;
+		}
+		return factory.printing.Preview(); //미리보기
+		//        return factory.printing.Print(true);
+		//        return factory.printing.Print(true,window);    //true:프린트 대화창 열음, window:윈도우전체, 프레임명
+	}
+
+	//  자세히 보기, 독자 수금정보 조회(ajax)
+	function detailView(readNo, newsCd, seq) {
+		$("readNo").value = readNo;
+		$("newsCd").value = newsCd;
+		$("seq").value = seq;
+
+		var url = "/collection/collection/ajaxCollectionList.do";
+		sendAjaxRequest(url, "readerListForm", "post", collectionList);
+	}
+
+	function collectionList(responseHttpObj) {
+		if (responseHttpObj) {
+			try {
+				var result = eval("(" + responseHttpObj.responseText + ")");
+				if (result) {
+					setCollectionList(result);
+				}
+			} catch (e) {
+				alert("오류 : " + e);
+			}
+		}
+	}
+
+	function setCollectionList(jsonObjArr) {
+		if (jsonObjArr.length > 0) {
+			for ( var i = 0; i < jsonObjArr.length; i++) {
+				if (i != jsonObjArr.length - 2) {
+					//alert(jsonObjArr[i].thisYear);
+				}
+				if (i == jsonObjArr.length - 1) {
+					//alert(jsonObjArr[i].lastYear);
+				}
+			}
+		}
+	}
+	//민원 처리  불배, 휴독 , 해지
+	function winPop(url) {
+		actUrl = "/reader/minwon/popMinwon.do";
+		if ("1" == url) { //신청 독자 조회
+			actUrl = "/reader/readerManage/popRetrieveApplyReader.do";
+			window
+					.open(
+							'',
+							'pop_minwon',
+							'width=510, height=545, toolbar=no, menubar=no, location=no, status=no, resizeable=no, scrollbar=no');
+		} else if ("001" == url) {//불배 민원 독자 조회
+			window
+					.open(
+							'',
+							'pop_minwon',
+							'width=900, height=800, toolbar=no, menubar=no, location=no, status=no, resizeable=no, scrollbar=no');
+		} else if ("002" == url) {//이전 요청 독자 조회
+			actUrl = "/reader/minwon/popRerocation.do";
+			window
+					.open(
+							'',
+							'pop_minwon',
+							'width=900, height=800, toolbar=no, menubar=no, location=no, status=no, resizeable=no, scrollbar=no');
+		} else if ("003" == url) {//휴독 민원 독자 조회
+			window
+					.open(
+							'',
+							'pop_minwon',
+							'width=510, height=540, toolbar=no, menubar=no, location=no, status=no, resizeable=no, scrollbar=no');
+		} else if ("004" == url) {//해지 민원 독자 조회
+			window
+					.open(
+							'',
+							'pop_minwon',
+							'width=510, height=540, toolbar=no, menubar=no, location=no, status=no, resizeable=no, scrollbar=no');
+		}
+		readerListForm.minGb.value = url;
+		readerListForm.target = "pop_minwon";
+		readerListForm.action = actUrl;
+		readerListForm.submit();
+	}
+
+	//페이징 펑션
+	function moveTo(where, seq) {
+
+		$("pageNo").value = seq;
+		readerListForm.target = "_self";
+		readerListForm.action = "/reader/readerManage/readerList.do";
+		readerListForm.submit();
+
+	}
+</script>
+
+<form id="readerListForm" name="readerListForm" action="" method="post">
+	<input type="hidden" id="readNo" name="readNo" value="" /> <input
+		type="hidden" id="minGb" name="minGb" value="" /> <input type="hidden"
+		id="newsCd" name="newsCd" value="" /> <input type="hidden" id="seq"
+		name="seq" value="" />
+	<!-- 페이징 처리 변수 -->
+	<input type=hidden id="pageNo" name="pageNo" value="292" />
+	<!-- 페이징 처리 변수 -->
+
+
+				<!-- main 내용-->
+				<td width="1057" class="pad10" valign="top">
+					<table width="100%" cellpadding="0" cellspacing="0" border="0">
+						<tr>
+							<td><img src="/images/tt_sub01_02.gif" border="0"
+								align="absmiddle"></td>
+						</tr>
+					</table>
+					<p style="top-margin: 10px;">
+						<!--독자등록-->
+						<table width="100%" cellpadding="0" cellspacing="0" border="0">
+							<tr>
+								<td width="60%" valign="top">
+									<table width="100%" cellpadding="5" cellspacing="1" border="0"
+										bgcolor="e5e5e5" class="b_01">
+										<tr bgcolor="ffffff">
+											<td bgcolor="f9f9f9" width="12%" align="center"><font
+												class="b02">독자번호</font></td>
+											<td><div align="right">
+													<input type="text" id="READNO" name="READNO" value=""
+														readonly />
+												</div></td>
+											<td bgcolor="f9f9f9" width="12%" align="center"><font
+												class="b02">구역명</font></td>
+											<td><input type="text" id="GNO" name="GNO" value="" /></td>
+											<td bgcolor="f9f9f9" width="12%" align="center"><font
+												class="b02">구역배달</font></td>
+											<td><div align="center">
+													<input type="text" id="GNO" name="GNO" value=""
+														class='box_s' /><input type="text" id="BNO" name="BNO"
+														value="" class='box_s' /> <input type="text" id="SNO"
+														name="SNO" value="" class='box_s'>
+												</div></td>
+										</tr>
+										<tr bgcolor="ffffff">
+											<td bgcolor="f9f9f9" align="center"><font class="b02">독
+													자 명</td>
+											<td colspan="3"><input type="text" id="READNM"
+												name="READNM" value="" /></td>
+											<td bgcolor="f9f9f9" align="center"><font class="b02">생년월일</td>
+											<td><input type="text" id="BIDT" name="BIDT" value="" /></td>
+										</tr>
+										<tr bgcolor="ffffff">
+											<td bgcolor="f9f9f9" align="center"><font class="b02">전화번호</td>
+											<td><div align="center">
+													<input type="text" id="HOMETEL1" name="HOMETEL1" value=""
+														class='box_s'> <input type="text" id="HOMETEL2"
+														name="HOMETEL2" value="" class='box_s'> <input
+															type="text" id="HOMETEL3" name="HOMETEL3" value=""
+															class='box_s'>
+												</div></td>
+											<td bgcolor="f9f9f9" align="center"><font class="b02">핸
+													드 폰</td>
+											<td><div align="center">
+													<input type="text" id="MOBILE1" name="MOBILE1" value=""
+														class='box_s'> <input type="text" id="MOBILE2"
+														name="MOBILE2" value="" class='box_s'> <input
+															type="text" id="MOBILE3" name="MOBILE3" value=""
+															class='box_s'>
+												</div></td>
+											<td bgcolor="f9f9f9" align="center"><font class="b02"><input
+													type="text" id="EMAIL" name="EMAIL" value="" /></td>
+											<td>&nbsp;</td>
+										</tr>
+										<tr bgcolor="ffffff">
+											<td bgcolor="f9f9f9" align="center"><font class="b02">우편번호</td>
+											<td><input type="text" id="DLVZIP" name="DLVZIP"
+												value="" /></td>
+											<td colspan="4"><input type="text" id="DLVADRS1"
+												name="DLVADRS1" value="" /></td>
+										</tr>
+										<tr bgcolor="ffffff">
+											<td bgcolor="f9f9f9" align="center"><font class="b02">주소코드</td>
+											<td>121<!--이곳에 콤보박스삽입요망--></td>
+											<td colspan="4">121</td>
+										</tr>
+										<tr bgcolor="ffffff">
+											<td bgcolor="f9f9f9" align="center"><font class="b02">상세주소</td>
+											<td colspan="5"><input type="text" id="DLVADRS2"
+												name="DLVADRS2" value="" /></td>
+										</tr>
+										<tr bgcolor="ffffff">
+											<td bgcolor="f9f9f9" align="center"><font class="b02">주거구분</td>
+											<td></td>
+											<td bgcolor="f9f9f9" align="center"><font class="b02">직
+													종</td>
+											<td>가사<!--이곳에 콤보박스삽입요망--></td>
+											<td bgcolor="f9f9f9" align="center"><font class="b02">관심분야</td>
+											<td>정치<!--이곳에 콤보박스삽입요망--></td>
+										</tr>
+									</table>
+
+									<p style="top-margin: 10px;">
+
+										<table width="100%" cellpadding="5" cellspacing="1" border="0"
+											bgcolor="e5e5e5" class="b_01">
+											<tr bgcolor="ffffff">
+												<td bgcolor="f9f9f9" width="12%" align="center"><font
+													class="b02">신 문 명 </font></td>
+												<td width="23%">매일경제</td>
+												<td bgcolor="f9f9f9" width="12%" align="center"><font
+													class="b02">확장일자</font></td>
+												<td>2010-03-22</td>
+												<td bgcolor="f9f9f9" width="12%" align="center"><font
+													class="b02">독자유형</font></td>
+												<td>일반</td>
+											</tr>
+											<tr bgcolor="ffffff">
+												<td bgcolor="f9f9f9" align="center"><font class="b02">구독부수</font></td>
+												<td><input type='text' class='box_s'> <input
+														type='text'
+														style='border: 1px solid #cccccc; background-color: #ffffff; height: 20px; width: 70px;'></td>
+												<td bgcolor="f9f9f9" align="center"><font class="b02">유가년월</font></td>
+												<td>2010-06</td>
+												<td bgcolor="f9f9f9" align="center"><font class="b02">배달유형</font></td>
+												<td>직배</td>
+											</tr>
+											<tr bgcolor="ffffff">
+												<td bgcolor="f9f9f9" align="center"><font class="b02">총
+														부 수</font></td>
+												<td><input name="text" type='text' class='box_s'>
+														<input type='text'
+														style='border: 1px solid #cccccc; background-color: #ffffff; height: 20px; width: 70px;'></td>
+												<td bgcolor="f9f9f9" align="center"><font class="b02">신청경로</font></td>
+												<td>지국판촉</td>
+												<td bgcolor="f9f9f9" align="center"><font class="b02">배달장소</font></td>
+												<td>현관</td>
+											</tr>
+											<tr bgcolor="ffffff">
+												<td bgcolor="f9f9f9" align="center"><font class="b02">수금방법</font></td>
+												<td>&nbsp;</td>
+												<td bgcolor="f9f9f9" align="center"><font class="b02">확
+														장 자</font></td>
+												<td>행복닷컴</td>
+												<td bgcolor="f9f9f9" align="center"><font class="b02">자
+														매 지 </font></td>
+												<td>&nbsp;</td>
+											</tr>
+											<tr bgcolor="ffffff">
+												<td bgcolor="f9f9f9" align="center"><font class="b02">구독일자</font></td>
+												<td>2010-03-22</td>
+												<td bgcolor="f9f9f9" align="center"><font class="b02">구독기간</font></td>
+												<td>19개월</td>
+												<td bgcolor="f9f9f9" align="center">판촉물</td>
+												<td>&nbsp;</td>
+											</tr>
+											<tr bgcolor="ffffff">
+												<td bgcolor="f9f9f9" align="center"><font class="b02">구독일자</font></td>
+												<td colspan="5">성내동 삼성 103-1508호</td>
+											</tr>
+											<tr bgcolor="ffffff">
+												<td bgcolor="f9f9f9" align="center"><font class="b02">해지일자</font></td>
+												<td>
+												<select name="RSDTYPECD" id="RSDTYPECD" >
+													<option value=""></option>
+													<option value="001">아파트</option>
+													<option value="002">다세대/빌라</option>
+													<option value="003">단독주택</option>
+													<option value="004">해지</option>
+													<option value="005">기타</option>
+													<option value="099">기타</option>
+											    </select>
+												</td>
+												<td bgcolor="f9f9f9" align="center"><font class="b02">해지사유</font></td>
+												<td colspan="3"></td>
+											</tr>
+										</table>
+
+										<p style="top-margin: 10px;">
+
+											<table width="100%" cellpadding="5" cellspacing="1"
+												border="0" bgcolor="e5e5e5" class="b_01">
+												<tr bgcolor="ffffff">
+													<td bgcolor="ffffff" width="12%" align="center"><select
+														class='search'><option value='0'>통합</option>
+															<option value='1'>통합검색</option></select></td>
+													<td colspan="3" align="center"><input name="text2"
+														type='text'
+														style='border: 1px solid #cccccc; background-color: #ffffff; height: 20px; width: 350px;'>
+															&nbsp;&nbsp; <a href="#"><img
+																src="/images/bt_search.gif" border="0" align="absmiddle"></a>
+															<a href="#"><img src="/images/bt_search02.gif"
+																border="0" align="absmiddle"></a></td>
+												</tr>
+												<tr bgcolor="ffffff">
+													<td colspan="4" rowspan="4" align="center" bgcolor="ffffff">
+														<!--통합 내용출력자리-->
+														<div id="xlist">
+															<table width="100%" cellpadding="5" cellspacing="0"
+																border="0" bgcolor="efefef" class="b_01">
+																<tr>
+																	<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																</tr>
+																<tr bgcolor="ffffff">
+																	<td align="center"><font class="b02">구역배달</font></td>
+																	<td align="center"><font class="b02">독자</font></td>
+																	<td align="center"><font class="b02">독자명</font></td>
+																	<td align="center"><font class="b02">전화번호</font></td>
+																	<td align="center"><font class="b02">주소</font></td>
+																	<td align="center"><font class="b02">단가</font></td>
+																</tr>
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110062363' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>18893</td>
+																			<td>최성욱/인덕회계법인</td>
+																			<td>02-539-4481</td>
+																			<td>서울 강남구 대치동 1001-10 동남유화빌딩 2층</td>
+																			<td>150/200808</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110064325' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19080</td>
+																			<td>신현태/19080</td>
+																			<td>02-563-2927</td>
+																			<td>서울 강남구 대치동 은마아파트 7-201호</td>
+																			<td>150/201009</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110062713' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19117</td>
+																			<td>더닥터스코스매틱/19117</td>
+																			<td>02-555-9480</td>
+																			<td>서울 강남구 대치동 968-5번지 일동빌딩 9층</td>
+																			<td>150/200903</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110062782' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19167</td>
+																			<td>김평(김현옥)</td>
+																			<td>02-742-7039</td>
+																			<td>서울 강남구 대치1동 삼성아파트 104동 1204호</td>
+																			<td>150/200904</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063697' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19177</td>
+																			<td>(주)서평아텍/19177</td>
+																			<td>02-565-4393</td>
+																			<td>서울 강남구 대치동 우성1차 1-1203호</td>
+																			<td>150/201003</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063074' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19179</td>
+																			<td>최희석/19179</td>
+																			<td>02-6241-0315</td>
+																			<td>서울 강남구 대치2동 은마아파트 25-31 25-105호</td>
+																			<td>150/200907</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110064441' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19403</td>
+																			<td>애니에프피/19403</td>
+																			<td>02-2051-3930</td>
+																			<td>서울 강남구 대치동 959-12 송암 3층</td>
+																			<td>150/201010</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110062980' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19447</td>
+																			<td>박재연/19447</td>
+																			<td>02-554-1490</td>
+																			<td>서울 강남구 대치2동 은마아파트 25-31 은마 28-902</td>
+																			<td>750/200905</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063520' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19477</td>
+																			<td>아시아자산운용/19477</td>
+																			<td>02-3490-5867</td>
+																			<td>서울 강남구 대치동 1002 코스모 6층</td>
+																			<td>150/201001</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063522' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19478</td>
+																			<td>아시아자산운용/19478</td>
+																			<td>02-3490-5867</td>
+																			<td>서울 강남구 대치동 1002  코스모 6층</td>
+																			<td>300/201001</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063521' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19619</td>
+																			<td>아시아자산운용/19619</td>
+																			<td>02-3490-5867</td>
+																			<td>서울 강남구 대치동 1002 코스모 6층</td>
+																			<td>150/201001</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110064015' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19648</td>
+																			<td>이철수/19648</td>
+																			<td>02-539-1996</td>
+																			<td>서울 강남구 대치동 은마아파트 11-1312호</td>
+																			<td>750/201006</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063070' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19729</td>
+																			<td>조용선</td>
+																			<td>02-6207-0007</td>
+																			<td>서울 강남구 대치1동 동부센트레빌 101동 1601호</td>
+																			<td>150/200907</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063700' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19730</td>
+																			<td>이윤정/19730</td>
+																			<td>02-555-5402</td>
+																			<td>서울 강남구 대치동 동부센트레빌 107-902호</td>
+																			<td>150/201003</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063868' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19780</td>
+																			<td>원포인트파트너스/19780</td>
+																			<td>02-569-4043</td>
+																			<td>서울 강남구 대치동 942-18 세풍 8층</td>
+																			<td>150/201004</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063179' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19814</td>
+																			<td>박병호/19814</td>
+																			<td>02-553-4130</td>
+																			<td>서울 강남구 대치3동 우성2차 202-201호</td>
+																			<td>150/200911</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063675' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19827</td>
+																			<td>동일철강(주)장인화/19827</td>
+																			<td>02-6747-5854</td>
+																			<td>서울 강남구 대치동 946-1 글라스타워 29층</td>
+																			<td>150/201004</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110064696' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19861</td>
+																			<td>이만성</td>
+																			<td>02-539-1996</td>
+																			<td>서울 강남구 대치동 992 현대 101-503호</td>
+																			<td>150/201101</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110063792' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19886</td>
+																			<td>황일호/19886</td>
+																			<td>02-826-8035</td>
+																			<td>서울 강남구 대치동 아이파크107-1802호</td>
+																			<td>150/201004</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																	
+																	
+																		<tr bgcolor="ffffff"
+																			onclick="javascript:detailView('110065853' , '100' , '0001')">
+																			<td>200-000</td>
+																			<td>19886</td>
+																			<td>황일호/19886</td>
+																			<td>02-826-8035</td>
+																			<td>서울 강남구 대치동 아이파크107-1802호</td>
+																			<td>150/201108</td>
+																		</tr>
+																		<tr>
+																			<td colspan="6" height="1" bgcolor="e5e5e5"></td>
+																		</tr>
+																	
+																
+																<tr>
+																	<td colspan="6" align="center">
+
+
+
+
+<!-- P A G I N G :: START -->
+		<div class="paging">
+			<span>
+			
+				
+					<a href="javascript:moveTo('list', '1');"><img src="/images/paging/etc_first_on.gif" alt="처음" border="0"/></a>&nbsp;
+					<a href="javascript:moveTo('list', '280');"><img src="/images/paging/etc_prev_on.gif" alt="이전" border="0"/></a>&nbsp;
+				
+				
+			
+			</span>
+			
+				
+					
+						
+						
+							<a href="javascript:moveTo('list', '291');">291</a>&nbsp;&nbsp;&nbsp;
+						
+					
+				
+					
+						
+							<strong>292</strong>&nbsp;&nbsp;&nbsp;
+						
+						
+					
+				
+					
+						
+						
+							<a href="javascript:moveTo('list', '293');">293</a>&nbsp;&nbsp;&nbsp;
+						
+					
+				
+			
+			<span>
+			
+				
+				
+					<img src="/images/paging/etc_next_off.gif" alt="다음" />&nbsp;
+					<img src="/images/paging/etc_end_off.gif" alt="끝" />&nbsp;
+				
+			
+			</span>
+		</div>
+	<!-- P A G I N G :: E N D --></td>
+																</tr>
+
+															</table>
+														</div>
+													</td>
+												</tr>
+
+											</table>
+											<p style="margin-top: 10px;">
+												<table width="100%" cellpadding="0" cellspacing="0"
+													border="0" align="right">
+													<tr align="right">
+														<td><a href="#"><img src="/images/bt_card.gif"
+																border="0" align="absmiddle"></a>&nbsp; <a href="#"><img
+																src="/images/bt_newmem.gif" border="0" align="absmiddle"></a>&nbsp;
+															<a href="#"><img src="/images/bt_add.gif" border="0"
+																align="absmiddle"></a></td>
+
+													</tr>
+												</table>
+								</td>
+								<!-- 메인 오른쪽 끝-->
+								<!-- 메인 왼쪽 시작-->
+
+								<td width="40%" valign="top" align="right">
+									<table width="95%" cellpadding="0" cellspacing="0" border="0">
+										<tr>
+											<td>
+
+												<table width="100%" cellpadding="5" cellspacing="1"
+													border="0" bgcolor="e5e5e5" class="b_01">
+													<tr>
+														<td colspan="7" height="40" align="center"><a
+															href="#"><img src="/images/bt_money01.gif" border="0"
+																align="absmiddle"></a> <input type='text'
+															style='border: 1px solid #cccccc; background-color: #ffffff; height: 27px; width: 58%;'>
+																<a href="#"><img src="/images/bt_money02.gif"
+																	border="0" align="absmiddle"></a></td>
+													</tr>
+
+
+													<tr bgcolor="f9f9f9" align="center">
+														<td align="center"><div align="center">
+																<font class="b02">년</font>
+															</div></td>
+														<td><div align="center">
+																<font class="b02">월</font>
+															</div></td>
+														<td bgcolor="f9f9f9" align="center"><div
+																align="center">
+																<font class="b02">수금일자</font>
+															</div></td>
+														<td><div align="center">
+																<font class="b02">금액</font>
+															</div></td>
+														<td bgcolor="f9f9f9" align="center"><div
+																align="center">
+																<font class="b02">수금액</font>
+															</div></td>
+														<td colspan="2"><div align="center">
+																<font class="b02">방법</font>
+															</div></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+
+													</tr>
+
+
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+													<tr bgcolor="ffffff" align="center">
+														<td align="center">2011</td>
+														<td>10</td>
+														<td align="center">2010-11-03</td>
+														<td>15000</td>
+														<td align="center">15000</td>
+														<td><select class='search'><option
+																	value='0'>지로</option>
+																<option value='1'>지로</option></select></td>
+													</tr>
+
+
+
+												</table>
+
+												<p style="margin-top: 10px;">
+
+													<table width="100%" cellpadding="5" cellspacing="1"
+														border="0" bgcolor="e5e5e5">
+														<tr>
+															<Td align="center"><a href="#"><img
+																	src="/images/bt_sin.gif" border="0" align="absmiddle"></a>
+																<a href="#"><img src="/images/bt_bul.gif" border="0"
+																	align="absmiddle"></a> <a href="#"><img
+																	src="/images/bt_ee.gif" border="0" align="absmiddle"></a>
+																<a href="#"><img src="/images/bt_hyu.gif" border="0"
+																	align="absmiddle"></a> <a href="#"><img
+																	src="/images/bt_hae.gif" border="0" align="absmiddle"></a>
+															</TD>
+														</tr>
+													</table>
+
+
+
+													<p style="margin-top: 10px;">
+
+														<table width="100%" cellpadding="5" cellspacing="1"
+															border="0" bgcolor="e5e5e5">
+															<tr>
+																<td height="40" align="center"><a href="#"><img
+																		src="/images/bt_tong.gif" border="0" align="absmiddle"></a>
+																	<a href="#"><img src="/images/bt_dok.gif"
+																		border="0" align="absmiddle"></a></td>
+															</tr>
+															<tr bgcolor="ffffff">
+																<td height="155">내용입력창</td>
+															</tr>
+														</table>
+														<p style="margin-top: 10px;">
+															<table width="100%" cellpadding="0" cellspacing="0"
+																border="0" align="right">
+																<tr align="right">
+																	<td><a href="#"><img src="/images/bt_save.gif"
+																			border="0" align="absmiddle"></a>&nbsp;&nbsp; <a
+																		href="#"><img src="/images/bt_end.gif" border="0"
+																			align="absmiddle"></a></td>
+
+																</tr>
+															</table>
+											</td>
+
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+				</td>
+				<!-- main 끝-->
+			</tr>
+		</table>
+		<!-- 메인내용-->
+
+</form>
+
+
+
+		
+			<!-- 
+			<table width="100%" cellpadding="0" cellspacing="0"  border="0">
+				<tr>
+					<td><img src="/images/tt_sub01_01.gif" border="0" align="absmiddle"></td>
+				</tr>
+			</table>
+			<p style="margin-top:10px;">	
+			<table width="100%" cellpadding="0" cellspacing="0"  border="0">
+				<tr>
+					<td><input type='text' style='border:1px solid #cccccc; background-color: #ffffff; height:25px; width:300px;'> 
+					<a href="#"><img src="/images/bt_search.gif" border="0" align="absmiddle"></a> <input type="radio">통합 <input type="radio">구역</td></td>
+					<td align="right"><a href="#"><img src="/images/bt_end.gif" border="0" align="absmiddle"></a></td>
+				</tr>
+			</table>
+			<p style="margin-top:5px;">						
+			<table width="100%" cellpadding="5" cellspacing="1" border="0" bgcolor="e5e5e5" class="b_01">
+			  <tr bgcolor="f9f9f9" align="center" class="box_p" >
+			    <td>구역 + 배달</td>
+			    <td>고유번호</td>
+			    <td>독자명</td>
+			    <td>주소</td>
+			    <td>전화번호</td>
+			    <td>확장일자</td>
+				<td>지명</td>
+			  </tr>
+			  <tr bgcolor="ffffff" align="center">
+			    <td colspan="7"></td>
+			  </tr>			   
+			</table>
+			-->
+		</td>
+		<!-- main 끝-->
+	</tr>
+</table>
+<!-- 메인내용-->
+
+<!-- footer start -->
+<table width="100%" height="0" cellpadding="0" cellspacing="0" bgcolor="cfcfcf">
+	<tr valign="bottom">
+		<td align="center" class="b01"><img src="/images/l_bottom.gif" border="0" align="absmiddle"> Copyright ⓒ 2011 mk.co.kr  All right reserved.</td>
+	</tr>
+</table>
+<!-- footer end -->
+
+</body>
+</html>
+
+     if (Prototype.Browser.IE && attributes.name) {
+      tagName = '<' + tagName + ' name="' + attributes.name + '">';
+      delete attributes.name;
+      return Element.writeAttribute(document.createElement(tagName), attributes);
+    }
+    if (!cache[tagName]) cache[tagName] = Element.extend(document.createElement(tagName));
+    return Element.writeAttribute(cache[tagName].cloneNode(false), attributes);
+  };
+  Object.extend(this.Element, element || { });
+  if (element) this.Element.prototype = element.prototype;
+}).call(window);
+
+Element.cache = { };
+
+Element.Methods = {
+  visible: function(element) {
+    return $(element).style.display != 'none';
+  },
+
+  toggle: function(element) {
+    element = $(element);
+    Element[Element.visible(element) ? 'hide' : 'show'](element);
+    return element;
+  },
+
+  hide: function(element) {
+    element = $(element);
+    element.style.display = 'none';
+    return element;
+  },
+
+  show: function(element) {
+    element = $(element);
+    element.style.display = '';
+    return element;
+  },
+
+  remove: function(element) {
+    element = $(element);
+    element.parentNode.removeChild(element);
+    return element;
+  },
+
+  update: function(element, content) {
+    element = $(element);
+    if (content && content.toElement) content = content.toElement();
+    if (Object.isElement(content)) return element.update().insert(content);
+    content = Object.toHTML(content);
+    element.innerHTML = content.stripScripts();
+    content.evalScripts.bind(content).defer();
+    return element;
+  },
+
+  replace: function(element, content) {
+    element = $(element);
+    if (content && content.toElement) content = content.toElement();
+    else if (!Object.isElement(content)) {
+      content = Object.toHTML(content);
+      var range = element.ownerDocument.createRange();
+      range.selectNode(element);
+      content.evalScripts.bind(content).defer();
+      content = range.createContextualFragmen

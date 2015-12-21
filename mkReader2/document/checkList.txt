@@ -1,0 +1,22 @@
+		* EB13파일 생성 시 : 자동이체독자 테이블(TBL_USERS OR TBL_USERS_STU) 기준으로 목록 가져옴.
+		* EB21파일 생성 시 : 수금 테이블(TM_READER_SUGM)에서 수금방법이 자동이체이면서 수금구분이 미수인 건들 목록을 기준.
+							TM_READER_SUGM과 TM_READER_NEWS 테이블을 조인해 독자번호를  구하여
+							그 독자번호와 자동이체독자 테이블(TBL_USERS OR TBL_USERS_STU)의 numid와 매칭.
+							자동이체정보는 TBL_USERS OR TBL_USERS_STU 에서 가져옴.
+							한마디로 TM_READER_SUGM 기준으로  TBL_USERS OR TBL_USERS_STU 테이블의 조인이 필요.
+							
+		* 자동이체 미수 데이터 생성 시 : SGBBCD 에 '044', SGGBCD 에 '021'
+		
+		* tbl_users 테이블에 jikuk, serial 컬럼은 최초 insert 후 절대 수정되면 안됨.
+			- 금결원과 통신할 때 jikuk + serial 값은 독자에 대한 유니크값으로 사용됨
+			- 생성방법은 jikuk에는 해당 지국번호가 들어가고 serial 에는 
+				select lpad(nvl(max(serial),0)+1,5,'0') from tbl_users where jikuk = 지국번호 and length(serial) = 5
+				
+		* tbl_users 테이블에 실제 독자의 지국코드는 realjikuk 임.
+		* EB21파일 처리시 수금 테이블에서 에서 가져온 목록 중 tbl_users 에 상태값이 EA21이 아니면 
+			수금 테이블에 미수건 중 해당 데이터의 수금구분(SGGBCD)을 자동이체에서 방문(012)으로 update -- 현재는 주석처리
+
+	자동이체 상태값
+		EA00 신규신청 => EA13 신규CMS확인중 => EA21 정상 or EA14 신청오류 
+		EA13- 해지신청중 => EA99 정상해지 or EA14- 해지오류 
+		EA00 상태에서 삭제시 => XX 삭제 (EA00 상태에서만 가능)

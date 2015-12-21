@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="readerMove">
+
+	<insert id="readerMoveInsert" parameterClass="java.util.HashMap">
+		<selectKey keyProperty="seq" resultClass="int" type="pre">
+			SELECT nvl(max(SEQ), 0)+1
+			FROM tm_reader_move
+		</selectKey>
+		INSERT INTO tm_reader_move
+			(SEQ,READNM,COMPETENTNM,HANDY1,HANDY2,HANDY3,TEL1,TEL2,TEL3,OUT_ADRS1,OUT_ADRS2,OUT_ZIPCODE,OUT_BOSEQ,OUT_BOSEQNM,IN_ADRS1,IN_ADRS2,IN_ZIPCODE,IN_BOSEQ,IN_BOSEQNM,MOVEDT,SGYYMM,QTY,SGTYPE,STATUS,INDT,INPS)
+		VALUES
+			(#seq#,#readnm#,#competentnm#,#handy1#,#handy2#,#handy3#,#tel1#,#tel2#,#tel3#,#out_adrs1#,#out_adrs2#,#out_zipcode#,#out_boseq#,#out_boseqnm#,#in_adrs1#,#in_adrs2#,#in_zipcode#,#in_boseq#,#in_boseqnm#,#movedt#,#sgyymm#,#qty#,#sgtype#,'1',sysdate,#inps#)
+	</insert>
+	
+	<select id="readerMoveList" resultClass="java.util.HashMap">
+		SELECT 
+			B.*
+		FROM
+			(
+				SELECT
+					ROWNUM AS RNUM
+					, A.*
+				FROM 
+					(
+						SELECT
+							SEQ,
+							READNM,
+							COMPETENTNM,
+							HANDY1,
+							HANDY2,
+							HANDY3,
+							TEL1,
+							TEL2,
+							TEL3,
+							OUT_ADRS1,
+							OUT_ADRS2,
+							OUT_ZIPCODE,
+							OUT_BOSEQ,
+							OUT_BOSEQNM,
+							IN_ADRS1,
+							IN_ADRS2,
+							IN_ZIPCODE,
+							IN_BOSEQ,
+							IN_BOSEQNM,
+							TO_DATE(MOVEDT,'yyyyMMdd') AS MOVEDT,
+							SUBSTR(sgyymm,1,4) ||'/'||SUBSTR(sgyymm,5,6) AS SGYYMM,
+							QTY,
+							SGTYPE,
+							STATUS,
+							REMK,
+							INDT,
+							INPS,
+							TO_CHAR(CHGDT, 'YYYY-MM-DD') CHGDT,
+							CHGPS
+						FROM
+							TM_READER_MOVE
+						WHERE
+							1=1
+							<isNotEmpty property="readnm" prepend="AND">
+								READNM like '%'||#readnm#||'%'
+							</isNotEmpty>
+							<isNotEmpty property="out_boseqnm" prepend="AND">
+								OUT_BOSEQNM like '%'||#out_boseqnm#||'%'
+							</isNotEmpty>
+							<isNotEmpty property="in_boseqnm" prepend="AND">
+								IN_BOSEQNM like '%'||#in_boseqnm#||'%'
+							</isNotEmpty>
+							<isNotEmpty property="sgyymm" prepend="AND">
+								SGYYMM = #sgyymm#
+							</isNotEmpty>
+							<isNotEmpty property="status" prepend="AND">
+								STATUS = #status#
+							</isNotEmpty>
+								<isNotEmpty property="startDate">
+									<isNotEmpty property="endDate">
+										AND TO_CHAR(INDT,'yyyy-MM-dd') BETWEEN #startDate# AND #endDate#
+									</isNotEmpty>
+								</isNotEmpty>
+						ORDER BY 
+							INDT $sort$,
+							SEQ	$sort$
+					) A
+				) B
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<select id="readerMoveCount" resultClass="int">
+		SELECT 
+			COUNT(1) COUNT
+        FROM 
+        	TM_READER_MOVE
+        WHERE 
+        	1=1
+			<isNotEmpty property="readnm" prepend="AND">
+				READNM like '%'||#readnm#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="out_boseqnm" prepend="AND">
+				OUT_BOSEQNM like '%'||#out_boseqnm#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="in_boseqnm" prepend="AND">
+				IN_BOSEQNM like '%'||#in_boseqnm#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="sgyymm" prepend="AND">
+				SGYYMM = #sgyymm#
+			</isNotEmpty>
+			<isNotEmpty property="status" prepend="AND">
+				STATUS = #status#
+			</isNotEmpty>
+			<isNotEmpty property="startDate">
+				<isNotEmpty property="endDate">
+					AND TO_CHAR(INDT,'yyyy-MM-dd') BETWEEN #startDate# AND #endDate#
+				</isNotEmpty>
+			</isNotEmpty>
+	</select>
+	
+	<select id="getReaderMove" resultClass="java.util.HashMap">
+		SELECT * FROM TM_READER_MOVE WHERE SEQ=#seq#
+	</select>
+	
+	<update id="readerMoveEdit">
+		UPDATE TM_READER_MOVE
+		SET
+			READNM=#readnm#,
+			COMPETENTNM=#competentnm#,
+			HANDY1=#handy1#,
+			HANDY2=#handy2#,
+			HANDY3=#handy3#,
+			TEL1=#tel1#,
+			TEL2=#tel2#,
+			TEL3=#tel3#,
+			OUT_ADRS1=#out_adrs1#,
+			OUT_ADRS2=#out_adrs2#,
+			OUT_ZIPCODE=#out_zipcode#,
+			OUT_BOSEQ=#out_boseq#,
+			OUT_BOSEQNM=#out_boseqnm#,
+			IN_ADRS1=#in_adrs1#,
+			IN_ADRS2=#in_adrs2#,
+			IN_ZIPCODE=#in_zipcode#,
+			IN_BOSEQ=#in_boseq#,
+			IN_BOSEQNM=#in_boseqnm#,
+			MOVEDT=#movedt#,
+			SGYYMM=#sgyymm#,
+			QTY=#qty#,
+			SGTYPE=#sgtype#,
+			STATUS=#status#,
+			CHGDT=SYSDATE,
+			CHGPS=#chgps#
+		WHERE SEQ=#seq#
+	</update>
+	
+	<delete id="readerMoveDelete" parameterClass="java.util.HashMap">
+		DELETE FROM TM_READER_MOVE WHERE SEQ=#seq#
+	</delete>
+	
+	<insert id="readerMoveInsertForJikuk" parameterClass="java.util.HashMap">
+		<selectKey keyProperty="seq" resultClass="int" type="pre">
+			SELECT nvl(max(SEQ), 0)+1
+			FROM tm_reader_move
+		</selectKey>
+		INSERT INTO tm_reader_move
+			(SEQ,READNM,COMPETENTNM,HANDY1,HANDY2,HANDY3,TEL1,TEL2,TEL3,OUT_ADRS1,OUT_ADRS2,OUT_ZIPCODE,OUT_BOSEQ,OUT_BOSEQNM,IN_ADRS1,IN_ADRS2,IN_ZIPCODE,IN_BOSEQ,IN_BOSEQNM,MOVEDT,SGYYMM,QTY,SGTYPE,STATUS,INDT,INPS)
+		VALUES
+			(#seq#,#readnm#,#competentnm#,#handy1#,#handy2#,#handy3#,#tel1#,#tel2#,#tel3#,#out_adrs1#,#out_adrs2#,#out_zipcode#,#out_boseq#,#out_boseqnm#,#in_adrs1#,#in_adrs2#,#in_zipcode#,#in_boseq#,#in_boseqnm#,#movedt#,#sgyymm#,#qty#,#sgtype#,'1',sysdate,#inps#)
+	</insert>
+	
+	<select id="readerMoveListForJikuk" resultClass="java.util.HashMap">
+		SELECT 
+			B.*
+		FROM
+			(
+				SELECT
+					ROWNUM AS RNUM
+					, A.*
+				FROM 
+					(
+						SELECT
+							SEQ,
+							READNM,
+							COMPETENTNM,
+							HANDY1,
+							HANDY2,
+							HANDY3,
+							TEL1,
+							TEL2,
+							TEL3,
+							OUT_ADRS1,
+							OUT_ADRS2,
+							OUT_ZIPCODE,
+							OUT_BOSEQ,
+							OUT_BOSEQNM,
+							IN_ADRS1,
+							IN_ADRS2,
+							IN_ZIPCODE,
+							IN_BOSEQ,
+							IN_BOSEQNM,
+							TO_DATE(MOVEDT,'yyyyMMdd') AS MOVEDT,
+							SUBSTR(sgyymm,1,4) ||'/'||SUBSTR(sgyymm,5,6) AS SGYYMM,
+							QTY,
+							SGTYPE,
+							STATUS,
+							REMK,
+							INDT,
+							INPS,
+							CHGDT,
+							CHGPS
+						FROM
+							TM_READER_MOVE
+						WHERE
+							1=1
+							<isNotEmpty property="move_type">
+								<isEqual property="move_type" compareValue="ALL" prepend="AND">
+									(OUT_BOSEQ=#out_boseq# OR IN_BOSEQ=#in_boseq#)
+								</isEqual>
+								<isEqual property="move_type" compareValue="OUT" prepend="AND">
+									OUT_BOSEQ=#out_boseq#
+								</isEqual>
+								<isEqual property="move_type" compareValue="IN" prepend="AND">
+									IN_BOSEQ=#in_boseq#
+								</isEqual>
+							</isNotEmpty>
+							
+							<isNotEmpty property="readnm" prepend="AND">
+								READNM like '%'||#readnm#||'%'
+							</isNotEmpty>
+							<isNotEmpty property="sgyymm" prepend="AND">
+								SGYYMM = #sgyymm#
+							</isNotEmpty>
+							<isNotEmpty property="status" prepend="AND">
+								STATUS = #status#
+							</isNotEmpty>
+							<isNotEmpty property="startDate">
+								<isNotEmpty property="endDate">
+									AND TO_CHAR(INDT,'yyyy-MM-dd') BETWEEN #startDate# AND #endDate#
+								</isNotEmpty>
+							</isNotEmpty>
+						ORDER BY 
+							INDT $sort$,
+							SEQ	$sort$
+					) A
+				) B
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<select id="readerMoveCountForJikuk" resultClass="int">
+		SELECT 
+			COUNT(1) COUNT
+        FROM 
+        	TM_READER_MOVE
+        WHERE 
+        	1=1
+			<isEqual compareProperty="move_type" compareValue="ALL" prepend="AND">
+				(OUT_BOSEQ=#out_boseq# OR IN_BOSEQ=#in_boseq#)
+			</isEqual>
+			<isEqual compareProperty="move_type" compareValue="OUT" prepend="AND">
+				OUT_BOSEQ=#out_boseq#
+			</isEqual>
+			<isEqual compareProperty="move_type" compareValue="IN" prepend="AND">
+				IN_BOSEQ=#in_boseq#
+			</isEqual>
+			<isNotEmpty property="readnm" prepend="AND">
+				READNM like '%'||#readnm#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="sgyymm" prepend="AND">
+				SGYYMM = #sgyymm#
+			</isNotEmpty>
+			<isNotEmpty property="status" prepend="AND">
+				STATUS = #status#
+			</isNotEmpty>
+			<isNotEmpty property="startDate">
+				<isNotEmpty property="endDate">
+					AND TO_CHAR(INDT,'yyyy-MM-dd') BETWEEN #startDate# AND #endDate#
+				</isNotEmpty>
+			</isNotEmpty>
+	</select>
+	
+	
+	<update id="readerMoveEditForJikuk">
+		UPDATE TM_READER_MOVE
+		SET
+			READNM=#readnm#,
+			COMPETENTNM=#competentnm#,
+			HANDY1=#handy1#,
+			HANDY2=#handy2#,
+			HANDY3=#handy3#,
+			TEL1=#tel1#,
+			TEL2=#tel2#,
+			TEL3=#tel3#,
+			OUT_ADRS1=#out_adrs1#,
+			OUT_ADRS2=#out_adrs2#,
+			OUT_ZIPCODE=#out_zipcode#,
+			OUT_BOSEQ=#out_boseq#,
+			OUT_BOSEQNM=#out_boseqnm#,
+			IN_ADRS1=#in_adrs1#,
+			IN_ADRS2=#in_adrs2#,
+			IN_ZIPCODE=#in_zipcode#,
+			IN_BOSEQ=#in_boseq#,
+			IN_BOSEQNM=#in_boseqnm#,
+			MOVEDT=#movedt#,
+			SGYYMM=#sgyymm#,
+			QTY=#qty#,
+			SGTYPE=#sgtype#,
+			CHGDT=SYSDATE,
+			CHGPS=#chgps#
+		WHERE SEQ=#seq#
+	</update>
+	
+	<select id="readerMoveListSaveExcel" resultClass="java.util.HashMap">
+		SELECT
+			SEQ,
+			READNM,
+			COMPETENTNM,
+			HANDY1,
+			HANDY2,
+			HANDY3,
+			TEL1,
+			TEL2,
+			TEL3,
+			OUT_ADRS1,
+			OUT_ADRS2,
+			OUT_ZIPCODE,
+			OUT_BOSEQ,
+			OUT_BOSEQNM,
+			IN_ADRS1,
+			IN_ADRS2,
+			IN_ZIPCODE,
+			IN_BOSEQ,
+			IN_BOSEQNM,
+			MOVEDT,
+			SGYYMM,
+			QTY,
+			SGTYPE,
+			STATUS,
+			REMK,
+			INDT,
+			INPS,
+			CHGDT,
+			CHGPS
+		FROM
+			TM_READER_MOVE
+		WHERE
+			1=1
+			<isNotEmpty property="readnm" prepend="AND">
+				READNM like '%'||#readnm#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="out_boseqnm" prepend="AND">
+				OUT_BOSEQNM like '%'||#out_boseqnm#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="in_boseqnm" prepend="AND">
+				IN_BOSEQNM like '%'||#in_boseqnm#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="sgyymm" prepend="AND">
+				SGYYMM = #sgyymm#
+			</isNotEmpty>
+			<isNotEmpty property="status" prepend="AND">
+				STATUS = #status#
+			</isNotEmpty>
+		ORDER BY 
+			INDT DESC,
+			SEQ DESC
+
+	</select>
+</sqlMap>

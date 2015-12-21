@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mkreader.scheduler.deadline.mapper.DeadLineMapper">
+
+	<select id="getAgencyList" resultType="java.util.HashMap">
+		SELECT 
+			BOSEQ
+			, FUNC_AGENT_NM(BOSEQ) AS BONM
+		FROM (
+			SELECT DISTINCT BOSEQ
+			FROM TM_READER_NEWS WHERE BOSEQ IS NOT NULL)
+		ORDER BY BONM
+	</select>
+	
+	<!-- 본사 입금 이외 미수 생성 -->
+	<select id="accountsReceivable" resultType="String" parameterType="java.util.HashMap">
+	SELECT 
+		FUNC_MONTH_DEADLINE(#{boSeq} , #{yymm})
+	FROM 
+		DUAL
+	</select>
+	
+	<!-- 지국별 구역리스트 조회 -->
+	<select id="getGnoList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+	SELECT 
+		DISTINCT GNO 
+	FROM 
+		TM_READER_NEWS 
+	WHERE 
+		BOSEQ = #{boSeq} AND BNO !='999' AND GNO IS NOT NULL
+		ORDER BY GNO
+	</select>
+	
+	<insert id="insertMonthClose" parameterType="java.util.HashMap">
+		<selectKey keyProperty="seq" resultType="int" order="BEFORE">
+			SELECT NVL(MAX(SEQ), 0)+1
+			FROM TM_MONTHCLOSE_HIST
+		</selectKey>
+		INSERT INTO TM_MONTHCLOSE_HIST
+			(SEQ, SGYYMM, SDATE, EDATE, REGDATE, REGUSER)
+		VALUES
+			(#{seq}, 
+			#{yymm},
+			(SELECT EDATE + 1 FROM (SELECT EDATE	FROM TM_MONTHCLOSE_HIST	ORDER BY SGYYMM DESC) WHERE	ROWNUM = 1),
+			TO_CHAR(ADD_MONTHS(TO_DATE(#{yymm}||'20','YYYYMMDD'), 1) , 'YYYYMMDD'),
+			SYSDATE, 
+			'SYSTEM')
+	</insert>
+	
+	<select id="getMonthCloseList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT SEQ,SGYYMM,SDATE,EDATE,REGDATE,REGUSER FROM TM_MONTHCLOSE_HIST WHERE SGYYMM=#{yymm}
+	</select>
+
+	<!-- 24개월 이전 미수 결손처리 전 히스토리 입력 -->
+	<insert id="update2YearMisuHist" parameterType="java.util.HashMap">
+		INSERT INTO TH_READER_SUGM
+			   (READNO, NEWSCD, YYMM, SEQ, CHGSEQ,
+				BOSEQ, SGBBCD, SGGBCD, BILLAMT, BILLQTY,
+				SGYYMM, AMT, LOSSAMT, FEE1, FEE2, FEE3,
+				SNDT, ICDT, CLDT, WRKNO, EDIPROCNO,
+				AUTOPROCNO, BILLTYPECD, REMK, INDT, INPS,
+				CHGDT, CHGPS, HINDT, HINPS) 
+		SELECT K.READNO, K.NEWSCD, K.YYMM, K.SEQ, (SELECT LPAD(NVL(MAX(TO_NUMBER(CHGSEQ)),0)+1,3,0)
+													 FROM TH_READER_SUGM
+                                                    WHERE READNO = K.READNO
+                                                      AND NEWSCD = K.NEWSCD
+                                                      AND YYMM = K.YYMM
+                                                      AND SEQ = K.SEQ),
+       		   K.BOSEQ, K.SGBBCD, K.SGGBCD, K.BILLAMT, K.BILLQTY,
+       		   K.SGYYMM, K.AMT, K.LOSSAMT, K.FEE1, K.FEE2, K.FEE3,
+       		   K.SNDT, K.ICDT, K.CLDT, K.WRKNO, K.EDIPROCNO,
+       		   K.AUTOPROCNO, K.BILLTYPECD, K.REMK, K.INDT, K.INPS,
+       		   SYSDATE, 'SYSTEM', SYSDATE, 'SYSTEM'
+		  FROM TM_READER_SUGM K
+		 WHERE (K.READNO, K.NEWSCD, K.SEQ, K.YYMM, K.BOSEQ) IN (SELECT B.READNO, B.NEWSCD, B.SEQ, B.YYMM, B.BOSEQ
+		                                                  		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		                                                		 WHERE A.READNO = B.READNO 
+		                                                 		   AND A.SEQ = B.SEQ 
+		                                                 		   AND A.NEWSCD = B.NEWSCD 
+		                                                 		   AND A.BOSEQ = B.BOSEQ
+		                                                 		   AND B.YYMM &lt;= TO_CHAR(ADD_MONTHS(TO_DATE(#{yymm}, 'YYYYMM'), -24), 'YYYYMM')
+		                                                 		   AND B.SGBBCD = '044')
+	</insert>
+
+	<!-- 24개월 이전 미수 결손처리 -->
+	<update id="update2YearsMisu" parameterType="java.util.HashMap">
+		UPDATE TM_READER_SUGM
+		   SET SGBBCD = '031',
+		   	   AMT= '0',
+		   	   SGYYMM = TO_CHAR(ADD_MONTHS(TO_DATE(#{yymm}, 'YYYYMM'), -1), 'YYYYMM'),
+		   	   SNDT = #{curDate},
+		   	   ICDT = #{curDate},
+		   	   CLDT = #{curDate},
+		   	   CHGDT = SYSDATE,
+		   	   CHGPS = 'SYSTEM'
+		 WHERE (READNO, NEWSCD, SEQ, YYMM, BOSEQ) IN (SELECT B.READNO, B.NEWSCD, B.SEQ, B.YYMM, B.BOSEQ
+		                                                FROM TM_READER_NEWS A, TM_READER_SUGM B
+		                                               WHERE A.READNO = B.READNO 
+		                                                 AND A.SEQ = B.SEQ 
+		                                                 AND A.NEWSCD = B.NEWSCD 
+		                                                 AND A.BOSEQ = B.BOSEQ
+		                                                 AND B.YYMM &lt;= TO_CHAR(ADD_MONTHS(TO_DATE(#{yymm}, 'YYYYMM'), -24), 'YYYYMM')
+		                                                 AND B.SGBBCD = '044')
+	</update>
+	
+	<!-- 마감 통계 등록 -->
+	<select id="statisticsInsert" resultType="String" parameterType="java.util.HashMap">
+	SELECT 
+		FUNC_STATISTICS_INSERT(#{boSeq} , #{yymm})
+	FROM 
+		DUAL
+	</select>
+	
+	<!-- 배달 번호 정렬 -->
+	<select id="deliverNumSort" resultType="String" parameterType="java.util.HashMap">
+	SELECT 
+		FUNC_DELIVERY_NUM_SORT(#{boSeq} , #{gno}) NUM
+	FROM 
+		DUAL
+	</select>
+</mapper>

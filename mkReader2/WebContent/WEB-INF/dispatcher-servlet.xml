@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "http://www.springframework.org/dtd/spring-beans-2.0.dtd">
+
+<beans>
+
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewClass"
+			value="org.springframework.web.servlet.view.JstlView" />
+		<property name="prefix" value="/WEB-INF/view/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="defaultEncoding" value="utf-8" />
+	</bean>
+
+	<bean id="defaultHandlerMapping"
+		class="kr.reflexion.espresso.spring.web.servlet.handler.PackageNameHandlerMapping">
+		<property name="interceptors">
+			<list>
+				<ref bean="authenticationHandlerInterceptor" />
+			</list>
+		</property>
+		<property name="alwaysUseFullPath" value="true" />
+		<property name="packagePrefix" value="com.mkreader.web" />
+	</bean>
+
+	<bean id="authenticationHandlerInterceptor"
+		class="kr.reflexion.espresso.spring.web.servlet.handler.AuthenticationHandlerInterceptor">
+		<property name="authentication">
+			<list>
+				<!-- ref bean="daumAuthentication" /-->
+			</list>
+		</property>
+	</bean>
+	
+    <!-- Application Message Bundle -->  
+    <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">  
+		<property name="basenames">
+	        <list>
+	            <value>/WEB-INF/messageresource/mail</value>
+	            <value>/WEB-INF/messageresource/sms</value>
+	            <value>/WEB-INF/messageresource/key</value>
+	        </list>
+   		</property>
+        <property name="cacheSeconds" value="0" />
+    </bean>
+
+    <bean class="com.mkreader.util.MailUtil" />
+    <bean class="com.mkreader.util.SecurityUtil" />
+    <bean class="com.mkreader.jidaemailing.JidaeMailingBatch" />
+    
+
+    <!--bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+    	<property name="host" value="localhost"/>
+    	<property name="port" value="25"/>
+    	<property name="username" value="username"/>
+    	<property name="password" value="password"/>
+    	<property name="javaMailProperties">
+    		<props>
+    			<prop key="mail.smtp.auth">true</prop>
+    			<prop key="mail.smtp.starttls.enable">true</prop>
+    		</props>
+    	</property>
+    </bean>
+    
+    <bean id="mailSend" class="com.mkreader.util.MailSend">
+    	<property name="mailSender" ref="mailSender"/>
+    </bean-->
+
+</beans>

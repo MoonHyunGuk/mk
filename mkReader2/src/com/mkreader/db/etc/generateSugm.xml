@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="etc.generateSugm">
+
+	<!-- 수금 대상 조회 -->
+	<select id="collectionList" resultClass="java.util.HashMap">
+		SELECT *
+		  FROM TM_READER_SUGM
+		 WHERE 1=1
+		   AND READNO = #readNo#
+		   AND NEWSCD = #newsCd#
+		   AND SEQ = #seq#
+		   AND YYMM = #yymm#
+	</select>
+
+	<!-- 지국의 수금 이력 조회 -->
+	<select id="retrieveSugmDt" resultClass="java.util.HashMap">
+		SELECT SNDT 
+          FROM TMP_JIKUK_SNDT
+         WHERE 1=1
+		   AND YYMM = #yymm#
+		   AND SGBBCD = #sgtype#
+		   AND NEWSCD = #newsCd#
+		   AND BOSEQ = #jikuk#
+		   AND (YYMM || '01' &lt; SNDT AND SUBSTR(YYMM, 0, 4) = SUBSTR(SNDT, 0, 4))
+		   AND SNDT IS NOT NULL
+		ORDER BY SNDT
+	</select>
+	
+	<!-- 지국의 수금 이력 조회(12월용) -->
+	<select id="retrieveSugmDtForZero" resultClass="java.util.HashMap">
+		SELECT SNDT 
+          FROM TMP_JIKUK_SNDT
+         WHERE 1=1
+		   AND YYMM = #yymm#
+		   AND SGBBCD = #sgtype#
+		   AND NEWSCD = #newsCd#
+		   AND BOSEQ = #jikuk#
+		   AND YYMM || '01' &lt; SNDT
+		   AND SNDT IS NOT NULL
+		ORDER BY SNDT
+	</select>
+	
+	<!-- 수금 대상일 이전 수금 이력 삭제 -->
+	<delete id = "deleteSugm" >
+		DELETE 
+		  FROM TM_READER_SUGM
+		 WHERE 1=1
+		   AND READNO = #readNo#
+		   AND SEQ = #seq#
+		   AND NEWSCD = #newsCd#
+		   AND (YYMM &lt; #sgbgmm# OR YYMM &gt; #sgedmm#)
+	</delete>
+	
+	<!-- 수금 정보 업데이트 -->
+	<update id="updateCollection">
+		UPDATE TM_READER_SUGM
+		   SET SGBBCD = #sgtype# ,
+		   	   SGGBCD = #sggbCd# ,
+		       SGYYMM = (SELECT CASE WHEN SUBSTR(#sndt#, 7, 2) &lt; 21 
+	                 	 			 THEN TO_CHAR(ADD_MONTHS(TO_DATE(#sndt#, 'YYYYMMDD'), -1), 'YYYYMM')
+		 	      		 			 ELSE SUBSTR(#sndt#, 1, 6)
+	         	  				END
+	         			   FROM DUAL),
+		       SNDT = #sndt#,
+		       ICDT = #sndt#,
+		       CLDT = #sndt#,
+		       BILLAMT = #uPrice#,
+		       BILLQTY = #qty#,
+		       AMT = #price#,
+		       LOSSAMT = ''
+		       <isNotEmpty property="sndt" prepend=",">
+	 	   	       CHGDT = TO_DATE(#sndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS')
+		   	   </isNotEmpty>
+    
+		 WHERE 1=1
+		   AND READNO = #readNo#
+		   AND NEWSCD = #newsCd#
+		   AND SEQ = #seq#
+		   AND YYMM = #yymm#
+	</update>
+
+	<!-- 수금 정보 일괄 업데이트 -->
+	<update id="updateCollectionChg">
+		UPDATE TM_READER_SUGM
+		   SET SGBBCD = #sgtype# ,
+		   	   SGGBCD = #sggbCd# ,
+		       SGYYMM = (SELECT CASE WHEN SUBSTR(#sndt#, 7, 2) &lt; 21 
+	                 	 			 THEN TO_CHAR(ADD_MONTHS(TO_DATE(#sndt#, 'YYYYMMDD'), -1), 'YYYYMM')
+		 	      		 			 ELSE SUBSTR(#sndt#, 1, 6)
+	         	  				END
+	         			   FROM DUAL),
+		       SNDT = #sndt#,
+		       ICDT = #sndt#,
+		       CLDT = #sndt#,
+		       BILLAMT = #uPrice#,
+		       BILLQTY = #qty#,
+		       AMT = #price#,
+		       LOSSAMT = ''
+		       <isNotEmpty property="sndt" prepend=",">
+	 	   	       CHGDT = TO_DATE(#sndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS')
+		   	   </isNotEmpty>
+    
+		 WHERE 1=1
+		   AND READNO = #readNo#
+		   AND NEWSCD = #newsCd#
+		   AND SEQ = #seq#
+		   <isEqual prepend="AND" property="sgtype" compareValue="032">
+			   YYMM BETWEEN #yymm# AND TO_CHAR(ADD_MONTHS(TO_DATE(#yymm#, 'YYYYMM'), #misuRan#),'YYYYMM')
+		   </isEqual>
+		   <isNotEqual prepend="AND" property="sgtype" compareValue="032">
+			   YYMM BETWEEN TO_CHAR(ADD_MONTHS(TO_DATE(#yymm#, 'YYYYMM'), #misuRan#),'YYYYMM') AND #yymm#
+		   </isNotEqual>		   
+	</update>
+	
+	<!-- 수금 정보 생성 -->
+	<insert id="insertCollection">
+	    INSERT INTO TM_READER_SUGM
+			(READNO, NEWSCD, YYMM, SEQ, BOSEQ, SGBBCD, SGGBCD, BILLAMT, BILLQTY,  SGYYMM, AMT, LOSSAMT, FEE1, FEE2, FEE3, SNDT, ICDT, CLDT, INDT, INPS, CHGDT, CHGPS )
+		VALUES
+		( #readNo#, #newsCd#, #yymm#, #seq#, #jikuk#, #sgtype#, #sggbCd#, (CASE WHEN #uPrice# IS NOT NULL THEN #uPrice# ELSE '0' END), #qty#,
+			(SELECT CASE WHEN SUBSTR(#sndt#, 7, 2) &lt; 21 
+	                 	 THEN SUBSTR(TO_CHAR(ADD_MONTHS(TO_DATE(#sndt#, 'YYYYMMDD'), -1), 'YYYYMMDD'), 1, 6)
+		 	      		 ELSE SUBSTR(#sndt#, 1, 6)
+	         	  	END
+	         FROM DUAL),
+		#price#, 
+		'', 0, 0, 0, #sndt#, #sndt#,
+		#sndt#,
+		
+		<isNotEmpty property="sndt" >
+			TO_DATE(#sndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS'),
+			#jikuk#,
+			TO_DATE(#sndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS'),
+		</isNotEmpty>
+		<isEmpty property="sndt">
+			TO_DATE(#tempSndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS'),
+			#jikuk#,
+			TO_DATE(#tempSndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS'),
+		</isEmpty>
+		#jikuk#)
+	</insert>
+	
+	<!-- 수금 정보 생성 -->
+	<insert id="insertCollection2">
+	    INSERT INTO TM_READER_SUGM
+			(READNO, NEWSCD, YYMM, SEQ, BOSEQ, SGBBCD, SGGBCD, BILLAMT, BILLQTY,  SGYYMM, AMT, LOSSAMT, FEE1, FEE2, FEE3, SNDT, ICDT, CLDT, INDT, INPS, CHGDT, CHGPS )
+		VALUES
+		( #readNo#, #newsCd#, #yymm#, #seq#, #jikuk#, '032', '032', (CASE WHEN #uPrice# IS NOT NULL THEN #uPrice# ELSE '0' END), #qty#,
+			(SELECT CASE WHEN SUBSTR(#sndt#, 7, 2) &lt; 21 
+	                 	 THEN SUBSTR(TO_CHAR(ADD_MONTHS(TO_DATE(#sndt#, 'YYYYMMDD'), -1), 'YYYYMMDD'), 1, 6)
+		 	      		 ELSE SUBSTR(#sndt#, 1, 6)
+	         	  	END
+	         FROM DUAL),
+		#price#, 
+		'', 0, 0, 0, #sndt#, #sndt#,
+		#sndt#,
+		
+		<isNotEmpty property="sndt" >
+			TO_DATE(#sndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS'),
+			#jikuk#,
+			TO_DATE(#sndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS'),
+		</isNotEmpty>
+		<isEmpty property="sndt">
+			TO_DATE(#tempSndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS'),
+			#jikuk#,
+			TO_DATE(#tempSndt#||ROUND(DBMS_RANDOM.VALUE(10,  16), 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0)||LPAD(ROUND(DBMS_RANDOM.VALUE(0,  59), 0), 2, 0) , 'YYYYMMDDHH24MISS'),
+		</isEmpty>
+		#jikuk#)
+	</insert>
+	
+</sqlMap>

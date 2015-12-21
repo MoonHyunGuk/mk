@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//iBATIS.com//DTD SQL Map Config 2.0//EN"
+    "http://www.ibatis.com/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+
+	<settings cacheModelsEnabled="true"  useStatementNamespaces="true"  />
+
+	<typeHandler
+		callback="org.springframework.orm.ibatis.support.ClobStringTypeHandler"
+		javaType="java.lang.String" jdbcType="CLOB" />
+
+	<sqlMap resource="com/mkreader/db/admin.xml" />
+	
+	<!-- 공통 쿼리 -->
+	<sqlMap resource="com/mkreader/db/common.xml" />
+	
+	<!-- 독자관리 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/readerManage.xml" />
+	
+	<!-- 독자신청 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/readerAplc.xml" />
+	
+	<!-- 비독자관리 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/biReader.xml" />
+	
+	<!-- 독자원장 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/readerWonJang.xml" />
+	
+	<!-- 배달명단 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/delivery.xml" />
+	
+	<!-- 독자관련 공통 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/common.xml" />
+	
+	<!-- 독자 - 자동이체 일반(관리자) 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/billingAdmin.xml" />
+	
+	<!-- 독자 - 자동이체 학생(관리자) 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/billingStuAdmin.xml" />
+	
+	<!-- 독자 - 자동이체 일반(지국) 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/billing.xml" />
+	
+	<!-- 독자 - 자동이체 학생(지국) 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/billingStu.xml" />
+	
+	<!-- 독자 - 본사 직원 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/employeeAdmin.xml" />
+	<sqlMap resource="com/mkreader/db/reader/employee.xml" />
+	
+	<!-- 독자 - 교육용 독자 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/education.xml" />
+	
+	<!-- 독자 - 소외계층 독자 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/alienation.xml" />
+	
+	<!-- 독자 - 카드독자 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/card.xml" />
+	
+	<!-- 독자 - 사원확장 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/empExtd.xml" />
+	
+	<!-- 기타 - 마감 (배달 번호 정렬) 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/etc/deadLine.xml" />
+	
+	<!-- mk.co.kr 신청 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/subscriptionForm.xml" />
+	<!-- 수금관리 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/collection/collection.xml" />
+	<!-- 수금입력 : 수동입금 -->
+	<sqlMap resource="com/mkreader/db/collection/manual.xml" />
+	<!-- 수금입력 : EDI입금 -->
+	<sqlMap resource="com/mkreader/db/collection/edibranch.xml" />
+	<!-- 수금입력 : EDI관리 -->
+	<sqlMap resource="com/mkreader/db/collection/edi.xml" />
+	<!-- 수금 : 전자수납관리 -->
+	<sqlMap resource="com/mkreader/db/collection/ediElect.xml" />
+	
+	<!-- 민원관리 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/reader/minwon.xml" />
+	
+	<!-- 고지서 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/output/billOutput.xml" />
+	
+	<!-- 관리메뉴(본사) 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/adminManage.xml" />
+	
+	<!-- 지국정보(지국) 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/agencyManage.xml" />
+	
+	<!-- 코드관리(지국) 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/codeManage.xml" />
+	
+	<!-- 자동이체 : 일반&학생(본사)-->
+	<sqlMap resource="com/mkreader/db/billing/zadmin/cmsrequest.xml" />
+	<sqlMap resource="com/mkreader/db/billing/zadmin/cmsget.xml" />
+	<sqlMap resource="com/mkreader/db/billing/zadmin/cmsbank.xml" />
+	<sqlMap resource="com/mkreader/db/billing/zadmin/popup.xml" />
+	<!-- 자동이체 : 일반&학생(지국)-->
+	<sqlMap resource="com/mkreader/db/billing/branch/cmsrequest.xml" />
+	<sqlMap resource="com/mkreader/db/billing/branch/cmsget.xml" />
+	<!-- 자동이체 : 학생(본사)-->
+	<sqlMap resource="com/mkreader/db/billing/student/cmsrequest.xml" />
+	<sqlMap resource="com/mkreader/db/billing/student/cmsget.xml" />
+	<sqlMap resource="com/mkreader/db/billing/student/refund.xml" />
+	<sqlMap resource="com/mkreader/db/billing/student/popup.xml" />
+	
+	<!-- 인쇄 -->
+	<sqlMap resource="com/mkreader/db/print/print.xml" />
+	<!-- 통계 -->
+	<sqlMap resource="com/mkreader/db/statistics/stats.xml" />
+	<!-- 신규신청 통계 -->
+	<sqlMap resource="com/mkreader/db/statistics/aplcStats.xml" />
+	
+	<!-- 커뮤니티 -->
+	<sqlMap resource="com/mkreader/db/community/bbs.xml" />
+	
+	<!-- ABC관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/etc/generateBno.xml" />
+	<sqlMap resource="com/mkreader/db/etc/generateSugm.xml" />
+	
+	<!-- 마이그레이션 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/migration.xml" />
+	
+	<!-- 공통코드 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/code.xml" />
+	
+	<!-- 지국통폐합 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/jikuk.xml" />
+	
+	<!-- 지국 AJAX 관련쿼리 
+	<sqlMap resource="com/mkreader/db/common/ajaxJikuk.xml" />
+	-->
+	
+	<!-- 메모 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/util/memo.xml" />
+	
+	<!-- 독자주소 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/util/address.xml" />
+	
+	<!-- 독자복구 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/readerRestore.xml" />
+	
+	<!-- 본사수금처리 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/headOffice.xml" />
+	
+	<!-- ABC처리 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/abcManage.xml" />
+	
+	<!-- 지대통지서 관련쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/jidae.xml" />
+	
+	<!-- 메뉴관리 관련 쿼리 -->
+	<sqlMap resource="com/mkreader/db/management/menu.xml" />
+	
+	<!-- 독자 이전 관리 -->
+	<sqlMap resource="com/mkreader/db/reader/readerMove.xml" />
+
+</sqlMapConfig>

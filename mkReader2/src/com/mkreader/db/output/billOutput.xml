@@ -1,0 +1,791 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="output.billOutput">
+
+	<!-- 구역정보 조회 -->
+	<select id="getGuyukList" resultClass="java.util.HashMap">
+	    SELECT BOSEQ,			<!-- 지국번호 -->
+			       GU_NO,		    <!-- 구역번호 -->
+			       GU_NM		    <!-- 구역명 -->
+		  FROM TM_GUYUK
+	    WHERE 1=1
+	    <isNotEmpty property="userId" prepend="AND">
+	    	    BOSEQ = #userId#
+		</isNotEmpty>
+		ORDER BY BOSEQ, GU_NO
+	</select>
+	
+	<!-- 매체코드 조회 -->
+	<select id="getNews" resultClass="java.util.HashMap">
+		SELECT A.SERIAL,         <!-- 지국번호 -->
+			       A.NEWSCD,      <!-- 매체코드 -->
+			       B.CNAME,        <!-- 매체명 -->
+			       B.YNAME         <!-- 약자 -->
+		  FROM TM_AGENCY_NEWS A, 
+			       TC_COMMON B
+		WHERE A.NEWSCD = B.CODE
+		   AND A.SERIAL = #userId#
+		   AND B.USEYN = 'Y'
+		   AND B.CDCLSF = '100'
+		ORDER BY B.SORTFD, B.CNAME
+	</select>
+	
+	<!-- 인쇄기준정보 조회 -->
+	<select id="getPrtCb" resultClass="java.util.HashMap">
+		SELECT MAX(SGYYMM) AA, 
+			       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), 1), 'YYYYMM') AB,
+				   SUBSTR(MAX(SGYYMM),1,4) || '-' || SUBSTR(MAX(SGYYMM),5,2) BA,    
+				   TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), 1), 'YYYY-MM') BB
+		 FROM TM_MONTHCLOSE_HIST 
+	</select>
+	
+	<!-- 직영여부 조회 -->
+	<select id="getJikyung" resultClass="java.util.HashMap">
+		SELECT SERIAL 
+		 FROM TM_AGENCY
+		WHERE TYPE IN('101','102')
+           AND SERIAL = #userId#
+	</select>
+	
+	<!-- 직영지로번호 사용여부 조회 -->
+	<select id="getJikyungJiro" resultClass="java.util.HashMap">
+		SELECT SERIAL 
+		 FROM TM_AGENCY
+		WHERE SERIAL = #userId#
+           AND GIRO_NO = #MK_JIRO_NUMBER#
+	</select>
+
+	<!-- 고객안내문 조회 -->
+	<select id="getCustNotice" resultClass="java.util.HashMap">
+		SELECT SERIAL, 
+				   CODE,
+				   CASE WHEN LENGTH(GIRO) BETWEEN 0 AND 14
+				            THEN GIRO
+				             ELSE SUBSTR(GIRO,1,14)||'..'
+				             END GIRO,
+				   CASE WHEN LENGTH(VISIT) BETWEEN 0 AND 14
+				            THEN VISIT
+				             ELSE SUBSTR(VISIT,1,14)||'..'
+				             END VISIT		    
+		  FROM TM_CUST_NOTICE
+		WHERE  SERIAL = #userId#
+		ORDER BY SERIAL, CODE
+	</select>
+	
+	<!-- 고객안내문 상세 조회 -->
+	<select id="getCustNoticeDtl" resultClass="java.util.HashMap">
+		SELECT SERIAL, 
+				   CODE,
+				   GIRO,
+				   VISIT 
+		  FROM TM_CUST_NOTICE
+		WHERE  SERIAL = #userId#
+		<isNotEmpty property="code" prepend="AND">
+	    	    CODE = #code#
+		</isNotEmpty>
+		ORDER BY SERIAL, CODE
+	</select>
+	
+	<!-- 고객안내문 등록 -->
+	<insert id="insertCustNotice"  parameterClass="java.util.HashMap">
+		  INSERT INTO TM_CUST_NOTICE 
+				            (SERIAL,CODE,GIRO,VISIT,INDT,INPS,CHGDT,CHGPS)
+			    VALUES (#userId#, 
+				             LPAD(#code#, 2, '0'), 
+				             #giro#, 
+				             #visit#,
+				             SYSDATE,
+				             #userId#,
+				             SYSDATE,
+				             #userId#)
+ 	</insert>
+ 	
+ 	<!-- 고객안내문 코드 존재여부 조회 -->
+	<select id="getCustNoticeCd" resultClass="java.util.HashMap">
+	    SELECT CODE
+		  FROM TM_CUST_NOTICE
+	    WHERE SERIAL = #userId#
+		    AND CODE = #code#
+	</select>
+	
+	<!-- 고객안내문 수정 -->
+	<update id="updateCustNotice"  parameterClass="java.util.HashMap">
+		 UPDATE TM_CUST_NOTICE
+			   SET GIRO = #giro#,
+			         VISIT = #visit#,
+			         CHGDT = SYSDATE, 
+			         CHGPS = #userId#
+		  WHERE SERIAL = #userId#
+		     AND CODE = #code#
+ 	</update>
+ 	
+ 	<!-- 고객안내문 삭제 -->
+	<delete id="deleteCustNotice"  parameterClass="java.util.HashMap">
+		 DELETE FROM TM_CUST_NOTICE 
+     	 	      WHERE SERIAL = #userId#
+ 	</delete>
+	
+	<!-- 공통코드 조회 -->
+	<select id="getCode" resultClass="java.util.HashMap">
+		SELECT CDCLSF, 
+				   CODE,
+				   CNAME,
+				   YNAME 
+		  FROM TC_COMMON
+		WHERE  USEYN = 'Y'
+	 	    AND CDCLSF = #cdclsf#
+		ORDER BY SORTFD, CODE
+	</select>
+ 	
+ 	<!-- 지국목록 조회 -->
+	<select id="getAgencyList" resultClass="java.util.HashMap">
+		SELECT SERIAL, 
+				   NAME
+		  FROM TM_AGENCY
+		WHERE  1=1
+		<isNotEmpty property="userId" prepend="AND">
+	    	    SERIAL = #userId#
+		</isNotEmpty>
+		ORDER BY NAME
+	</select>
+	
+	<!-- 독자목록 조회 -->
+	<select id="getReaderList" resultClass="java.util.HashMap">
+		SELECT BOSEQ, READNO, SUBSTR(READNM, 1, 8) READNM, NEWSCD, FUNC_COMMON_CDNM('100',NEWSCD) NEWSNM, SEQ, QTY, BNO
+	 	 FROM TM_READER_NEWS
+		WHERE 1=1
+		   AND BOSEQ =  #serial#
+		   <isNotEmpty property="newsCd" prepend="AND">
+	    	    NEWSCD = #newsCd#
+	 	   </isNotEmpty>
+		   AND READNO = #readNo#
+	     ORDER BY BOSEQ, READNO, NEWSCD, DECODE(BNO, '999', BNO, GNO) ASC NULLS FIRST, GNO ASC NULLS FIRST, SNO ASC NULLS FIRST
+	</select>
+	
+	<!-- 영수증 발행 목록 조회 -->
+	<select id="getBillList" resultClass="java.util.HashMap">
+		SELECT ID,
+			 	   BOSEQ,
+			       READER_NO,
+			       READNM,
+			       REPLACE(REPLACE(ADDR, '&lt;B&gt;', ''), '&lt;/B&gt;', '') AS ADDR,
+			       HJDT,
+			       NEWSNM,
+			       TO_CHAR(UPRICE, '9,999,999') UPRICE,
+			       TO_CHAR(AMOUNT, '9,999,999') AMOUNT,
+			       YYMM,
+			       QTY
+			FROM TMP_BILL_PRT
+			WHERE BOSEQ =  #serial#
+			ORDER BY ID
+	</select>
+	
+	<!-- 개별영수증 발행내역 삭제 -->
+	<delete id="deleteBill"  parameterClass="java.util.HashMap">
+		 DELETE FROM TMP_BILL_PRT 
+     	 	      WHERE BOSEQ = #boseq#
+      			     AND ID = #id#
+ 	</delete>
+ 	
+ 	
+	<!-- 개별영수증 전체내역 삭제 -->
+	<delete id="deleteAllBill"  parameterClass="java.util.HashMap">
+		 DELETE FROM TMP_BILL_PRT 
+     	 	      WHERE BOSEQ = #serial#
+ 	</delete>
+ 	
+ 	<!-- 개별영수증 등록(통합) -->
+	<insert id="insertBill"  parameterClass="java.util.HashMap">
+		  INSERT INTO TMP_BILL_PRT 
+			SELECT X.BOSEQ, 
+				       MIN(X.ID), 
+				       X.NAME, X.JIKUK_TEL, X.GIRO_NO, X.APPROVAL_NO, X.NEWSCD, X.NEWSNM, X.READNO, X.GNO, X.BNO, TO_CHAR(TO_DATE(X.HJDT,'YYYY-MM-DD'),'YYYY-MM-DD') HJDT, X.HJPSNM, 
+				       X.SGBGMM, X.PHONE, X.PHONE2, X.CLAMLISTLY, X.CLAMLISTTY, X.LASTBILL, X.READER_NO, X.READNM, X.ADDR, X.UPRICE,X.AMOUNT, 
+				       X.REMK, X.NOTI_G, X.NOTI_V,
+				       DECODE(MIN(X.YYMM),MAX(X.YYMM)
+				             ,MAX(X.YYMM),SUBSTR(MIN(X.YYMM),3,5)||'~'||SUBSTR(MAX(X.YYMM),3,5)) YYMM,
+				       '&lt;' || X.GIRO_NO || '+ +'||#jiroDv# || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(MIN(X.YYMM),3,2) || SUBSTR(MIN(X.YYMM),6,2) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(MAX(X.YYMM), 'YYYY-MM'), TO_DATE(MIN(X.YYMM), 'YYYY-MM'))+1),2,0)
+				        || FUNC_CHECK_DIGIT_CUST(#jiroDv# || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(MIN(X.YYMM),3,2) || SUBSTR(MIN(X.YYMM),6,2) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(MAX(X.YYMM), 'YYYY-MM'), TO_DATE(MIN(X.YYMM), 'YYYY-MM'))+1),2,0)) 
+				        || '+'  READBAND1,
+				         SUBSTR(LPAD(TRIM(X.AMOUNT),11,' '),1,11-LENGTH(TRIM(X.AMOUNT))) || '+' || X.AMOUNT 
+				        || FUNC_CHECK_DIGIT_BILLAMT(X.AMOUNT)||'&lt; &lt;11&lt;' READBAND,
+				        X.QTY
+			  FROM (
+			  <iterate property="yymm" conjunction="UNION ALL" >
+			  			SELECT A.BOSEQ,  
+				        (SELECT NVL2(MAX(ID),MAX(ID)+1, '1') FROM TMP_BILL_PRT WHERE BOSEQ = A.BOSEQ) ID,
+				        NVL(C.JIKUK_TEL, JIKUK_HANDY) JIKUK_TEL, 
+			   	    	<isNotEmpty property="jikyung">
+	    					<isEqual property="jikyung" prepend="" compareValue="1">
+								#MK_JIRO_NUMBER# GIRO_NO,    
+				        		#MK_APPROVAL_NUMBER# APPROVAL_NO,
+				        		C.NAME,
+							</isEqual>
+							<isEqual property="jikyung" prepend="" compareValue="2">
+								C.GIRO_NO,    
+				        		C.APPROVAL_NO,
+				        		C.NAME_SUB NAME,
+							</isEqual>
+	    				</isNotEmpty>				        
+				        <isEmpty property="jikyung">
+							C.GIRO_NO,    
+				        	C.APPROVAL_NO,
+				        	C.NAME,
+	    				</isEmpty>	
+				        A.NEWSCD,
+				        FUNC_COMMON_CDNM('100',A.NEWSCD) NEWSNM, 
+				        A.READNO,      
+				        A.GNO,           
+				        A.BNO,     
+				        A.HJDT, TRIM(A.HJPSNM) HJPSNM, A.SGBGMM,      
+				        TRIM(A.MOBILE1)||'-'||TRIM(A.MOBILE2)||'-'||TRIM(A.MOBILE3) PHONE,  
+				        TRIM(A.HOMETEL1)||'-'||TRIM(A.HOMETEL2)||'-'||TRIM(A.HOMETEL3) PHONE2,   
+				        LOWER(FUNC_GET_CLAMLIST2(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYY'))) CLAMLISTLY,     
+				        UPPER(FUNC_GET_CLAMLIST2(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(SYSDATE, 'YYYY'))) CLAMLISTTY,     
+				        FUNC_LAST_MONTH_BILL(A.BOSEQ,A.NEWSCD,A.READNO, A.GNO,TO_CHAR(SYSDATE, 'YYYYMM')) LASTBILL,  
+				        A.GNO||'-'||A.READNO||'-'||A.BNO READER_NO,  
+				        TRIM(A.READNM) READNM,
+				        
+				        <isEqual property="addrType" compareValue="roadNm">
+				        	NVL2(A.BDMNGNO,  REPLACE(FUNC_EXP_ROAD_ADDR(A.BDMNGNO)||'  (&lt;B&gt;'||A.DLVADRS1||'&lt;/B&gt;, '||TRIM(A.DLVADRS2)||')', #apt#, 'A'),
+				        </isEqual>
+				        <isEqual property="addrType" compareValue="lotNo">
+							NVL2(A.BDMNGNO,  REPLACE(A.DLVADRS1||' '||TRIM(A.DLVADRS2), #apt#, 'A'),
+				        </isEqual>
+			        		REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), 
+     						INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #gu#)+1, 
+     						LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#apt#,'A') ) AS ADDR,
+				        A.UPRICE,
+				        #amount#  AMOUNT, 
+				        #yymm[]#  YYMM,   
+				        TRIM(A.REMK) REMK,
+				       (SELECT GIRO FROM TM_CUST_NOTICE WHERE SERIAL = A.BOSEQ AND CODE = #noti#) NOTI_G,
+				       (SELECT VISIT FROM TM_CUST_NOTICE WHERE SERIAL = A.BOSEQ AND CODE = #noti#) NOTI_V,
+				       #qty#  QTY
+				   FROM TM_READER_NEWS A, TM_AGENCY C
+				  WHERE A.BOSEQ = C.USERID
+				    AND A.READNO = #reader#
+				    AND A.NEWSCD = #news#
+				    AND A.SEQ = #seq#
+				  </iterate>
+				 ) X
+				
+				GROUP BY X.BOSEQ, X.NAME, X.JIKUK_TEL, X.GIRO_NO, X.APPROVAL_NO, X.NEWSCD, X.NEWSNM, X.READNO, X.GNO, X.BNO, X.HJDT, X.HJPSNM, 
+				       X.SGBGMM, X.PHONE, X.PHONE2, X.CLAMLISTLY, X.CLAMLISTTY, X.LASTBILL, X.READER_NO, X.READNM, X.ADDR, X.UPRICE, X.AMOUNT, 
+				       X.REMK, X.NOTI_G, X.NOTI_V, X.QTY
+ 	</insert>
+ 	
+ 	<!-- 개별영수증 등록(월별) -->
+	<insert id="insertBillMonth"  parameterClass="java.util.HashMap">
+		INSERT INTO TMP_BILL_PRT 
+			SELECT X.BOSEQ, 
+				       X.ID, 
+				       X.NAME, X.JIKUK_TEL, X.GIRO_NO, X.APPROVAL_NO, X.NEWSCD, X.NEWSNM, X.READNO, X.GNO, X.BNO, TO_CHAR(TO_DATE(X.HJDT,'YYYY-MM-DD'),'YYYY-MM-DD') HJDT, X.HJPSNM, 
+				       X.SGBGMM, X.PHONE, X.PHONE2, X.CLAMLISTLY, X.CLAMLISTTY, X.LASTBILL, X.READER_NO, X.READNM, X.ADDR, X.UPRICE,X.AMOUNT, 
+				       X.REMK, X.NOTI_G, X.NOTI_V,
+				       X.YYMM,
+				       '&lt;' || X.GIRO_NO || '+ +'||#jiroDv# || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(X.YYMM  ,3,2) || SUBSTR(X.YYMM  ,6,2) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(X.YYMM  , 'YYYY-MM'), TO_DATE(X.YYMM  , 'YYYY-MM'))+1),2,0)             
+				        || FUNC_CHECK_DIGIT_CUST(#jiroDv# || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(X.YYMM  ,3,2) || SUBSTR(X.YYMM  ,6,2) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(X.YYMM  , 'YYYY-MM'), TO_DATE(X.YYMM  , 'YYYY-MM'))+1),2,0))  
+				        || '+' READBAND1,
+				         SUBSTR(LPAD(TRIM(X.AMOUNT),11,' '),1,11-LENGTH(TRIM(X.AMOUNT))) || '+' || X.AMOUNT 
+				        || FUNC_CHECK_DIGIT_BILLAMT(X.AMOUNT)||'&lt; &lt;11&lt;' READBAND,
+				        X.QTY
+			  FROM (SELECT A.BOSEQ,  
+				        (SELECT NVL2(MAX(ID),MAX(ID)+1, '1') FROM TMP_BILL_PRT WHERE BOSEQ = A.BOSEQ) ID, 
+				        NVL(C.JIKUK_TEL, JIKUK_HANDY) JIKUK_TEL, 
+				        <isNotEmpty property="jikyung">
+	    					<isEqual property="jikyung" prepend="" compareValue="1">
+								#MK_JIRO_NUMBER# GIRO_NO,    
+				        		#MK_APPROVAL_NUMBER# APPROVAL_NO,
+				        		C.NAME,
+							</isEqual>
+							<isEqual property="jikyung" prepend="" compareValue="2">
+								C.GIRO_NO,    
+				        		C.APPROVAL_NO,
+				        		C.NAME_SUB NAME,
+							</isEqual>
+	    				</isNotEmpty>				        
+				        <isEmpty property="jikyung">
+							C.GIRO_NO,    
+				        	C.APPROVAL_NO,
+				        	C.NAME,
+	    				</isEmpty>	
+				        A.NEWSCD,
+				        FUNC_COMMON_CDNM('100',A.NEWSCD) NEWSNM, 
+				        A.READNO,      
+				        A.GNO,           
+				        A.BNO,     
+				        A.HJDT, TRIM(A.HJPSNM) HJPSNM, A.SGBGMM,      
+				        TRIM(A.MOBILE1)||'-'||TRIM(A.MOBILE2)||'-'||TRIM(A.MOBILE3) PHONE,  
+				        TRIM(A.HOMETEL1)||'-'||TRIM(A.HOMETEL2)||'-'||TRIM(A.HOMETEL3) PHONE2,   
+				        LOWER(FUNC_GET_CLAMLIST2(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYY'))) CLAMLISTLY,     
+				        UPPER(FUNC_GET_CLAMLIST2(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(SYSDATE, 'YYYY'))) CLAMLISTTY,     
+				        FUNC_LAST_MONTH_BILL(A.BOSEQ,A.NEWSCD,A.READNO, A.GNO,TO_CHAR(SYSDATE, 'YYYYMM')) LASTBILL,  
+				        A.GNO||'-'||A.READNO||'-'||A.BNO READER_NO,  
+				        TRIM(A.READNM) READNM,
+
+				        <isEqual property="addrType" compareValue="roadNm">
+				        	NVL2(A.BDMNGNO,  REPLACE(FUNC_EXP_ROAD_ADDR(A.BDMNGNO)||'  (&lt;B&gt;'||A.DLVADRS1||'&lt;/B&gt;, '||TRIM(A.DLVADRS2)||')', #apt#, 'A'),
+				        </isEqual>
+				        <isEqual property="addrType" compareValue="lotNo">
+							NVL2(A.BDMNGNO,  REPLACE(A.DLVADRS1||' '||TRIM(A.DLVADRS2), #apt#, 'A'),
+				        </isEqual>
+				        REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), 
+     							INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #gu#)+1, 
+     							LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#apt#,'A') ) AS ADDR,
+     							
+				        A.UPRICE,
+				        #amount#  AMOUNT, 
+						#yymm#  YYMM,   
+				         TRIM(A.REMK) REMK,
+				       (SELECT GIRO FROM TM_CUST_NOTICE WHERE SERIAL = A.BOSEQ AND CODE = #noti#) NOTI_G,
+				       (SELECT VISIT FROM TM_CUST_NOTICE WHERE SERIAL = A.BOSEQ AND CODE = #noti#) NOTI_V,
+				       #qty#  QTY
+			   FROM TM_READER_NEWS A, TM_AGENCY C
+			  WHERE A.BOSEQ = C.USERID
+			     AND A.READNO = #reader#
+			     AND A.NEWSCD = #news#
+			     AND A.SEQ = #seq#
+			 ) X
+ 	</insert>
+	
+	<!-- 독자 조회 -->
+	<select id="getReader" resultClass="java.util.HashMap">
+		SELECT * FROM (
+		SELECT BOSEQ, READNO, NEWSCD, SEQ, GNO||'-'||READNO||'-'||BNO READER, READNM, 
+			       NVL2(BDMNGNO,  REPLACE(DLVADRS1||' '||TRIM(DLVADRS2), #apt#, 'A'),
+			       REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), 
+     			    		INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1, 
+   				   			LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A')
+   				   ) AS ADDR,
+			       TRIM(MOBILE1)||'-'||TRIM(MOBILE2)||'-'||TRIM(MOBILE3)||' / '||TRIM(HOMETEL1)||'-'||TRIM(HOMETEL2)||'-'||TRIM(HOMETEL3) PHONE,
+			       REMK
+		  FROM TM_READER_NEWS
+		 WHERE READNO = #reader#
+	 	    AND BOSEQ = #serial#
+			AND NEWSCD = NVL(#news#,'100')
+			<isNotEmpty property="seq" prepend="AND">
+		    	   SEQ = #seq#
+		 	   </isNotEmpty>
+		 ORDER BY BOSEQ, READNO, NEWSCD, GNO ASC NULLS FIRST , BNO ASC NULLS FIRST ,SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 수금목록 조회 -->
+	<select id="getSugmList1" resultClass="java.util.HashMap">
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYYMM'),1,4) YY, 
+			       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYYMM'),5,2) MM, 
+			       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		    <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -11), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -11), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -11), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -10), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -10), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -10), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -9), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -9), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -9), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -8), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -8), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -8), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -7), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -7), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -7), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -6), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -6), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -6), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -5), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -5), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -5), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -4), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -4), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -4), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -3), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -3), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -3), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -2), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -2), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -2), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+	</select>
+	
+	
+	<!-- 수금목록 조회2 -->
+	<select id="getSugmList2" resultClass="java.util.HashMap">
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 0), 'YYYYMM'),1,4) YY, 
+			       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 0), 'YYYYMM'),5,2) MM, 
+			       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 0), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 2), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 2), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 2), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 3), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 3), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 3), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 4), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 4), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 4), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 5), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 5), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 5), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 6), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 6), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 6), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 7), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 7), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 7), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 8), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 8), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 8), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 9), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 9), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 9), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 10), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 10), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 10), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+		UNION ALL
+		SELECT * FROM (SELECT A.READNO, SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 11), 'YYYYMM'),1,4) YY, 
+		       SUBSTR(TO_CHAR(ADD_MONTHS(SYSDATE, 11), 'YYYYMM'),5,2) MM, 
+		       TO_CHAR(B.BILLAMT, '9,999,999') BILLAMT, TO_CHAR(B.AMT, '9,999,999') AMT, TO_CHAR(TO_DATE(B.SNDT, 'YYYY-MM-DD'),'YYYY-MM-DD') SNDT, NVL2(B.SGBBCD, FUNC_COMMON_CDNM('119',B.SGBBCD),'') SGBBNM
+		  FROM TM_READER_NEWS A, TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO(+) AND A.NEWSCD = B.NEWSCD(+) AND A.SEQ = B.SEQ(+)
+		   AND A.BOSEQ = #serial#
+		   AND A.READNO = #readNo#
+		   AND A.NEWSCD = NVL(#newsCd#,'100')
+		   <isNotEmpty property="seq" prepend="AND">
+	    	   A.SEQ = #seq#
+	 	   </isNotEmpty>
+		   AND B.YYMM(+) = TO_CHAR(ADD_MONTHS(SYSDATE, 11), 'YYYYMM') ORDER BY A.BOSEQ, A.READNO, A.NEWSCD, A.GNO ASC NULLS FIRST , A.BNO ASC NULLS FIRST ,A.SNO ASC NULLS FIRST
+		 ) WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 지국별 월별 방문수금일 조회(ABC) -->
+	<select id="getVisitSndt" resultClass="string">
+		SELECT PRINTDT 
+  		 FROM TMP_VISITDT
+ 		WHERE BOSEQ = #userId#
+   		   AND YYMM = #prtCb#  
+	</select>
+	
+	 <!-- 임시테이블 데이타 초기화(ABC)   -->
+	<delete id="deleteTmpReader"  parameterClass="java.util.HashMap">
+		DELETE FROM TMP_READER_NEWS
+		WHERE BOSEQ = #userId#
+ 	</delete>
+	
+	<!-- 임시테이블 데이타 등록(ABC)   -->
+	<insert id="insertTmpReader">
+		 INSERT INTO TMP_READER_NEWS
+				SELECT * FROM TM_READER_NEWS 
+				WHERE ( bno!='999' or (bno='999' and stdt &gt; #visitSndt#)) 
+				AND READTYPECD IN('011','012','013') 
+				AND SGTYPE IN('011','012','013','022') 
+				AND SGBGMM  &lt;= #prtCb#  
+				AND BOSEQ = #userId#
+				AND NEWSCD = '100' 
+				AND APLCDT &lt;= #visitSndt#
+		</insert>
+
+	<!-- 임시테이블 독자중 중지독자 조회(ABC) -->
+	<select id="getStReader" resultClass="java.util.HashMap">
+		SELECT * FROM TMP_READER_NEWS
+		WHERE BOSEQ = #userId#
+		     AND BNO = '999'
+	</select>
+	
+	<!-- 독자 부활, 배달번호 설정(ABC) -->
+	<update id="updateStReader"  parameterClass="java.util.HashMap">
+		 UPDATE TMP_READER_NEWS X
+			  SET X.STDT = ''
+			      , X.STSAYOU = ''
+			      , X.HJTYPECD = 'ABC'  
+			      , X.REMK = ''
+			      , X.BNO =  NVL((SELECT BNO FROM (SELECT * FROM TH_READER_NEWS
+			                                            WHERE READNO = #readno#
+			                                              AND NEWSCD = '100'
+			                                              AND SEQ = #seq#
+			                                              AND BNO != '999'
+			                                            ORDER BY CHGSEQ DESC) WHERE ROWNUM = 1)
+			              ,'900')
+			WHERE X.READNO = #readno#
+			  AND X.NEWSCD = '100'
+			  AND X.SEQ = #seq#
+ 	</update>
+ 	
+ 	<!-- 지국의 구역번호 리스트 조회(ABC) -->
+	<select id="reterieveGnoList" resultClass="java.util.HashMap">
+		SELECT 
+			DISTINCT (GNO) 
+		FROM 
+			TMP_READER_NEWS 
+		WHERE 
+			BOSEQ = #userId# 
+			AND GNO IS NOT NULL 
+			ORDER BY GNO
+	</select>
+	
+	<!-- 배달 번호 정렬(ABC) -->
+	<select id="deliverNumSort" resultClass="String">
+		SELECT 
+			FUNC_DELIVERY_NUM_SORT2(#userId# , #gno#)
+		FROM 
+			DUAL
+	</select>
+	
+</sqlMap>

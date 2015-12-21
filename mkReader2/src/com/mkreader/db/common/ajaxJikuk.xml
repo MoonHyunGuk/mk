@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="common.ajax.jikuk">
+	<!-- 리스트 -->
+	<select id="getList" resultClass="java.util.HashMap">
+		  SELECT serial
+		          , name
+		   FROM TM_AGENCY
+		  WHERE
+			1=1
+			<isNotEmpty property="SEARCH_KEY">
+					name LIKE '%'||#SEARCH_KEY#||'%'
+			</isNotEmpty>
+	 	ORDER BY 
+			name
+	</select>
+</sqlMap>

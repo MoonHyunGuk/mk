@@ -1,0 +1,795 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="reader.empExtd">
+	<!-- 사원확장 목록 조회 -->	
+	<select id="getEmpExtdList" resultClass="java.util.HashMap">
+		SELECT D.* FROM (SELECT ROWNUM RNUM, C.* FROM (
+			SELECT A.NUMID,
+			       A.READNM,
+			       A.COMPNM,
+				   A.MEDIA,
+			       A.GUBUN,
+			       A.READERTYP,
+			       A.ZIP,
+			       A.ADDR1,
+			       A.ADDR2,
+			       A.NEWADDR,
+			       A.BDMNGNO,
+			       A.ADDR1||' '||A.ADDR2 ADDR,
+			       CASE WHEN A.READTEL IS NULL
+				 	   	THEN ''
+				 	   	WHEN LENGTH(A.READTEL) = 7
+				 	   	THEN SUBSTR(A.READTEL, 0, 3)||'-'||SUBSTR(A.READTEL, 4, 4)
+				 	   	WHEN LENGTH(A.READTEL) = 8
+				 	   	THEN SUBSTR(A.READTEL, 0, 4)||'-'||SUBSTR(A.READTEL, 5, 4)
+				 	   	WHEN LENGTH(A.READTEL) = 9
+				        THEN SUBSTR(A.READTEL, 0, 2)||'-'||SUBSTR(A.READTEL, 3, 3)||'-'||SUBSTR(A.READTEL, 6, 4)
+				        WHEN LENGTH(A.READTEL) = 10
+				  		THEN CASE WHEN SUBSTR(A.READTEL, 0, 2) = '02'
+				                  THEN SUBSTR(A.READTEL, 0, 2)||'-'||SUBSTR(A.READTEL, 3, 4)||'-'||SUBSTR(A.READTEL, 7, 4)
+				                  ELSE SUBSTR(A.READTEL, 0, 3)||'-'||SUBSTR(A.READTEL, 4, 3)||'-'||SUBSTR(A.READTEL, 7, 4)
+				              END
+                        ELSE SUBSTR(A.READTEL, 0, 3)||'-'||SUBSTR(A.READTEL, 4, 4)||'-'||SUBSTR(A.READTEL, 8, 4)
+				    END READTEL,
+			       A.QTY,
+			       A.MEMO,
+			       A.EMPCOMPCD,
+			       DECODE(FUNC_COMMON_CDNM('9000', A.EMPCOMPCD), '9000', '', FUNC_COMMON_CDNM('9000', A.EMPCOMPCD)) EMPCOMP,
+			       A.EMPDEPTCD,
+			       DECODE(FUNC_COMMON_CDNM('90002', A.EMPDEPTCD), '90002', '', FUNC_COMMON_CDNM('90002', A.EMPDEPTCD)) EMPDEPT,
+			       A.EMPTEAMCD,
+			       DECODE(FUNC_COMMON_CDNM('90002', A.EMPTEAMCD), '90002', '', FUNC_COMMON_CDNM('90002', A.EMPTEAMCD)) EMPTEAM,
+			       A.EMPNM,
+			       A.EMPNO,
+			       CASE WHEN A.EMPTEL IS NULL
+				 	   	THEN ''
+				 	   	WHEN LENGTH(A.EMPTEL) = 7
+				 	   	THEN SUBSTR(A.EMPTEL, 0, 3)||'-'||SUBSTR(A.EMPTEL, 4, 4)
+				 	   	WHEN LENGTH(A.EMPTEL) = 8
+				 	   	THEN SUBSTR(A.EMPTEL, 0, 4)||'-'||SUBSTR(A.EMPTEL, 5, 4)
+				 	   	WHEN LENGTH(A.EMPTEL) = 9
+				        THEN SUBSTR(A.EMPTEL, 0, 2)||'-'||SUBSTR(A.EMPTEL, 3, 3)||'-'||SUBSTR(A.EMPTEL, 6, 4)
+				        WHEN LENGTH(A.EMPTEL) = 10
+				  		THEN CASE WHEN SUBSTR(A.EMPTEL, 0, 2) = '02'
+				                  THEN SUBSTR(A.EMPTEL, 0, 2)||'-'||SUBSTR(A.EMPTEL, 3, 4)||'-'||SUBSTR(A.EMPTEL, 7, 4)
+				                  ELSE SUBSTR(A.EMPTEL, 0, 3)||'-'||SUBSTR(A.EMPTEL, 4, 3)||'-'||SUBSTR(A.EMPTEL, 7, 4)
+				              END
+                        ELSE SUBSTR(A.EMPTEL, 0, 3)||'-'||SUBSTR(A.EMPTEL, 4, 4)||'-'||SUBSTR(A.EMPTEL, 8, 4)
+				    END EMPTEL,
+				   CASE WHEN (SELECT S.READNO
+		       			    	FROM TM_READER_APLC S
+		       			   	   WHERE S.APLCDT = SUBSTR(A.APLCNO, 0, 8)
+		       			     	 AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) IS NOT NULL
+		       			THEN '3'
+		       			ELSE A.STATUS
+		       	    END STATUS,
+			       A.APLCNO,
+			       (SELECT S.READNO FROM TM_READER_APLC S WHERE S.APLCDT = SUBSTR(A.APLCNO, 0, 8) AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) READNO,
+			       A.BOSEQ,
+			       FUNC_AGENT_NM(A.BOSEQ) BOSEQNM,
+			       A.APLCDT,
+			       A.STDT,
+			       A.NTDT,
+			       A.NTPS,
+			       A.INDT,
+			       A.INPS
+			  FROM TM_EMP_EXTD A
+			 WHERE 1=1
+			<isEqual property="dateType" compareValue="1" prepend="AND">
+		   	   A.APLCDT BETWEEN #fromDate# AND #toDate#
+			</isEqual>
+			<isEqual property="dateType" compareValue="2" prepend="AND">
+		   	   A.STDT BETWEEN #fromDate# AND #toDate#
+			</isEqual>
+			<isNotEmpty property="media" prepend="AND">
+			 	   A.MEDIA = #media# 
+			</isNotEmpty>
+			<isNotEmpty property="readerTyp" prepend="AND">
+			 	   A.READERTYP = #readerTyp# 
+			</isNotEmpty>
+			<isNotEmpty property="gubun">
+				<isNotEqual property="readerTyp" compareValue="2">
+					<isNotEqual property="readerTyp" compareValue="3" prepend="AND">
+				 	   A.GUBUN = #gubun#
+				 	</isNotEqual>				
+			 	</isNotEqual>
+			</isNotEmpty>
+			<isNotEmpty property="empComp" prepend="AND">
+			 	   A.EMPCOMPCD = #empComp# 
+			</isNotEmpty>
+			<isNotEmpty property="empDept" prepend="AND">
+			 	   A.EMPDEPTCD = #empDept# 
+			</isNotEmpty>
+			<isNotEmpty property="empTeam" prepend="AND">
+				<isEqual property="empTeam" compareValue="none">
+			 	   (A.EMPTEAMCD IS NULL OR A.EMPTEAMCD NOT IN (SELECT code FROM TC_COMMON WHERE CDCLSF = '90002' AND RESV1 = A.EMPDEPTCD AND RESV3 = '2') )
+				</isEqual>
+				<isNotEqual property="empTeam" compareValue="none">
+			 	   A.EMPTEAMCD = #empTeam#
+				</isNotEqual>
+			</isNotEmpty>
+			<isNotEmpty property="boseq" prepend="AND">
+			 	   A.BOSEQ = #boseq# 
+			</isNotEmpty>
+
+			<isNotEmpty property="search_value">
+				<isEqual property="search_type" compareValue="total" prepend="AND">
+					(UPPER(A.EMPNM) LIKE '%'||UPPER(#search_value#)||'%' OR UPPER(A.READNM) like '%'||UPPER(#search_value#)||'%' OR UPPER(A.COMPNM) like '%'||UPPER(#search_value#)||'%')
+				</isEqual>
+				<isEqual property="search_type" compareValue="empNm" prepend="AND">
+					UPPER(A.EMPNM) LIKE '%'||UPPER(#search_value#)||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="readerNm" prepend="AND">
+					UPPER(A.READNM) LIKE '%'||UPPER(#search_value#)||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="company" prepend="AND">
+					UPPER(A.COMPNM) LIKE '%'||UPPER(#search_value#)||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="empTel" prepend="AND">
+					A.EMPTEL = #search_value#
+				</isEqual>
+			</isNotEmpty>
+			 ORDER BY A.APLCDT DESC, A.NUMID DESC
+			  ) C
+			<isNotEmpty property="status">
+				WHERE C.STATUS = #status#
+			</isNotEmpty>
+		) D
+		WHERE
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+
+	<!-- 사원확장 목록 카운트 조회 -->
+	<select id="empExtdListCount" resultClass="int">
+		SELECT COUNT(1) COUNT
+		  FROM TM_EMP_EXTD A
+		 WHERE 1=1
+		<isEqual property="dateType" compareValue="1" prepend="AND">
+	   	   A.APLCDT BETWEEN #fromDate# AND #toDate#
+		</isEqual>
+		<isEqual property="dateType" compareValue="2" prepend="AND">
+	   	   A.STDT BETWEEN #fromDate# AND #toDate#
+		</isEqual>
+		<isNotEmpty property="media" prepend="AND">
+	 	   A.MEDIA = #media# 
+		</isNotEmpty>
+		<isNotEmpty property="readerTyp" prepend="AND">
+		 	   A.READERTYP = #readerTyp# 
+		</isNotEmpty>
+		<isNotEmpty property="gubun">
+			<isNotEqual property="readerTyp" compareValue="2" prepend="AND">
+		 	   A.GUBUN = #gubun#
+		 	</isNotEqual>
+		</isNotEmpty>
+		<isNotEmpty property="empComp" prepend="AND">
+		 	   A.EMPCOMPCD = #empComp# 
+		</isNotEmpty>
+		<isNotEmpty property="empDept" prepend="AND">
+		 	   A.EMPDEPTCD = #empDept# 
+		</isNotEmpty>
+		<isNotEmpty property="empTeam" prepend="AND">
+			<isEqual property="empTeam" compareValue="none">
+		 	   (A.EMPTEAMCD IS NULL OR A.EMPTEAMCD NOT IN (SELECT code FROM TC_COMMON WHERE CDCLSF = '90002' AND RESV1 = A.EMPDEPTCD AND RESV3 = '2') )
+			</isEqual>
+			<isNotEqual property="empTeam" compareValue="none">
+		 	   A.EMPTEAMCD = #empTeam#
+			</isNotEqual>
+		</isNotEmpty>		
+		<isNotEmpty property="boseq" prepend="AND">
+		 	   A.BOSEQ = #boseq# 
+		</isNotEmpty>
+
+		<isNotEmpty property="search_value">
+			<isEqual property="search_type" compareValue="total" prepend="AND">
+				(UPPER(A.EMPNM) LIKE '%'||UPPER(#search_value#)||'%' OR UPPER(A.READNM) like '%'||UPPER(#search_value#)||'%' OR UPPER(A.COMPNM) like '%'||UPPER(#search_value#)||'%')
+			</isEqual>
+			<isEqual property="search_type" compareValue="empNm" prepend="AND">
+				UPPER(A.EMPNM) LIKE '%'||UPPER(#search_value#)||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="readerNm" prepend="AND">
+				UPPER(A.READNM) LIKE '%'||UPPER(#search_value#)||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="company" prepend="AND">
+				UPPER(A.COMPNM) LIKE '%'||UPPER(#search_value#)||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="empTel" prepend="AND">
+				A.EMPTEL = #search_value#
+			</isEqual>
+		</isNotEmpty>
+		<isNotEmpty property="status" prepend="AND">
+				(CASE WHEN (SELECT S.READNO
+		       			      FROM TM_READER_APLC S
+		       			     WHERE S.APLCDT = SUBSTR(A.APLCNO, 0, 8)
+		       			       AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) IS NOT NULL
+		       		  THEN '3'
+		       	      ELSE A.STATUS
+		       	  END ) = #status#
+		</isNotEmpty>
+	</select>
+
+	<!-- 사원확장 목록 엑셀출력용 조회 -->	
+	<select id="getEmpExtdListExcel" resultClass="java.util.HashMap">
+		SELECT A.NUMID,
+		       A.READNM,
+		       A.COMPNM,
+			   A.MEDIA,
+		       A.GUBUN,
+		       A.READERTYP,
+		       A.ZIP,
+		       A.ADDR1,
+		       A.ADDR2,
+		       A.NEWADDR,
+		       A.BDMNGNO,
+		       A.ADDR1||' '||A.ADDR2 ADDR,
+		       CASE WHEN A.READTEL IS NULL
+			 	   	THEN ''
+			 	   	WHEN LENGTH(A.READTEL) = 7
+			 	   	THEN SUBSTR(A.READTEL, 0, 3)||'-'||SUBSTR(A.READTEL, 4, 4)
+			 	   	WHEN LENGTH(A.READTEL) = 8
+			 	   	THEN SUBSTR(A.READTEL, 0, 4)||'-'||SUBSTR(A.READTEL, 5, 4)
+			 	   	WHEN LENGTH(A.READTEL) = 9
+			        THEN SUBSTR(A.READTEL, 0, 2)||'-'||SUBSTR(A.READTEL, 3, 3)||'-'||SUBSTR(A.READTEL, 6, 4)
+			        WHEN LENGTH(A.READTEL) = 10
+			  		THEN CASE WHEN SUBSTR(A.READTEL, 0, 2) = '02'
+			                  THEN SUBSTR(A.READTEL, 0, 2)||'-'||SUBSTR(A.READTEL, 3, 4)||'-'||SUBSTR(A.READTEL, 7, 4)
+			                  ELSE SUBSTR(A.READTEL, 0, 3)||'-'||SUBSTR(A.READTEL, 4, 3)||'-'||SUBSTR(A.READTEL, 7, 4)
+			              END
+                       ELSE SUBSTR(A.READTEL, 0, 3)||'-'||SUBSTR(A.READTEL, 4, 4)||'-'||SUBSTR(A.READTEL, 8, 4)
+			    END READTEL,
+		       A.QTY,
+		       A.MEMO,
+		       A.EMPCOMPCD,
+		       DECODE(FUNC_COMMON_CDNM('9000', A.EMPCOMPCD), '9000', '', FUNC_COMMON_CDNM('9000', A.EMPCOMPCD)) EMPCOMP,
+		       A.EMPDEPTCD,
+		       DECODE(FUNC_COMMON_CDNM('90002', A.EMPDEPTCD), '90002', '', FUNC_COMMON_CDNM('90002', A.EMPDEPTCD)) EMPDEPT,
+		       A.EMPTEAMCD,
+		       DECODE(FUNC_COMMON_CDNM('90002', A.EMPTEAMCD), '90002', '', FUNC_COMMON_CDNM('90002', A.EMPTEAMCD)) EMPTEAM,
+		       A.EMPNM,
+		       CASE WHEN A.EMPTEL IS NULL
+			 	   	THEN ''
+			 	   	WHEN LENGTH(A.EMPTEL) = 7
+			 	   	THEN SUBSTR(A.EMPTEL, 0, 3)||'-'||SUBSTR(A.EMPTEL, 4, 4)
+			 	   	WHEN LENGTH(A.EMPTEL) = 8
+			 	   	THEN SUBSTR(A.EMPTEL, 0, 4)||'-'||SUBSTR(A.EMPTEL, 5, 4)
+			 	   	WHEN LENGTH(A.EMPTEL) = 9
+			        THEN SUBSTR(A.EMPTEL, 0, 2)||'-'||SUBSTR(A.EMPTEL, 3, 3)||'-'||SUBSTR(A.EMPTEL, 6, 4)
+			        WHEN LENGTH(A.EMPTEL) = 10
+			  		THEN CASE WHEN SUBSTR(A.EMPTEL, 0, 2) = '02'
+			                  THEN SUBSTR(A.EMPTEL, 0, 2)||'-'||SUBSTR(A.EMPTEL, 3, 4)||'-'||SUBSTR(A.EMPTEL, 7, 4)
+			                  ELSE SUBSTR(A.EMPTEL, 0, 3)||'-'||SUBSTR(A.EMPTEL, 4, 3)||'-'||SUBSTR(A.EMPTEL, 7, 4)
+			              END
+                       ELSE SUBSTR(A.EMPTEL, 0, 3)||'-'||SUBSTR(A.EMPTEL, 4, 4)||'-'||SUBSTR(A.EMPTEL, 8, 4)
+			    END EMPTEL,
+			   CASE WHEN (SELECT S.READNO
+	       			    	FROM TM_READER_APLC S
+	       			   	   WHERE S.APLCDT = SUBSTR(A.APLCNO, 0, 8)
+	       			     	 AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) IS NOT NULL
+	       			THEN '3'
+	       			ELSE A.STATUS
+	       	    END STATUS,
+		       A.APLCNO,
+		       (SELECT S.READNO FROM TM_READER_APLC S WHERE S.APLCDT = SUBSTR(A.APLCNO, 0, 8) AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) READNO,
+		       A.BOSEQ,
+		       FUNC_AGENT_NM(A.BOSEQ) BOSEQNM,
+		       A.APLCDT,
+		       A.STDT,
+		       A.NTDT,
+		       A.NTPS,
+		       A.INDT,
+		       A.INPS
+		  FROM TM_EMP_EXTD A
+		 WHERE 1=1
+		<isEqual property="dateType" compareValue="1" prepend="AND">
+	   		A.APLCDT BETWEEN #fromDate# AND #toDate#
+		</isEqual>
+		<isEqual property="dateType" compareValue="2" prepend="AND">
+	   		A.STDT BETWEEN #fromDate# AND #toDate#
+		</isEqual>
+		<isNotEmpty property="media" prepend="AND">
+	 		A.MEDIA = #media#
+		</isNotEmpty>
+		<isNotEmpty property="readerTyp" prepend="AND">
+			A.READERTYP = #readerTyp# 
+		</isNotEmpty>
+		<isNotEmpty property="gubun">
+			<isNotEqual property="readerTyp" compareValue="2" prepend="AND">
+		 	   A.GUBUN = #gubun#
+		 	</isNotEqual>
+		</isNotEmpty>
+		<isNotEmpty property="empComp" prepend="AND">
+			A.EMPCOMPCD = #empComp# 
+		</isNotEmpty>
+		<isNotEmpty property="empDept" prepend="AND">
+			A.EMPDEPTCD = #empDept# 
+		</isNotEmpty>
+		<isNotEmpty property="empTeam" prepend="AND">
+			<isEqual property="empTeam" compareValue="none">
+		 	   (A.EMPTEAMCD IS NULL OR A.EMPTEAMCD NOT IN (SELECT code FROM TC_COMMON WHERE CDCLSF = '90002' AND RESV1 = A.EMPDEPTCD AND RESV3 = '2') )
+			</isEqual>
+			<isNotEqual property="empTeam" compareValue="none">
+		 	   A.EMPTEAMCD = #empTeam#
+			</isNotEqual>
+		</isNotEmpty>		
+		<isNotEmpty property="boseq" prepend="AND">
+		 	   A.BOSEQ = #boseq# 
+		</isNotEmpty>
+
+		<isNotEmpty property="search_value">
+			<isEqual property="search_type" compareValue="total" prepend="AND">
+				(A.EMPNM LIKE '%'||#search_value#||'%' OR A.READNM like '%'||#search_value#||'%' OR A.COMPNM like '%'||#search_value#||'%')
+			</isEqual>
+			<isEqual property="search_type" compareValue="empNm" prepend="AND">
+				A.EMPNM LIKE '%'||#search_value#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="readerNm" prepend="AND">
+				A.READNM LIKE '%'||#search_value#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="company" prepend="AND">
+				A.COMPNM LIKE '%'||#search_value#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="empTel" prepend="AND">
+				A.EMPTEL = #search_value#
+			</isEqual>
+		</isNotEmpty>
+		<isNotEmpty property="status" prepend="AND">
+				(CASE WHEN (SELECT S.READNO
+		       			      FROM TM_READER_APLC S
+		       			     WHERE S.APLCDT = SUBSTR(A.APLCNO, 0, 8)
+		       			       AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) IS NOT NULL
+		       		  THEN '3'
+		       	      ELSE A.STATUS
+		       	  END ) = #status#
+		</isNotEmpty>
+		 ORDER BY A.APLCDT DESC, A.NUMID DESC
+	</select>
+
+	<!-- 사원확장 테이블 입력 -->
+	<insert id="insertEmpExtd" >
+		INSERT INTO TM_EMP_EXTD (NUMID,
+								 MEDIA, GUBUN, READERTYP, READNM, COMPNM, ZIP,
+		                         ADDR1, ADDR2, READTEL, QTY, MEMO,
+		                         APLCDT, EMPCOMPCD, EMPDEPTCD, EMPTEAMCD, EMPNM, EMPTEL, EMPNO,
+		                         STATUS, APLCNO, BOSEQ,
+		                         NTDT, NTPS,
+		                         INDT, INPS, NEWADDR, BDMNGNO)
+		     VALUES ((SELECT NVL(MAX(NUMID)+1, 1) FROM TM_EMP_EXTD), 
+		     		 #media#, #gubun#, #readerTyp#, #readNm#, #compNm#, #zip#,
+		             #addr1#, #addr2#, #readTel#, #qty#, #memo#,
+		             NVL(#regDt#,TO_CHAR(SYSDATE, 'YYYYMMDD')), #empComp#, #empDept#, #empTeam#, #empNm#, #empTel#, #empNo#,
+		             #status#, #aplcDt#||#aplcNo#, #boseq#,
+				<isEqual property="status" compareValue="1">
+				   	 SYSDATE, #loginId#,
+				</isEqual>
+				<isNotEqual property="status" compareValue="1">
+				   	 #ntDt#, #ntPs#,
+				</isNotEqual>
+		             SYSDATE, #loginId#, #newaddr#, #bdMngNo#)
+	</insert>
+
+	<!-- 구독신청정보 등록 -->
+	<insert id="insertAplcInfo" >
+			INSERT INTO TM_READER_APLC (APLCDT, APLCNO,
+										NEWSCD, BOSEQ,  
+                                        READTYPECD, READNM, BIDT, 
+                                        EMAIL, HOMETEL1, HOMETEL2, HOMETEL3, 
+                                        MOBILE1, MOBILE2, MOBILE3, 
+                                        DLVZIP, DLVADRS1, DLVADRS2, 
+                                        UPRICE, QTY, TASKCD, 
+                                        INTFLDCD, SGTYPECD, RSDTYPECD, DLVTYPECD, 
+                                        DLVPOSICD, HJDT, HJPATHCD, 
+                                        HJPSREGCD, HJPSNM, HJPS_REMK, SGBGMM, 
+                                        INDT, INPS, CHGDT, CHGPS, NEWADDR, BDMNGNO)
+			VALUES ( #aplcDt#, #aplcNo#,
+					 #newsCd#, #boseq#,
+					 #readTypeCd#, #readNm#, #bidt#,
+					 #eMail#, #homeTel1#, #homeTel2#, #homeTel3#, 
+					 #readTel1#, #readTel2#, #readTel3#, 
+					 #zip#, #addr1#, #addr2#,  
+					 NVL(#uPrice#, (#qty#*15000)), #qty#, #taskCd#, 
+					 #intFldCd#, #sgType#, #rsdTypeCd#, #dlvTypeCd#, 
+					 #dlvPosiCd#, #hjDt#, #hjPathCd#,  
+					 #hjPsregCd#, #empNm#, #compNm#||#memo#, #sgBgmm#,
+					 SYSDATE, #loginId#, SYSDATE, #loginId#, #newaddr#, #bdMngNo#)
+	</insert>
+
+	<!-- aplcDt 조회 -->
+	<select id="getAplcDt" resultClass="String">
+		SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') APLCDT
+	      FROM DUAL 
+	</select>
+	
+	<!-- aplcNo 조회 -->
+	<select id="getAplcNo" resultClass="String">
+		SELECT LPAD(NVL(MAX(APLCNO)+1, 1), 5, '0') APLCNO
+	      FROM TM_READER_APLC
+	     WHERE APLCDT = #aplcDt#
+	</select>
+	
+	<!-- 사원확장 상세 정보 조회 -->
+	<select id="getEmpExtdInfo" resultClass="java.util.HashMap">
+		SELECT A.NUMID,
+		       A.READNM,
+		       A.COMPNM,
+			   A.MEDIA,
+		       A.GUBUN,
+		       A.READERTYP,
+		       A.ZIP,
+		       A.ADDR1,
+		       A.ADDR2,
+			   A.NEWADDR,
+			   A.BDMNGNO,
+		       A.ADDR1||' '||A.ADDR2 ADDR,
+		       A.READTEL,
+		       CASE WHEN A.READTEL IS NULL
+			 	   	THEN ''
+		       		WHEN SUBSTR(A.READTEL, 0, 2) = '02'
+			        THEN SUBSTR(A.READTEL, 0, 2)
+			        ELSE SUBSTR(A.READTEL, 0, 3)
+			    END AS READTEL1,
+			   CASE WHEN A.READTEL IS NULL
+			 	   	THEN ''
+		       		WHEN LENGTH(A.READTEL) = 9
+			        THEN SUBSTR(A.READTEL, 2, 3)
+                    WHEN LENGTH(A.READTEL) = 11
+			        THEN SUBSTR(A.READTEL, 4, 4)
+			        ELSE CASE WHEN A.READTEL IS NULL
+                              THEN ''
+                              WHEN SUBSTR(A.READTEL, 0, 2) = '02'
+                              THEN SUBSTR(A.READTEL, 3, 4)
+                              ELSE SUBSTR(A.READTEL, 4, 3)
+                          END 
+ 			    END AS READTEL2,
+ 			   CASE WHEN A.READTEL IS NULL
+			 	   	THEN ''
+		       		WHEN LENGTH(A.READTEL) = 9
+			        THEN SUBSTR(A.READTEL, 6, 4)
+                    WHEN LENGTH(A.READTEL) = 11
+			        THEN SUBSTR(A.READTEL, 8, 4)
+			        ELSE SUBSTR(A.READTEL, 7, 4) 
+ 			    END AS READTEL3 ,
+ 			   A.QTY,
+ 			   A.MEMO,
+		       A.APLCDT,
+		       A.STDT,
+		       A.EMPCOMPCD,
+		       DECODE(FUNC_COMMON_CDNM('9000', A.EMPCOMPCD), '9000', '', FUNC_COMMON_CDNM('9000', A.EMPCOMPCD)) EMPCOMP,
+		       A.EMPDEPTCD,
+		       DECODE(FUNC_COMMON_CDNM('90002', A.EMPDEPTCD), '90002', '', FUNC_COMMON_CDNM('90002', A.EMPDEPTCD)) EMPDEPT,
+		       A.EMPTEAMCD,
+		       DECODE(FUNC_COMMON_CDNM('90002', A.EMPTEAMCD), '90002', '', FUNC_COMMON_CDNM('90002', A.EMPTEAMCD)) EMPTEAM,
+		       A.EMPNM,
+		       A.EMPTEL,
+		       A.EMPNO,
+		       CASE WHEN A.EMPTEL IS NULL
+			 	   	THEN ''
+		       		ELSE SUBSTR(A.EMPTEL, 0, 3)
+			    END AS EMPTEL1,
+			   CASE WHEN A.EMPTEL IS NULL
+			 	   	THEN ''
+		       		WHEN LENGTH(A.EMPTEL) = 10
+			        THEN SUBSTR(A.EMPTEL, 4, 3)
+                    ELSE SUBSTR(A.EMPTEL, 4, 4)
+                END AS EMPTEL2,
+ 			   CASE WHEN A.EMPTEL IS NULL
+			 	   	THEN ''
+		       		WHEN LENGTH(A.EMPTEL) = 10
+			        THEN SUBSTR(A.EMPTEL, 7, 4)
+                    ELSE SUBSTR(A.EMPTEL, 8, 4)
+ 			    END AS EMPTEL3,
+				CASE WHEN (SELECT S2.STDT
+		       			    FROM TM_READER_APLC S,
+		       			   		 TM_READER_NEWS S2
+		       			   WHERE S.READNO IS NOT NULL
+		       			     AND S.READNO = S2.READNO
+		       			     AND S.APLCDT = SUBSTR(A.APLCNO, 0, 8)
+		       			     AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) IS NOT NULL
+		       		THEN '4'
+		       		ELSE A.STATUS
+		       	END STATUS,
+		       A.APLCNO,
+		       A.BOSEQ,
+		       A.NTDT,
+		       A.NTPS,
+		       A.INDT,
+		       A.INPS
+		  FROM TM_EMP_EXTD A
+		 WHERE A.NUMID = #numId#
+	</select>
+
+	<!-- 사원확장 업데이트 -->
+	<update id="updateEmpExtd">
+		UPDATE TM_EMP_EXTD
+		   SET MEDIA = #media#,
+			   GUBUN = #gubun#,
+			   READERTYP = #readerTyp#,
+			   READNM = #readNm#,
+			   COMPNM = #compNm#,
+			   ZIP = #zip#,
+			   ADDR1 = #addr1#,
+			   ADDR2 = #addr2#,
+			   READTEL = #readTel#,
+			   QTY = #qty#,
+			   EMPCOMPCD = #empComp#,
+			   EMPDEPTCD = #empDept#,
+			   EMPTEAMCD = #empTeam#,
+			   EMPNM = #empNm#,
+			   EMPTEL = #empTel#,
+			   EMPNO = #empNo#,
+			   MEMO = #memo#,
+			<isEqual property="flag" compareValue="1">
+			   APLCNO = #aplcDt#||#aplcNo#,
+			   STATUS = #status#,
+			   NTDT = SYSDATE,
+			   NTPS = #loginId#,
+			</isEqual>
+			<isNotEqual property="flag" compareValue="1">
+			   NTDT = #ntDt#,
+			   NTPS = #ntPs#,
+			</isNotEqual>
+			   NEWADDR = #newaddr#,
+			   BDMNGNO = #bdMngNo#,
+			   BOSEQ = #boseq#
+		 WHERE NUMID = #numId#
+	</update>
+
+    <!-- 사원확장 중지처리 -->
+	<update id="deleteEmpExtd">
+		UPDATE TM_EMP_EXTD
+		   SET STATUS = #status#,
+		   	   STDT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		 WHERE NUMID = #numId#
+	</update>
+
+	<!-- 부서명 조회 -->	
+	<select id="retrieveCode" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '90002'
+		AND RESV1 = #resv1#
+		AND RESV3 = #resv3#
+		ORDER BY CNAME
+	</select>	
+
+	<!-- 코드 조회 -->	
+	<select id="nameToCode" resultClass="String">
+	SELECT 
+		CODE
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = #cdclsf#
+		AND CNAME = #cname#
+		<isNotEqual property="cdclsf" compareValue="9000" >
+			AND RESV1 = #resv1#
+			AND RESV3 = #resv3#
+		</isNotEqual>
+
+	</select>
+	
+	<!-- 사원확장 현황 조회 -->
+	<select id="getEmpExtdStat" resultClass="java.util.HashMap">	
+		  SELECT FUNC_COMMON_CDNM('9000', B.RESV1) COMPNM,
+		  	     B.CODE DEPTCD,
+		  	     B.CNAME DEPTNM,
+		  		 (SELECT NVL(SUM(A.QTY),0) 
+		  		 	FROM TM_EMP_EXTD A
+		  		   WHERE A.EMPDEPTCD = B.CODE
+		  		     AND A.MEDIA = '1' 
+		  		     AND (A.READERTYP = '1' OR A.READERTYP = '3') 
+		  		     AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+		  		     <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>
+		  		 ) PAPER,
+		  		 (SELECT NVL(SUM(A.QTY),0)
+		  		    FROM TM_EMP_EXTD A
+		  		   WHERE A.EMPDEPTCD = B.CODE
+		  		     AND A.MEDIA = '1' 
+		  		     AND A.READERTYP = '2' 
+		  		     AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+		  		 	<isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>
+		  		 ) PAPERSTU,
+		  		 (SELECT NVL(SUM(A.QTY),0) 
+		  		    FROM TM_EMP_EXTD A 
+		  		   WHERE A.EMPDEPTCD = B.CODE 
+		  		     AND A.MEDIA = '2' 
+		  		     AND (A.READERTYP = '1' OR A.READERTYP = '3')
+		  		     AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+		  		 	<isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>
+		  		 ) ELEC,
+		  		 (SELECT NVL(SUM(A.QTY),0) 
+		  		    FROM TM_EMP_EXTD A 
+		  		   WHERE A.EMPDEPTCD = B.CODE 
+		  		     AND A.MEDIA = '2' 
+		  		     AND A.READERTYP = '2' 
+		  		     AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+		  		 	<isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>
+		  		 ) ELECSTU,
+		  		 (SELECT NVL(SUM(A.QTY),0) 
+		  		    FROM TM_EMP_EXTD A 
+		  		   WHERE A.EMPDEPTCD = B.CODE 
+		  		     AND A.MEDIA = '3' 
+		  		     AND (A.READERTYP = '1' OR A.READERTYP = '3')
+		  		     AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+		  		 	<isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>
+		  		 ) ELECF,
+		  		 (SELECT NVL(SUM(A.QTY),0) 
+		  		    FROM TM_EMP_EXTD A 
+		  		   WHERE A.EMPDEPTCD = B.CODE 
+		  		     AND A.MEDIA = '3' 
+		  		     AND A.READERTYP = '2' 
+		  		     AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+		  		 	<isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>
+		  		 ) ELECFSTU,
+		  		 COUNT(*)OVER(PARTITION BY B.RESV1) AS PARTCNT
+		    FROM TC_COMMON B
+		   WHERE 1=1
+		     AND B.CDCLSF = '90002'
+		     AND B.RESV3 = '1'
+		   ORDER BY B.RESV1, B.CNAME
+	</select>
+
+	<!-- 사원확장 현황 조회 (부서별)-->
+	<select id="getEmpExtdTeamStat" resultClass="java.util.HashMap">
+		SELECT K.*
+	  	  FROM (SELECT FUNC_COMMON_CDNM('90002', B.RESV1) DEPTNM,
+	                   B.CODE TEAMCD,
+	                   B.CNAME TEAMNM,
+	                   (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPTEAMCD = B.CODE AND A.MEDIA = '1' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) PAPER,
+	                   (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPTEAMCD = B.CODE AND A.MEDIA = '1' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) PAPERSTU,
+	                   (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPTEAMCD = B.CODE AND A.MEDIA = '2' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) ELEC,
+	                   (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPTEAMCD = B.CODE AND A.MEDIA = '2' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) ELECSTU,      	   
+	                   (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPTEAMCD = B.CODE AND A.MEDIA = '3' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) ELECF,
+	              	   (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPTEAMCD = B.CODE AND A.MEDIA = '3' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) ELECFSTU
+	              FROM TC_COMMON B
+	             WHERE 1=1
+	               AND B.CDCLSF = '90002'
+	               AND B.RESV3 = '2'
+	               AND B.RESV1 = #deptCd#
+
+	           UNION ALL
+	             
+			  SELECT FUNC_COMMON_CDNM('90002', B.CODE) DEPTNM,
+			  	     'none' TEAMCD,
+			  	     'none' TEAMNM,
+			  		 (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPDEPTCD = B.CODE AND A.EMPTEAMCD IS NULL AND A.MEDIA = '1' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) PAPER,
+			  		 (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPDEPTCD = B.CODE AND A.EMPTEAMCD IS NULL AND A.MEDIA = '1' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) PAPERSTU,
+			  		 (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPDEPTCD = B.CODE AND A.EMPTEAMCD IS NULL AND A.MEDIA = '2' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) ELEC,
+			  		 (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPDEPTCD = B.CODE AND A.EMPTEAMCD IS NULL AND A.MEDIA = '2' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) ELECSTU,
+			  		 (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPDEPTCD = B.CODE AND A.EMPTEAMCD IS NULL AND A.MEDIA = '3' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) ELECF,
+			  		 (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPDEPTCD = B.CODE AND A.EMPTEAMCD IS NULL AND A.MEDIA = '3' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate# <isEqual property="chbx" compareValue="on">AND A.STATUS != '4'</isEqual>) ELECFSTU
+			    FROM TC_COMMON B
+			   WHERE 1=1
+			     AND B.CDCLSF = '90002'
+			     AND B.CODE = #deptCd#
+
+	          ) K
+	    ORDER BY K.TEAMCD
+	</select>
+	
+	<!-- 개인실적 우수자 조회 -->
+	<select id="getEmpExtdTop" resultClass="java.util.HashMap">
+		 SELECT ROWNUM RM,
+			    DECODE(FUNC_COMMON_CDNM('9000', K.EMPCOMPCD), '9000', '', FUNC_COMMON_CDNM('9000', K.EMPCOMPCD)) EMPCOMP,
+			    K.EMPCOMPCD,
+			    DECODE(FUNC_COMMON_CDNM('90002', K.EMPDEPTCD), '90002', '', FUNC_COMMON_CDNM('90002', K.EMPDEPTCD)) EMPDEPT,
+			    K.EMPDEPTCD,
+			    DECODE(FUNC_COMMON_CDNM('90002', K.EMPTEAMCD), '90002', '', FUNC_COMMON_CDNM('90002', K.EMPTEAMCD)) EMPTEAM,
+                K.EMPTEAMCD,
+                K.EMPNM,
+				CASE WHEN K.EMPTEL IS NULL
+				 	   	THEN ''
+				 	   	WHEN LENGTH(K.EMPTEL) = 7
+				 	   	THEN SUBSTR(K.EMPTEL, 0, 3)||'-'||SUBSTR(K.EMPTEL, 4, 4)
+				 	   	WHEN LENGTH(K.EMPTEL) = 8
+				 	   	THEN SUBSTR(K.EMPTEL, 0, 4)||'-'||SUBSTR(K.EMPTEL, 5, 4)
+				 	   	WHEN LENGTH(K.EMPTEL) = 9
+				        THEN SUBSTR(K.EMPTEL, 0, 2)||'-'||SUBSTR(K.EMPTEL, 3, 3)||'-'||SUBSTR(K.EMPTEL, 6, 4)
+				        WHEN LENGTH(K.EMPTEL) = 10
+				  		THEN CASE WHEN SUBSTR(K.EMPTEL, 0, 2) = '02'
+				                  THEN SUBSTR(K.EMPTEL, 0, 2)||'-'||SUBSTR(K.EMPTEL, 3, 4)||'-'||SUBSTR(K.EMPTEL, 7, 4)
+				                  ELSE SUBSTR(K.EMPTEL, 0, 3)||'-'||SUBSTR(K.EMPTEL, 4, 3)||'-'||SUBSTR(K.EMPTEL, 7, 4)
+				              END
+                        ELSE SUBSTR(K.EMPTEL, 0, 3)||'-'||SUBSTR(K.EMPTEL, 4, 4)||'-'||SUBSTR(K.EMPTEL, 8, 4)
+				    END EMPTEL,
+                (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPNM = K.EMPNM AND A.EMPTEL = K.EMPTEL AND A.MEDIA = '1' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate#) PAPER,
+		  		(SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPNM = K.EMPNM AND A.EMPTEL = K.EMPTEL AND A.MEDIA = '1' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate#) PAPERSTU,
+		  		(SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPNM = K.EMPNM AND A.EMPTEL = K.EMPTEL AND A.MEDIA = '2' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate#) ELEC,
+		  		(SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPNM = K.EMPNM AND A.EMPTEL = K.EMPTEL AND A.MEDIA = '2' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate#) ELECSTU,
+		  		(SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPNM = K.EMPNM AND A.EMPTEL = K.EMPTEL AND A.MEDIA = '3' AND (A.READERTYP = '1' OR A.READERTYP = '3') AND A.APLCDT BETWEEN #fromDate# AND #toDate#) ELECF,
+		  		(SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPNM = K.EMPNM AND A.EMPTEL = K.EMPTEL AND A.MEDIA = '3' AND READERTYP = '2' AND A.APLCDT BETWEEN #fromDate# AND #toDate#) ELECFSTU,
+                QTY
+           FROM (SELECT EMPCOMPCD,
+       					EMPDEPTCD,
+                        EMPTEAMCD,
+                        EMPNM,
+                        EMPTEL,
+                        SUM(QTY) QTY 
+				   FROM TM_EMP_EXTD
+				  WHERE 1=1
+				    AND APLCDT BETWEEN #fromDate# AND #toDate#
+			<isEqual property="chbx" compareValue="on">
+				  AND STATUS != '4'
+			</isEqual>
+           		  GROUP BY EMPCOMPCD, EMPDEPTCD, EMPTEAMCD, EMPNM, EMPTEL
+          		  ORDER BY QTY DESC, EMPNM
+                ) K 
+          WHERE ROWNUM &lt; 11
+	</select>
+	
+	<!-- 사원확장 통계 -->
+	<select id="getTotalCount" resultClass="java.util.HashMap">
+		SELECT (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '1' AND READERTYP = '1' AND STDT IS NULL) PAPER,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '1' AND READERTYP = '2' AND STDT IS NULL) PAPERSTU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '1' AND READERTYP = '3' AND STDT IS NULL ) PAPEREDU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '2' AND READERTYP = '1' AND STDT IS NULL ) ELEC,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '2' AND READERTYP = '2' AND STDT IS NULL ) ELECSTU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '2' AND READERTYP = '3' AND STDT IS NULL ) ELECEDU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '3' AND READERTYP = '1' AND STDT IS NULL ) ELECF, 
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '3' AND READERTYP = '2' AND STDT IS NULL ) ELECFSTU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '3' AND READERTYP = '3' AND STDT IS NULL ) ELECFEDU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A) TOTAL
+		  FROM DUAL
+	</select>
+	
+	<!-- 사원정보 조회 -->
+	<select id="retrieveEmpList" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT COMPANY COMPANYCD,
+					   FUNC_COMMON_CDNM('9000', COMPANY) COMPANYNM,
+				       OFFINM DEPTCD,
+				       FUNC_COMMON_CDNM('9001' , OFFINM) DEPTNM,
+				       SABUN EMPNO,
+				       READNM EMPNAME,
+				       HOMETEL1||HOMETEL2||HOMETEL3 TELNO,
+				       MOBILE1||MOBILE2||MOBILE3 MOBILE
+				  FROM TM_READER_NEWS
+				 WHERE 1=1
+				   AND READTYPECD = '016'
+				<isEmpty property="empNm">
+					<isNotEmpty property="company">
+						AND COMPANY = #company#
+					</isNotEmpty>
+					<isNotEmpty property="dept">
+						AND OFFINM = #dept#
+					</isNotEmpty>
+				</isEmpty>
+				<isNotEmpty property="empNm">
+				   AND READNM LIKE '%'||#empNm#||'%'
+				</isNotEmpty>
+			)C
+		)D
+		WHERE
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+
+ 	<!-- 사원정보 조회 카운트 -->
+	<select id="retrieveEmpListCount" resultClass="int">
+		SELECT COUNT(1) COUNT
+		  FROM TM_READER_NEWS
+		 WHERE 1=1
+		   AND READTYPECD = '016'
+		<isEmpty property="empNm">
+			<isNotEmpty property="company">
+				AND COMPANY = #company#
+			</isNotEmpty>
+			<isNotEmpty property="dept">
+				AND OFFINM = #dept#
+			</isNotEmpty>
+		</isEmpty>
+		<isNotEmpty property="empNm">
+		   AND READNM LIKE '%'||#empNm#||'%'
+		</isNotEmpty>
+	</select>
+</sqlMap>

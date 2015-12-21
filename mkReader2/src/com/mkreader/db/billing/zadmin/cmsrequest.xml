@@ -1,0 +1,584 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="billing.zadmin.cmsrequest">
+
+	<!-- result map -->
+	<resultMap id="EA13LogMap" class="hashmap">
+		<result property="NUMID" column="NUMID" />
+		<result property="LOGDATE" column="LOGDATE" />
+		<result property="MEMO" column="MEMO" jdbcType="CLOB" javaType="string" />
+		<result property="ERR_STR" column="ERR_STR" jdbcType="CLOB" javaType="string" />
+		<result property="ADMINID" column="ADMINID" />
+	</resultMap>
+
+	<!-- EB13 log 목록 -->
+	<select id="getEB13LogList" resultClass="map" resultMap="EA13LogMap">
+		SELECT 
+			C.*
+		FROM
+			(
+				SELECT 
+					ROWNUM AS RNUM
+					, B.*
+	  			FROM
+					(
+						SELECT 
+							*
+						FROM 
+							tbl_EA13_log A 
+						WHERE 
+							NUMID is not null
+						ORDER BY 
+							numid desc
+					) B
+			) C
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- EB13 log 갯수 -->
+	<select id="getEB13LogCount" resultClass="int">
+		SELECT 
+			count(*) as recCount
+		FROM 
+			tbl_EA13_log
+		WHERE 
+			numid IS NOT NULL
+	</select>
+	
+	<!-- EB13 log 정보 -->
+	<select id="getEB13LogInfo" resultClass="map" resultMap="EA13LogMap">
+		SELECT *
+		FROM (
+			SELECT 
+				*
+			FROM 
+				tbl_EA13_log 
+			WHERE 
+				numid = #numid#
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	<!-- EB13 log 정보 -->
+	<select id="getExistEB13Log" resultClass="map" resultMap="EA13LogMap">
+		SELECT *
+		FROM (
+			SELECT *
+			FROM 
+				tbl_EA13_log
+			WHERE
+				1=1
+				<isNotEmpty property="fdate" prepend=" AND ">
+					to_char(logdate, 'yymmdd') = #fdate#
+				</isNotEmpty>
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	<update id="updateUsersStatus">
+		UPDATE 
+			tbl_users 
+		SET 
+			status = #STATUS_NEW#
+		WHERE
+			status = #STATUS_OLD#
+	</update>
+	
+	<update id="updateUsersStatus2">
+		UPDATE 
+			tbl_users 
+		SET 
+			status = #STATUS#
+		WHERE
+			numid = #numid#
+	</update>
+	
+	<select id="getUserList" resultClass="java.util.HashMap">
+		SELECT 
+			A.numid
+			, A.jikuk
+			, A.serial
+			, A.gubun
+			, (CASE length(nvl(A.saup,' ')) WHEN 10 THEN nvl(A.saup,' ') ELSE substr(nvl(A.saup,' '),1,6) END) as saup
+			, A.jumin1
+			, A.jumin2
+			, A.whostep
+			, A.rdate
+			, A.r_out_date
+			, nvl(A.bank, ' ') as bank
+			, nvl(A.bank_num, ' ') as bank_num
+			, A.bank_name
+			, nvl(A.bank_money, ' ') as bank_money
+			, A.userid 
+			, A.readno
+			, A.realjikuk
+		FROM 
+			tbl_users A
+		WHERE 
+			A.status = #STATUS#
+			<isNotEmpty property="LEVELS" prepend=" AND ">
+				A.levels = #LEVELS#
+			</isNotEmpty>
+			and
+			A.rdate is not null
+		ORDER BY 
+			A.numid
+	</select>
+	
+	<select id="getUserList2" resultClass="java.util.HashMap">
+		SELECT 
+			A.numid
+			, A.jikuk
+			, A.serial
+			, A.gubun
+			, (CASE length(nvl(A.saup,' ')) WHEN 10 THEN nvl(A.saup,' ') ELSE substr(nvl(A.saup,' '),1,6) END) as saup
+			, A.jumin1
+			, A.jumin2
+			, A.whostep
+			, A.rdate
+			, A.r_out_date
+			, nvl(A.bank, ' ') as bank
+			, nvl(A.bank_num, ' ') as bank_num
+			, A.bank_name
+			, nvl(A.bank_money, ' ') as bank_money
+			, A.userid 
+			, A.readno
+			, A.realjikuk
+		FROM 
+			tbl_users A
+		WHERE 
+			A.status = #STATUS#
+			<isNotEmpty property="LEVELS" prepend=" AND ">
+				A.levels = #LEVELS#
+			</isNotEmpty>
+			AND A.R_OUT_DATE &lt;= ADD_MONTHS(SYSDATE, -1)
+			and
+			A.rdate is not null
+			and
+			A.readno is not null
+			and 
+			(
+				select 
+					count(readno) 
+				from 
+					tm_reader_sugm 
+				where 
+					readno = A.readno 
+					and 
+					SGBBCD='044'
+			)=0
+		ORDER BY 
+			A.numid
+	</select>
+	
+	<select id="getUserInfo" resultClass="java.util.HashMap">
+		SELECT 
+			A.*
+		FROM 
+			tbl_users A
+		WHERE 
+			A.numid = #numid#
+	</select>
+	
+	
+	<insert id="insertEALog">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_EA_log
+		</selectKey>
+		INSERT INTO tbl_EA_log ( 
+			numid
+			, serialno
+			, filename
+			, cmstype
+			<isNotEmpty property="cmsmoney">
+				, cmsmoney
+			</isNotEmpty>
+			, cmsdate
+			, cmsresult
+			, userid
+			, usernumid
+			, codenum
+			, rdate
+			<isNotEmpty property="subsmonth">
+				, subsmonth
+			</isNotEmpty>
+			<isNotEmpty property="readno">
+				, readno
+			</isNotEmpty>
+		) VALUES ( 
+			#numid#
+			, #serialno#
+			, #filename#
+			, #cmstype#
+			<isNotEmpty property="cmsmoney">
+				, #cmsmoney#
+			</isNotEmpty>
+			, #cmsdate#
+			, #cmsresult#
+			, #userid#
+			, #usernumid#
+			, #codenum#
+			<isNotEmpty property="rdate">
+				, #rdate#
+			</isNotEmpty>
+			<isEmpty property="rdate">
+				, to_char(sysdate, 'YYYY-MM-DD')
+			</isEmpty>
+			<isNotEmpty property="subsmonth">
+				, #subsmonth#
+			</isNotEmpty>
+			<isNotEmpty property="readno">
+				, #readno#
+			</isNotEmpty>
+		)
+	</insert>
+	
+	<insert id="insertEB13Log">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_EA13_log
+		</selectKey>
+		INSERT INTO tbl_EA13_log ( 
+			numid
+			, logdate
+			, memo
+			, err_str
+			, adminid
+		) VALUES ( 
+			#numid#
+			, sysdate
+			, #memo#
+			, #err_str#
+			, #adminid#
+		)
+	</insert>
+	
+	<!-- EB13 log 최상위 row data -->
+	<select id="getEB13LogFirstRow" resultClass="map" resultMap="EA13LogMap">
+		SELECT *
+		FROM (
+			SELECT * 
+			FROM 
+				tbl_EA13_log 
+			ORDER 
+				BY logdate DESC
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	
+	
+	<!-- EB14 log 목록 -->
+	<select id="getEB14LogList" resultClass="java.util.HashMap">
+		SELECT 
+			C.*
+		FROM
+			(
+				SELECT 
+					ROWNUM AS RNUM
+					, B.*
+	  			FROM
+					(
+						SELECT 
+							*
+						FROM 
+							tbl_cmsEA14data_log A 
+						WHERE 
+							NUMID is not null
+						ORDER BY 
+							numid desc
+					) B
+			) C
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- EB14 log 갯수 -->
+	<select id="getEB14LogCount" resultClass="int">
+		SELECT 
+			count(*) as recCount
+		FROM 
+			tbl_cmsEA14data_log
+		WHERE 
+			numid IS NOT NULL
+	</select>
+	
+	<!-- EA log 목록 -->
+	<select id="getEALogList" resultClass="java.util.HashMap">
+		SELECT A.*,
+               B.READNO,
+               B.USERNAME,
+               B.PHONE,
+               B.HANDY,
+          	   B.REALJIKUK,
+			   C.NAME JIKUK_NAME,
+               C.JIKUK_TEL
+		  FROM (SELECT NUMID,
+        	       	   SERIALNO,
+                       FILENAME,
+                       CMSTYPE,
+                       CMSDATE,
+                       CMSMONEY,
+                       CMSRESULT,
+                       USERID,
+                       USERNUMID,
+                       CODENUM,
+                       RDATE,
+                       SUBSMONTH,
+                       ORDERNO,
+                       CHECKED
+				  FROM TBL_EA_LOG
+			     WHERE 1=1
+			        <isNotEmpty property="filename" prepend=" AND ">
+					   FILENAME = #filename#
+				    </isNotEmpty>
+				    <isNotEmpty property="cmsdate" prepend=" AND ">
+					   CMSDATE = #cmsdate#
+				    </isNotEmpty>
+				    <isNotEqual property="chbx" compareValue="all">
+				   		<isEqual property="chbx" compareValue="on" prepend=" AND">
+							CMSRESULT = '00000'
+						</isEqual>
+						<isEqual property="chbx" compareValue="off" prepend=" AND">
+							CMSRESULT &lt;&gt; '00000'
+						</isEqual>
+					</isNotEqual>
+				   ORDER BY SERIALNO
+			   ) A,
+               TBL_USERS B, 
+               TM_AGENCY C
+         WHERE 1=1
+           AND A.USERNUMID = B.NUMID 
+           AND B.REALJIKUK = C.USERID 
+		   <isNotEmpty property="jikuk" prepend=" AND ">
+			   B.REALJIKUK = #jikuk#
+		   </isNotEmpty>
+
+	</select>
+	
+	
+	<!-- 지국목록 -->
+	<select id="getAgencyList" resultClass="java.util.HashMap">
+		SELECT DISTINCT(B.JIKUK) JIKUK,
+			   C.NAME JIKUK_NAME
+          FROM (SELECT NUMID,
+        	       	   SERIALNO,
+                       FILENAME,
+                       CMSTYPE,
+                       CMSDATE,
+                       CMSMONEY,
+                       CMSRESULT,
+                       USERID,
+                       USERNUMID,
+                       CODENUM,
+                       RDATE,
+                       SUBSMONTH,
+                       ORDERNO,
+                       CHECKED
+				  FROM TBL_EA_LOG
+			     WHERE 1=1
+			       <isNotEmpty property="filename" prepend=" AND ">
+					   FILENAME = #filename#
+				   </isNotEmpty>
+				   <isNotEmpty property="cmsdate" prepend=" AND ">
+					   CMSDATE = #cmsdate#
+				   </isNotEmpty>
+				   <isNotEqual property="chbx" compareValue="all">
+				   		<isEqual property="chbx" compareValue="on" prepend=" AND">
+							CMSRESULT = '00000'
+						</isEqual>
+						<isEqual property="chbx" compareValue="off" prepend=" AND">
+							CMSRESULT &lt;&gt; '00000'
+						</isEqual>
+					</isNotEqual>
+	             ORDER BY SERIALNO
+			   ) A,
+               TBL_USERS B, 
+               TM_AGENCY C
+         WHERE 1=1
+           AND A.USERNUMID = B.NUMID 
+           AND B.REALJIKUK = C.USERID
+         ORDER BY C.NAME
+    </select>	
+	
+	<!-- EA log 갯수 -->
+	<select id="getEALogCount" resultClass="int">
+		SELECT 
+			count(*)
+		FROM 
+			tbl_EA_log
+		WHERE
+			1=1
+			<isNotEmpty property="filename" prepend=" AND ">
+				filename = #filename#
+			</isNotEmpty>
+			<isNotEmpty property="cmsresult" prepend=" AND ">
+				cmsresult = #cmsresult#
+			</isNotEmpty>
+			<isNotEmpty property="cmsresult_not" prepend=" AND ">
+				cmsresult &lt;&gt; #cmsresult_not#
+			</isNotEmpty>
+			<isNotEmpty property="cmstype" prepend=" AND ">
+				trim(cmstype) = #cmstype#
+			</isNotEmpty>
+			<isNotEmpty property="cmsdate" prepend=" AND ">
+				cmsdate = #cmsdate#
+			</isNotEmpty>
+	</select>
+	
+	<update id="updateEALog">
+		UPDATE tbl_EA_log 
+		SET 
+			cmsresult = #cmsresult# 
+		WHERE
+			1=1 
+			<isNotEmpty property="cmsdate" prepend=" AND ">
+				cmsdate = #cmsdate#
+			</isNotEmpty> 
+			<isNotEmpty property="cmstype" prepend=" AND ">
+				cmstype like #cmstype# || '%'
+			</isNotEmpty>
+			<isNotEmpty property="serialno" prepend=" AND ">
+				serialno = #serialno#
+			</isNotEmpty>
+	</update>
+	
+	<update id="updateTblUsers">
+		UPDATE tbl_users 
+		SET 
+			status = #users_status#
+			, levels = #levels# 
+			<isNotEmpty property="rdate_result">
+				, rdate_result = #rdate_result#
+			</isNotEmpty>
+		WHERE
+			numid IN (
+				SELECT usernumid 
+				FROM tbl_EA_log 
+				WHERE 
+					cmsdate = #cmsdate#
+					<isNotEmpty property="cmstype" prepend=" AND ">
+						trim(cmstype) = #cmstype#
+					</isNotEmpty>
+					<isNotEmpty property="cmsresult" prepend=" AND ">
+						cmsresult = #cmsresult#
+					</isNotEmpty>
+			)
+			<isNotEmpty property="log_status" prepend=" AND ">
+				status = #log_status#
+			</isNotEmpty>
+	</update>
+	
+	<update id="updateTblUsersError">
+		UPDATE tbl_users 
+		SET 
+			status = #users_status#
+			, levels = #levels# 
+			<isNotEmpty property="rdate_result">
+				, rdate_result = #rdate_result#
+			</isNotEmpty>
+		WHERE
+			numid IN (
+				SELECT usernumid 
+				FROM tbl_EA_log 
+				WHERE 
+					cmsdate = #cmsdate#
+					<isNotEmpty property="cmstype" prepend=" AND ">
+						trim(cmstype) = #cmstype#
+					</isNotEmpty>
+					<isNotEmpty property="cmsresult_not" prepend=" AND ">
+						cmsresult &lt;&gt; #cmsresult_not#
+					</isNotEmpty>
+			)
+			<isNotEmpty property="log_status" prepend=" AND ">
+				status = #log_status#
+			</isNotEmpty>
+	</update>
+
+	<insert id="insertCmsEA14Data">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_cmsEA14data
+		</selectKey>
+		INSERT INTO tbl_cmsEA14data ( 
+			numid
+			, rtype
+			, serial
+			, filename
+			, rdate
+			, type
+			, number_
+			, bank_code
+			, bank_numb
+			, bank_jumin
+			, ccode
+			, mtype
+			, result
+			, tmp
+			, indate
+			, chk_id  
+		) VALUES ( 
+			#numid#
+			, #rtype#
+			, #serial#
+			, #filename#
+			, #rdate#
+			, #type#
+			, #number#
+			, #bank_code#
+			, #bank_numb#
+			, #bank_jumin#
+			, #ccode#
+			, #mtype#
+			, #result#
+			, #tmp#
+			, sysdate
+			, #chk_id#  
+		)
+	</insert>
+	
+	<insert id="insertCmsEA14DataResult">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_cmsEA14data_log
+		</selectKey>
+		INSERT INTO tbl_cmsEA14data_log ( 
+			numid
+			, rtype
+			, code
+			, filename
+			, cmsdate
+			, totals
+			, type1
+			, type2
+			, type3
+			, type4
+			, indate
+			, chk_id
+		) VALUES ( 
+			#numid#
+			, #rtype#
+			, #code#
+			, #filename#
+			, #cmsdate#
+			, #totals#
+			, #type1#
+			, #type2#
+			, #type3#
+			, #type4#
+			, sysdate
+			, #chk_id#  
+		)
+	</insert>
+	
+</sqlMap>

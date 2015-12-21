@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="reader.biReader">
+
+	<!-- 1차그룹코드 전체조회 -->
+	<select id="SECD6" resultClass="java.util.HashMap">
+		SELECT CDCLSF,CODE,CNAME FROM TC_COMMON WHERE CDCLSF LIKE '60%' ORDER BY SORTFD,CODE
+	</select>
+	
+	<!-- 2차그룹코드 전체조회 -->
+	<select id="SECD7" resultClass="java.util.HashMap">
+		SELECT CDCLSF,CODE,CNAME FROM TC_COMMON WHERE CDCLSF LIKE '7%' ORDER BY SORTFD,CODE
+	</select>
+	
+	<!-- 3차그룹코드 전체조회 -->
+	<select id="SECD8" resultClass="java.util.HashMap">
+		SELECT CDCLSF,CODE,CNAME FROM TC_COMMON WHERE CDCLSF LIKE '8%' ORDER BY SORTFD,CODE
+	</select>
+	
+	<!-- 그룹코드 상위그룹기준 2차,3차 그룹 조회 -->
+	<select id="biGroupList" resultClass="java.util.HashMap">
+		SELECT CDCLSF,CODE,CNAME 
+		 FROM TC_COMMON 
+		WHERE CDCLSF = #cdclsf# 
+	    ORDER BY SORTFD,CODE
+	</select>
+		
+	<!-- 비독자 구분코드 -->
+	<select id="SELCODE" resultClass="java.util.HashMap">
+		SELECT CDCLSF,CODE,CNAME FROM TC_COMMON WHERE CDCLSF='500' ORDER BY SORTFD,CODE
+	</select>
+		
+		
+<!-- 비독자 리스트  -->
+	<select id="BIRDR_LIST" resultClass="java.util.HashMap">
+	SELECT B.*
+	    FROM ( SELECT ROWNUM RNUM, A.* 
+	     	         FROM ( 
+	     	         
+								SELECT /*+ index_desc(TM_BI_READER_APLC TM_BI_READER_APLC_PK) */ APLCDT, APLCNO, 
+										 BI_GROUP1, BI_GROUP2, BI_GROUP3, BI_GROUP4, 
+										 NVL2(BI_GROUP1,FUNC_COMMON_CDNM('600',BI_GROUP1),'') BI_GROUP_NM1,
+										 NVL2(BI_GROUP2,FUNC_COMMON_CDNM(BI_GROUP1,BI_GROUP2),'') BI_GROUP_NM2,
+										 NVL2(BI_GROUP3,FUNC_COMMON_CDNM(BI_GROUP2,BI_GROUP3),'') BI_GROUP_NM3,
+										 BI_READNM, OFFZIP, OFFADRS1, OFFADRS2, OFFDEPT, OFFDUTY, OFFTEL1,
+									 	 OFFTEL2, OFFTEL3, OFFFAX1, OFFFAX2, OFFFAX3, MOBILE1, MOBILE2, MOBILE3, EMAIL, 
+									 	 HOMEZIP, HOMEADRS1, HOMEADRS2, HOMETEL1, HOMETEL2, HOMETEL3,
+									 	 SMGUDOK, ORGAN, GUBUN, REMK
+								FROM TM_BI_READER_APLC
+								WHERE APLCNO != ' ' 
+								
+								<isNotEmpty property="GUBUN" prepend="AND" >
+									GUBUN = #GUBUN#
+								</isNotEmpty>
+								<isNotEmpty property="BI_GROUP1" prepend="AND" >
+									BI_GROUP1 = #BI_GROUP1#
+								</isNotEmpty>
+								<isNotEmpty property="BI_GROUP2" prepend="AND" >
+									BI_GROUP2 = #BI_GROUP2#
+								</isNotEmpty>
+								<isNotEmpty property="BI_GROUP3" prepend="AND" >
+									BI_GROUP3 = #BI_GROUP3#
+								</isNotEmpty>
+								<isNotEmpty property="BI_READNM" prepend="AND" >
+									BI_READNM LIKE '%'||#BI_READNM#||'%'
+								</isNotEmpty>
+								<isNotEmpty property="ADDR" prepend="AND" >
+									OFFADRS1||OFFADRS2 LIKE '%'||#ADDR#||'%'
+								</isNotEmpty>
+								<isNotEmpty property="TEL1">
+									<isNotEmpty property="TEL2">
+										<isNotEmpty property="TEL3">
+											AND (OFFTEL1||OFFTEL2||OFFTEL3 = #TEL1#||#TEL2#||#TEL3#
+											        OR MOBILE1||MOBILE2||MOBILE3 = #TEL1#||#TEL2#||#TEL3#)
+										</isNotEmpty>
+									</isNotEmpty>
+								</isNotEmpty>
+								<isNotEmpty property="ORGAN" prepend="AND" >
+									ORGAN LIKE '%'||#ORGAN#||'%'
+								</isNotEmpty>
+								<isNotEmpty property="OFFDEPT" prepend="AND" >
+									OFFDEPT LIKE '%'||#OFFDEPT#||'%'
+								</isNotEmpty>
+								<isNotEmpty property="OFFDUTY" prepend="AND" >
+									OFFDUTY LIKE '%'||#OFFDUTY#||'%'
+								</isNotEmpty>
+								ORDER BY APLCDT DESC, APLCNO DESC
+		
+		 ) A
+			              ) B
+	    WHERE RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		   AND RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+<!-- 비독자 리스트 건수 -->
+	<select id="BIRDR_LIST_CNT"  resultClass="int">
+		SELECT COUNT(1)
+		  FROM TM_BI_READER_APLC
+		WHERE APLCNO != ' ' 
+		
+		<isNotEmpty property="GUBUN" prepend="AND" >
+			GUBUN = #GUBUN#
+		</isNotEmpty>
+		<isNotEmpty property="BI_GROUP1" prepend="AND" >
+			BI_GROUP1 = #BI_GROUP1#
+		</isNotEmpty>
+		<isNotEmpty property="BI_GROUP2" prepend="AND" >
+			BI_GROUP2 = #BI_GROUP2#
+		</isNotEmpty>
+		<isNotEmpty property="BI_GROUP3" prepend="AND" >
+			BI_GROUP3 = #BI_GROUP3#
+		</isNotEmpty>
+		<isNotEmpty property="BI_GROUP4" prepend="AND" >
+			BI_GROUP4 = #BI_GROUP4#
+		</isNotEmpty>		
+		<isNotEmpty property="BI_READNM" prepend="AND" >
+			BI_READNM LIKE '%'||#BI_READNM#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="ADDR" prepend="AND" >
+			OFFADRS1||OFFADRS2 LIKE '%'||#ADDR#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="TEL1">
+			<isNotEmpty property="TEL2">
+				<isNotEmpty property="TEL3">
+					AND (OFFTEL1||OFFTEL2||OFFTEL3 = #TEL1#||#TEL2#||#TEL3#
+					        OR MOBILE1||MOBILE2||MOBILE3 = #TEL1#||#TEL2#||#TEL3#)
+				</isNotEmpty>
+			</isNotEmpty>
+		</isNotEmpty>
+		<isNotEmpty property="ORGAN" prepend="AND" >
+			ORGAN LIKE '%'||#ORGAN#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="OFFDEPT" prepend="AND" >
+			OFFDEPT LIKE '%'||#OFFDEPT#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="OFFDUTY" prepend="AND" >
+			OFFDUTY LIKE '%'||#OFFDUTY#||'%'
+		</isNotEmpty>
+    </select>	
+		
+<!-- 비독자 리스트 - 엑셀출력  -->
+	<select id="BIRDR_LIST_EXCEL" resultClass="java.util.HashMap">
+
+				SELECT /*+ index_desc(TM_BI_READER_APLC TM_BI_READER_APLC_PK) */ APLCDT, APLCNO, 
+						 BI_GROUP1, BI_GROUP2, BI_GROUP3, BI_GROUP4, 
+						 NVL2(BI_GROUP1,FUNC_COMMON_CDNM('600',BI_GROUP1),'') BI_GROUP_NM1,
+						 NVL2(BI_GROUP2,FUNC_COMMON_CDNM(BI_GROUP1,BI_GROUP2),'') BI_GROUP_NM2,
+						 NVL2(BI_GROUP3,FUNC_COMMON_CDNM(BI_GROUP2,BI_GROUP3),'') BI_GROUP_NM3,
+						 BI_READNM, SUBSTR(OFFZIP,0,3)||'-'||SUBSTR(OFFZIP,4,3) OFFZIP, OFFADRS1, OFFADRS2, OFFDEPT, OFFDUTY, OFFTEL1,
+					 	 OFFTEL2, OFFTEL3, OFFFAX1, OFFFAX2, OFFFAX3, MOBILE1, MOBILE2, MOBILE3, EMAIL, 
+					 	 SUBSTR(HOMEZIP,0,3)||'-'||SUBSTR(HOMEZIP,4,3) HOMEZIP, HOMEADRS1, HOMEADRS2, HOMETEL1, HOMETEL2, HOMETEL3,
+					 	 SMGUDOK, ORGAN, NVL2(GUBUN,FUNC_COMMON_CDNM('500', GUBUN),'') GUBUN, REMK
+				FROM TM_BI_READER_APLC
+				WHERE APLCNO != ' ' 
+				
+				<isNotEmpty property="GUBUN" prepend="AND" >
+					GUBUN = #GUBUN#
+				</isNotEmpty>
+				<isNotEmpty property="BI_GROUP1" prepend="AND" >
+					BI_GROUP1 = #BI_GROUP1#
+				</isNotEmpty>
+				<isNotEmpty property="BI_GROUP2" prepend="AND" >
+					BI_GROUP2 = #BI_GROUP2#
+				</isNotEmpty>
+				<isNotEmpty property="BI_GROUP3" prepend="AND" >
+					BI_GROUP3 = #BI_GROUP3#
+				</isNotEmpty>
+				<isNotEmpty property="BI_READNM" prepend="AND" >
+					BI_READNM LIKE '%'||#BI_READNM#||'%'
+				</isNotEmpty>
+				<isNotEmpty property="ADDR" prepend="AND" >
+					OFFADRS1||OFFADRS2 LIKE '%'||#ADDR#||'%'
+				</isNotEmpty>
+				<isNotEmpty property="TEL1">
+					<isNotEmpty property="TEL2">
+						<isNotEmpty property="TEL3">
+							AND (OFFTEL1||OFFTEL2||OFFTEL3 = #TEL1#||#TEL2#||#TEL3#
+							        OR MOBILE1||MOBILE2||MOBILE3 = #TEL1#||#TEL2#||#TEL3#)
+						</isNotEmpty>
+					</isNotEmpty>
+				</isNotEmpty>
+				<isNotEmpty property="ORGAN" prepend="AND" >
+					ORGAN LIKE '%'||#ORGAN#||'%'
+				</isNotEmpty>
+				<isNotEmpty property="OFFDEPT" prepend="AND" >
+					OFFDEPT LIKE '%'||#OFFDEPT#||'%'
+				</isNotEmpty>
+				<isNotEmpty property="OFFDUTY" prepend="AND" >
+					OFFDUTY LIKE '%'||#OFFDUTY#||'%'
+				</isNotEmpty>
+				ORDER BY APLCDT DESC, APLCNO DESC
+
+	</select>
+	
+			
+<!-- 비독자  삭제  -->
+	<delete id="DELETE_BIRDR_INFO" >
+		DELETE
+		FROM TM_BI_READER_APLC
+		WHERE APLCDT = #APLCDT#
+		AND APLCNO = #APLCNO#
+	</delete>	
+	
+<!-- 비독자 정보 저장--> 
+	<insert id="INSERT_BIRDR_INFO" > 
+	  INSERT INTO
+		TM_BI_READER_APLC (APLCDT, APLCNO, READNO, BI_GROUP1, BI_GROUP2, BI_GROUP3, BI_READNM, CRDDT, OFFZIP, OFFADRS1, OFFADRS2, OFFDUTY, OFFDEPT, OFFTEL1,
+		       OFFTEL2, OFFTEL3, OFFFAX1, OFFFAX2, OFFFAX3, MOBILE1, MOBILE2, MOBILE3, EMAIL, 
+		       HOMEZIP, HOMEADRS1, HOMEADRS2, HOMETEL1, HOMETEL2, HOMETEL3, REMK, INDT, INPS, 
+		       CHGDT, CHGPS, SMGUDOK, ORGAN, GUBUN) VALUES ( #APLCDT#, FUNC_BI_READER_APLCNO_SEQ(#APLCDT#), '', #BI_GROUP1#, #BI_GROUP2#, #BI_GROUP3#,  #BI_READNM#, #APLCDT#, 
+		       #OFFZIP#, #OFFADRS1#, #OFFADRS2#, #OFFDUTY#, #OFFDEPT#, #OFFTEL1#, #OFFTEL2#, #OFFTEL3#, #OFFFAX1#, #OFFFAX2#, #OFFFAX3#, 
+		       #MOBILE1#, #MOBILE2#, #MOBILE3#, #EMAIL#, #HOMEZIP#, #HOMEADRS1#, #HOMEADRS2#, #HOMETEL1#, #HOMETEL2#, #HOMETEL3#, #REMK#, 
+		       TO_CHAR(SYSDATE, 'YYYYMMDD'), #INPS#, TO_CHAR(SYSDATE, 'YYYYMMDD'), #CHGPS#, #SMGUDOK#, #ORGAN#, #GUBUN#)
+	</insert>
+
+<!-- 비독자 동명이인 확인 -->	
+	<select id="BIRDR_DUPCHK"  resultClass="int">
+		SELECT COUNT(1) CNT
+		FROM TM_BI_READER_APLC
+		WHERE BI_READNM = #BI_READNM# 
+		  AND BI_GROUP1 = #BI_GROUP1# 
+	      AND BI_GROUP2 = #BI_GROUP2# 
+		  AND BI_GROUP3 = #BI_GROUP3#
+	
+	</select>
+	
+	<!-- 비독자 상세조회 -->
+	<select id="selectBiReaderDataView" resultClass="java.util.HashMap">
+		 SELECT APLCDT, APLCNO 
+				 , BI_GROUP1, BI_GROUP2, BI_GROUP3, BI_GROUP4 
+			     , NVL2(BI_GROUP1,FUNC_COMMON_CDNM('600',BI_GROUP1),'') BI_GROUP_NM1
+			     , NVL2(BI_GROUP2,FUNC_COMMON_CDNM(BI_GROUP1,BI_GROUP2),'') BI_GROUP_NM2
+			     , NVL2(BI_GROUP3,FUNC_COMMON_CDNM(BI_GROUP2,BI_GROUP3),'') BI_GROUP_NM3
+			     , BI_READNM, OFFZIP, OFFADRS1, OFFADRS2, OFFDEPT, OFFDUTY
+			     , OFFTEL1, OFFTEL2, OFFTEL3, OFFFAX1, OFFFAX2, OFFFAX3
+			     , MOBILE1, MOBILE2, MOBILE3, EMAIL
+			     , HOMEZIP, HOMEADRS1, HOMEADRS2, HOMETEL1, HOMETEL2, HOMETEL3
+			     , SMGUDOK, ORGAN, GUBUN, REMK
+		  FROM TM_BI_READER_APLC
+		 WHERE APLCDT = #APLCDT#
+		    AND APLCNO = #APLCNO#
+	</select>
+
+<!-- 비독자  정보 수정-->
+	<update id="UPDATE_BIRDR_INFO" >
+		UPDATE TM_BI_READER_APLC
+		SET BI_GROUP1 = #BI_GROUP1#, BI_GROUP2 = #BI_GROUP2#, BI_GROUP3 = #BI_GROUP3#,
+				BI_READNM = #BI_READNM#, OFFZIP = #OFFZIP#, 
+		        OFFADRS1 = #OFFADRS1#, OFFADRS2 = #OFFADRS2#, OFFDUTY = #OFFDUTY#, OFFDEPT = #OFFDEPT#, 
+		        OFFTEL1 = #OFFTEL1#, OFFTEL2 = #OFFTEL2#, OFFTEL3 = #OFFTEL3#, OFFFAX1 = #OFFFAX1#, 
+		        OFFFAX2 = #OFFFAX2#, OFFFAX3 = #OFFFAX3#, MOBILE1 = #MOBILE1#, MOBILE2 = #MOBILE2#, 
+		        MOBILE3 = #MOBILE3#, EMAIL = #EMAIL#, HOMEZIP = #HOMEZIP#, HOMEADRS1 = #HOMEADRS1#, 
+		        HOMEADRS2 = #HOMEADRS2#, HOMETEL1 = #HOMETEL1#, HOMETEL2 = #HOMETEL2#, HOMETEL3 = #HOMETEL3#, 
+		        REMK = #REMK#, CHGDT = TO_CHAR(SYSDATE, 'YYYYMMDD'), CHGPS = #CHGPS#, SMGUDOK = #SMGUDOK#, ORGAN = #ORGAN#, GUBUN = #GUBUN#
+		WHERE APLCDT = #APLCDT#
+		AND APLCNO = #APLCNO#
+	</update>
+
+</sqlMap>

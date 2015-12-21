@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="reader.employee">
+	
+	<!-- 본사직원 리스트 -->
+	<select id="employeeList" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT 
+					READNO, <!-- 독자번호 -->	
+					NEWSCD, <!-- 신문코드 --> 
+					SEQ, <!-- 일련번호 --> 
+					BOSEQ, <!-- 지국일련번호 -->
+					FUNC_AGENT_NM(BOSEQ) JIKUKNM,  <!-- 지국명 -->
+					COMPANY, <!-- 회사코드 -->
+					(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9000' AND CODE = COMPANY) AS COMPANYNM, <!-- 회사명 -->
+					(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9001' AND CODE = OFFINM) AS OFFINM, <!-- 부서명 -->
+					SABUN, <!-- 사번 -->
+					READNM, <!-- 성명 -->
+					DLVADRS1||''||DLVADRS2 AS ADDR, <!-- 주소 -->
+					MOBILE1||'-'||MOBILE2||'-'||MOBILE3 AS MOBILE, <!-- 휴대폰 --> 
+					UPRICE, <!-- 가격 -->
+					INDT, <!-- 입력일자 -->
+					SUBSTR(STDT,1,4 )||'-'||SUBSTR(STDT,5,2 )||'-'||SUBSTR(STDT,7,2 ) AS STDT, <!-- 중지일자 -->
+					BNO
+		        FROM 
+		        	TM_READER_NEWS A, TM_AGENCY B
+		        WHERE 
+		        	A.BOSEQ = #boSeq#
+       				AND A.BOSEQ = B.SERIAL
+		        	AND READTYPECD = '016'
+		        	ORDER BY INDT DESC
+			)C
+		)D
+		where
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 본사 직원 리스트 카운트 -->
+	<select id="employeeListCount" resultClass="int">
+		SELECT COUNT(*) FROM TM_READER_NEWS A, TM_AGENCY B WHERE A.BOSEQ = #boSeq# AND A.BOSEQ = B.SERIAL AND READTYPECD = '016'
+	</select>
+	
+	<!-- 정상 구독 부수 카운트 -->
+	<select id="employeeCount" resultClass="int">
+		SELECT NVL(SUM(A.QTY),0) FROM TM_READER_NEWS A, TM_AGENCY B WHERE A.BOSEQ = #boSeq# AND A.BOSEQ = B.SERIAL AND READTYPECD = '016' AND BNO != '999'
+	</select>
+	
+	<!-- 본사직원 검색 리스트 -->
+	<select id="searchEmployeeList" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT 
+					READNO, <!-- 독자번호 -->	
+					NEWSCD, <!-- 신문코드 --> 
+					SEQ, <!-- 일련번호 --> 
+					BOSEQ, <!-- 지국일련번호 -->
+					FUNC_AGENT_NM(BOSEQ) JIKUKNM,  <!-- 지국명 -->
+					COMPANY, <!-- 회사코드 -->
+					(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9000' AND CODE = COMPANY) AS COMPANYNM, <!-- 회사명 -->
+					(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9001' AND CODE = OFFINM) AS OFFINM, <!-- 부서명 -->
+					SABUN, <!-- 사번 -->
+					READNM, <!-- 성명 -->
+					DLVADRS1||''||DLVADRS2 AS ADDR, <!-- 주소 -->
+					MOBILE1||'-'||MOBILE2||'-'||MOBILE3 AS MOBILE, <!-- 휴대폰 --> 
+					UPRICE, <!-- 가격 -->
+					A.INDT, <!-- 입력일자 -->
+					SUBSTR(STDT,1,4 )||'-'||SUBSTR(STDT,5,2 )||'-'||SUBSTR(STDT,7,2 ) AS STDT, <!-- 중지일자 -->
+					BNO
+		        FROM 
+		        	TM_READER_NEWS A , TC_COMMON B
+		        WHERE 
+		        	BOSEQ = #boSeq#
+		        	AND READTYPECD = '016'
+		        	<isNotEmpty property="searchKey">
+		        		<isNotEmpty property="searchText" prepend="AND">
+			        		<isEqual property="searchKey" compareValue="company">
+			        			B.CDCLSF = '9000' AND B.CODE = COMPANY AND B.CNAME like UPPER('%'||#searchText#||'%')
+			        		</isEqual>
+			        		<isEqual property="searchKey" compareValue="office">
+			        			B.CDCLSF = '9001' AND B.CODE = OFFINM AND B.CNAME like UPPER('%'||#searchText#||'%')
+			        		</isEqual>
+			        		<isEqual property="searchKey" compareValue="readnm">
+			        			READNM like UPPER('%'||#searchText#||'%') AND B.CDCLSF = '9000' AND B.CODE = COMPANY
+			        		</isEqual>
+		        		</isNotEmpty>
+		        		<isEmpty property="searchText" prepend="AND">
+		        			B.CDCLSF = '9000' AND B.CODE = COMPANY
+		        		</isEmpty>
+		        	</isNotEmpty>
+		        	<isNotEmpty property="status">
+		        		<isEqual property="status" compareValue="2" prepend="AND">
+		        			BNO != '999'
+		        		</isEqual>
+		        		<isEqual property="status" compareValue="3" prepend="AND">
+		        			BNO = '999'
+		        		</isEqual>
+		        	</isNotEmpty>
+		        	ORDER BY INDT DESC
+			)C
+		)D
+		where
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 본사직원 검색 리스트 카운트 -->
+	<select id="searchEmployeeListCount" resultClass="int">
+		SELECT 
+			COUNT(*)
+        FROM 
+        	TM_READER_NEWS A , TC_COMMON B
+        WHERE 
+        	BOSEQ = #boSeq#
+        	AND READTYPECD = '016'
+        	<isNotEmpty property="searchKey">
+        		<isNotEmpty property="searchText" prepend="AND">
+	        		<isEqual property="searchKey" compareValue="company">
+	        			B.CDCLSF = '9000' AND B.CODE = COMPANY AND B.CNAME like UPPER('%'||#searchText#||'%')
+	        		</isEqual>
+	        		<isEqual property="searchKey" compareValue="office">
+	        			B.CDCLSF = '9001' AND B.CODE = OFFINM AND B.CNAME like UPPER('%'||#searchText#||'%')
+	        		</isEqual>
+	        		<isEqual property="searchKey" compareValue="readnm">
+	        			UPPER(READNM) like UPPER('%'||#searchText#||'%') AND B.CDCLSF = '9000' AND B.CODE = COMPANY
+	        		</isEqual>
+        		</isNotEmpty>
+        		<isEmpty property="searchText" prepend="AND">
+        			B.CDCLSF = '9000' AND B.CODE = COMPANY
+        		</isEmpty>
+        	</isNotEmpty>
+        	<isNotEmpty property="status" prepend="AND">
+        		<isEqual property="status" compareValue="2" >
+        			BNO != '999'
+        		</isEqual>
+        		<isEqual property="status" compareValue="3">
+        			BNO = '999'
+        		</isEqual>
+        	</isNotEmpty>
+	</select>
+	
+	<!-- 본사직원 검색 리스트 카운트 -->
+	<select id="searchEmployeeCount" resultClass="int">
+		SELECT 
+			NVL(SUM(A.QTY),0)
+        FROM 
+        	TM_READER_NEWS A , TC_COMMON B
+        WHERE 
+        	BOSEQ = #boSeq#
+        	AND READTYPECD = '016'
+        	<isNotEmpty property="searchKey">
+        		<isNotEmpty property="searchText" prepend="AND">
+	        		<isEqual property="searchKey" compareValue="company">
+	        			B.CDCLSF = '9000' AND B.CODE = COMPANY AND B.CNAME like UPPER('%'||#searchText#||'%')
+	        		</isEqual>
+	        		<isEqual property="searchKey" compareValue="office">
+	        			B.CDCLSF = '9001' AND B.CODE = OFFINM AND B.CNAME like UPPER('%'||#searchText#||'%')
+	        		</isEqual>
+	        		<isEqual property="searchKey" compareValue="readnm">
+	        			UPPER(READNM) like UPPER('%'||#searchText#||'%') AND B.CDCLSF = '9000' AND B.CODE = COMPANY
+	        		</isEqual>
+        		</isNotEmpty>
+        		<isEmpty property="searchText" prepend="AND">
+        			B.CDCLSF = '9000' AND B.CODE = COMPANY
+        		</isEmpty>
+        	</isNotEmpty>
+        	AND BNO != '999'
+	</select>
+</sqlMap>

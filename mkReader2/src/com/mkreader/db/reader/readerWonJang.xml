@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="reader.readerWonJang">
+	<!-- 구역번호 조회 -->	
+	<select id="retrieveGnoList" resultClass="java.util.HashMap">
+	SELECT 
+		MIN(GNO) AS MINGNO, MAX(GNO) AS MAXGNO
+	FROM 
+		TM_READER_NEWS 
+	WHERE 
+		1 = 1
+	<isNotEmpty property="agency_serial" prepend="AND">
+		BOSEQ = #agency_serial#
+	</isNotEmpty>
+	</select>
+	
+	<!-- 독자 원장 조회 -->	
+	<select id="retrieveReaderList" resultClass="java.util.HashMap">
+	SELECT 
+		GNO, 
+		(SELECT GU_NM FROM TM_GUYUK WHERE BOSEQ=#agency_serial# AND GU_NO=GNO) GNONM,
+		MIN(BNO) AS MINBNO, 
+		MAX(BNO) AS MAXBNO
+	FROM 
+		TM_READER_NEWS 
+    WHERE
+    	1 = 1
+    	<isNotEmpty property="agency_serial" prepend="AND">
+			BOSEQ = #agency_serial#
+		</isNotEmpty>
+		<isNotEmpty property="newsCd">
+			<iterate property="newsCd" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+				#newsCd[]#
+			</iterate>
+		</isNotEmpty>
+		<isNotEmpty property="readTypeCd">
+			<iterate property="readTypeCd" open="(" close=")" conjunction="," prepend="AND READTYPECD IN">
+				#readTypeCd[]#
+			</iterate>
+		</isNotEmpty>
+		<isNotEmpty property="minGno">
+			<isNotEmpty property="maxGno" prepend="AND">
+				GNO BETWEEN #minGno# AND #maxGno#
+			</isNotEmpty>
+		</isNotEmpty>
+		GROUP BY GNO ORDER BY GNO ASC NULLS FIRST 
+	</select>
+	
+	<!--독자원장 엑셀출력 -->	
+	<select id="readerWonJangList" remapResults="true" resultClass="java.util.HashMap">
+	SELECT 
+		BOREADNO||'-'||BNO READERNO, <!-- 독자번호 -->
+		DLVADRS2, <!-- 독자 주소 --> 
+		<isNotEmpty property="terms2">
+			READNM, <!-- 독자 이름 -->
+		</isNotEmpty>
+		<isNotEmpty property="terms4">
+			MOBILE1||MOBILE2||MOBILE3 MOBILE, <!-- 전화번호2인쇄 -->
+		</isNotEmpty>
+		<isNotEmpty property="terms5">
+			REMK, <!-- 비고 -->
+		</isNotEmpty>
+		FUNC_GET_CLAMLIST(READNO, NEWSCD, SEQ, TO_CHAR(SYSDATE, 'YYYY')) CLAMLIST,
+		(SELECT YNAME FROM TC_COMMON WHERE CDCLSF = '100' AND CODE=NEWSCD)||SUBSTR(UPRICE,1,3) PRICE,
+		(SELECT CNAME FROM TC_COMMON WHERE CDCLSF='115'  AND CODE=READTYPECD)||'/'||(SELECT CNAME FROM TC_COMMON WHERE CDCLSF='119'  AND CODE=SGTYPE) SGTYPE,
+		SUBSTR(HJDT,3,7)||'/'||SUBSTR(SGBGMM,5,2)||'/'||QTY SGBGMM,
+		HJPSNM, 
+		HOMETEL1||HOMETEL2||HOMETEL3 HOMETEL,
+		STDT,
+		BNO
+	FROM 
+		TM_READER_NEWS
+	WHERE
+		1 = 1
+	<isNotEmpty property="agency_serial" prepend="AND">
+		BOSEQ = #agency_serial#
+	</isNotEmpty>
+	<isNotEmpty property="print" prepend="AND">
+		GNO = #print#
+	</isNotEmpty>
+	<isNotEmpty property="start">
+		<isNotEmpty property="end" prepend="AND">
+			BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0)
+		</isNotEmpty>
+	</isNotEmpty>
+	<iterate property="newsCd" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+		#newsCd[]#
+	</iterate>
+	<iterate property="readTypeCd" open="(" close=")" conjunction="," prepend="AND READTYPECD IN">
+		#readTypeCd[]#
+	</iterate>
+	<isEqual property="terms3" prepend="AND" compareValue="no">
+		BNO !='999' <!-- 중지독자 포함여부 -->
+	</isEqual>
+		ORDER BY GNO ASC NULLS FIRST , BNO ASC NULLS FIRST
+	</select>
+	 
+	<!--독자원장 통계 엑셀출력 -->	
+	<select id="retrieveStatistics" remapResults="true" resultClass="java.util.HashMap">
+	SELECT 
+		SUM(QTY) QTY, <!-- 유가부수 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND SGBGMM = TO_CHAR(ADD_MONTHS(TO_DATE(#nowYYMM#,'YYYYMM'), 1) ,'YYYYMM') AND BNO !='999' GROUP BY GNO) AS ONE, <!-- 현재월+1 준유가부수 -->  
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND SGBGMM = TO_CHAR(ADD_MONTHS(TO_DATE(#nowYYMM#,'YYYYMM'), 2) ,'YYYYMM') AND BNO !='999' GROUP BY GNO) AS TWO, <!-- 현재월+2 준유가부수 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND SGBGMM = TO_CHAR(ADD_MONTHS(TO_DATE(#nowYYMM#,'YYYYMM'), 3) ,'YYYYMM') AND BNO !='999' GROUP BY GNO) AS THREE, <!-- 현재월+3 준유가부수 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND SGBGMM = TO_CHAR(ADD_MONTHS(TO_DATE(#nowYYMM#,'YYYYMM'), 4) ,'YYYYMM') AND BNO !='999' GROUP BY GNO) AS FOUR, <!-- 현재월+4 준유가부수 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND SGBGMM = TO_CHAR(ADD_MONTHS(TO_DATE(#nowYYMM#,'YYYYMM'), 5) ,'YYYYMM') AND BNO !='999' GROUP BY GNO) AS FIVE, <!-- 현재월+5 준유가부수 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND SGBGMM = TO_CHAR(ADD_MONTHS(TO_DATE(#nowYYMM#,'YYYYMM'), 6) ,'YYYYMM') AND BNO !='999' GROUP BY GNO) AS SIX, <!-- 현재월+6 준유가부수 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND SGBGMM &gt; TO_CHAR(ADD_MONTHS(TO_DATE(#nowYYMM#,'YYYYMM'), 6) ,'YYYYMM') AND BNO !='999' GROUP BY GNO) AS ETC, <!-- 현재월+6 이후 준유가부수 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND SGBGMM = #nowYYMM# AND BNO !='999' GROUP BY GNO) AS FIRSTSGBBMM, <!-- 첫수 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD = '012' AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) STU1, <!-- 학생(지국) -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD = '013' AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) STU2, <!-- 학생(본사) -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD = '014' AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) DON, <!-- 기증 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD = '015' AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) PUB, <!-- 홍보 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD = '021' AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) EDU, <!-- 교육 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND  MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &lt;= 6 AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) AS HALFYY, <!-- 반년 합계 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND  MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &gt; 6 AND MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &lt;= 12 AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) AS ONEYY, <!-- 1년 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND  MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &gt; 12 AND MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &lt;= 24 AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) AS TWOYY, <!-- 2년 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND  MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &gt; 24 AND MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &lt;= 36 AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) AS THREEYY, <!-- 3년 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND  MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &gt; 36 AND MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &lt;= 48 AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) AS FOURYY, <!-- 4년 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND  MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &gt; 48 AND MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &lt;= 60 AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) AS FIVEYY, <!-- 5년 -->
+		(SELECT SUM(QTY) FROM TM_READER_NEWS WHERE BOSEQ = #agency_serial# AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0) AND NEWSCD = #tem_newsCd# AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' ) AND  MONTHS_BETWEEN(TO_DATE(#nowYYMM#,'YYMM') ,INDT) &gt; 60 AND SGBGMM &lt; #nowYYMM# AND BNO !='999' GROUP BY GNO) AS SIXYY <!-- 6년 -->
+	FROM  
+		TM_READER_NEWS 
+	WHERE  BOSEQ = #agency_serial#
+	AND NEWSCD = #tem_newsCd#
+	AND GNO = #print# AND BNO BETWEEN LPAD(#start# , 3, 0)  AND LPAD(#end#, 3, 0)
+	AND READTYPECD NOT IN ('012' , '013' , '015' , '021' , '022' )
+	AND SGBGMM &lt; #nowYYMM#
+	AND BNO !='999'
+ 	GROUP BY GNO ASC NULLS FIRST , BNO ASC NULLS FIRST ,SNO ASC NULLS FIRST
+	</select>
+</sqlMap>

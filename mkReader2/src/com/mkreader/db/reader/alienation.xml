@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="reader.alienation">
+	
+	<!-- 소외계층 리스트 -->
+	<select id="alienationList" resultClass="java.util.HashMap">
+	SELECT D.* FROM(
+		SELECT ROWNUM RNUM , C.* FROM(
+			SELECT 
+				READNO, <!-- 독자번호 -->	
+				NEWSCD, <!-- 신문코드 --> 
+				SEQ, <!-- 일련번호 --> 
+				BOSEQ, <!-- 지국일련번호 -->
+				FUNC_AGENT_NM(BOSEQ) JIKUKNM,  <!-- 지국명 -->
+				COMPANY, <!-- 회사코드 -->
+				(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9000' AND CODE = COMPANY) AS COMPANYNM, <!-- 회사명 -->
+				(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9001' AND CODE = OFFINM) AS OFFINM, <!-- 부서명 -->
+				SABUN, <!-- 사번 -->
+				READNM, <!-- 성명 -->
+				DLVADRS1,
+				DLVADRS2, <!-- 주소 -->
+				NEWADDR,
+				(CASE WHEN HOMETEL1 IS NULL AND HOMETEL2 IS NULL AND HOMETEL3 IS NULL THEN MOBILE1||'-'||MOBILE2||'-'||MOBILE3 ELSE HOMETEL1||'-'||HOMETEL2||'-'||HOMETEL3 END) AS TEL, 
+				QTY,
+				UPRICE, <!-- 가격 -->
+				INDT, <!-- 입력일자 -->
+				TO_DATE(HJDT,'YYYYMMDD') AS HJDT,
+				SUBSTR(STDT,1,4 )||'-'||SUBSTR(STDT,5,2 )||'-'||SUBSTR(STDT,7,2 ) AS STDT, <!-- 중지일자 -->
+				BNO
+	        FROM 
+	        	TM_READER_NEWS A, TM_AGENCY B
+	        WHERE 
+	        	A.BOSEQ = B.SERIAL
+	        	AND READTYPECD = #READTYPECD#
+	        	<isNotEmpty property="boSeq" prepend="AND">
+		       		BOSEQ = #boSeq#
+		       	</isNotEmpty>
+	        ORDER BY INDT DESC
+		)C
+	)D
+	where
+	RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+	AND
+	RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 소외계층 리스트 카운트 -->
+	<select id="alienationListCount" resultClass="int">
+	SELECT 
+		COUNT(*) 
+	FROM 
+		TM_READER_NEWS A, TM_AGENCY B 
+	WHERE 
+		A.BOSEQ = B.SERIAL 
+		AND READTYPECD = #READTYPECD#
+		<isNotEmpty property="boSeq" prepend="AND">
+       		BOSEQ = #boSeq#
+       	</isNotEmpty>
+	</select>
+	
+	<!-- 소외계층 리스트 카운트 -->
+	<select id="alienationCount" resultClass="int">
+	SELECT 
+		NVL(SUM(A.QTY),0) 
+	FROM 
+		TM_READER_NEWS A, TM_AGENCY B 
+	WHERE 
+		A.BOSEQ = B.SERIAL 
+		AND READTYPECD = #READTYPECD#
+		AND BNO != '999'
+		<isNotEmpty property="boSeq" prepend="AND">
+       		BOSEQ = #boSeq#
+       	</isNotEmpty>
+	</select>
+	
+	<!-- 소외계층 검색 리스트 -->
+	<select id="searchAlienationList" resultClass="java.util.HashMap">
+	SELECT D.* FROM(
+		SELECT ROWNUM RNUM , C.* FROM(
+			SELECT 
+				READNO, <!-- 독자번호 -->	
+				NEWSCD, <!-- 신문코드 --> 
+				SEQ, <!-- 일련번호 --> 
+				BOSEQ, <!-- 지국일련번호 -->
+				FUNC_AGENT_NM(BOSEQ) JIKUKNM,  <!-- 지국명 -->
+				COMPANY, <!-- 회사코드 -->
+				(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9000' AND CODE = COMPANY) AS COMPANYNM, <!-- 회사명 -->
+				(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9001' AND CODE = OFFINM) AS OFFINM, <!-- 부서명 -->
+				SABUN, <!-- 사번 -->
+				READNM, <!-- 성명 -->
+				DLVADRS1,
+				DLVADRS2, 
+				NEWADDR,<!-- 주소 -->
+				(CASE WHEN HOMETEL1 IS NULL AND HOMETEL2 IS NULL AND HOMETEL3 IS NULL THEN MOBILE1||'-'||MOBILE2||'-'||MOBILE3 ELSE HOMETEL1||'-'||HOMETEL2||'-'||HOMETEL3 END) AS TEL, 
+				QTY,
+				UPRICE, <!-- 가격 -->
+				INDT, <!-- 입력일자 -->
+				TO_DATE(HJDT,'YYYYMMDD') AS HJDT,
+				SUBSTR(STDT,1,4 )||'-'||SUBSTR(STDT,5,2 )||'-'||SUBSTR(STDT,7,2 ) AS STDT, <!-- 중지일자 -->
+				BNO
+	        FROM 
+	        	TM_READER_NEWS A, TM_AGENCY B
+	        WHERE 
+	        	A.BOSEQ = B.SERIAL
+	        	AND READTYPECD = #READTYPECD#
+	        	<isNotEmpty property="boSeq" prepend="AND">
+	        		BOSEQ = #boSeq#
+	        	</isNotEmpty>
+	        	<isNotEmpty property="searchKey">
+	        		<isNotEmpty property="searchText" prepend="AND">
+		        		UPPER(READNM) like UPPER('%'||#searchText#||'%')
+		        	</isNotEmpty>
+	        	</isNotEmpty>
+	        	<isNotEmpty property="status">
+	        		<isEqual property="status" compareValue="2" prepend="AND">
+	        			BNO != '999'
+	        		</isEqual>
+	        		<isEqual property="status" compareValue="3" prepend="AND">
+	        			BNO = '999'
+	        		</isEqual>
+	        	</isNotEmpty>
+	        ORDER BY INDT DESC
+		)C
+	)D
+	where
+	RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+	AND
+	RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 소외계층 검색 리스트 카운트 -->
+	<select id="searchAlienationListCount" resultClass="int">
+	SELECT 
+		COUNT(*) 
+	FROM 
+		TM_READER_NEWS A, TM_AGENCY B 
+	WHERE 
+		A.BOSEQ = B.SERIAL 
+		AND READTYPECD = #READTYPECD#
+		<isNotEmpty property="boSeq" prepend="AND">
+       		BOSEQ = #boSeq#
+       	</isNotEmpty>
+       	<isNotEmpty property="searchKey">
+       		<isNotEmpty property="searchText" prepend="AND">
+        		UPPER(READNM) like UPPER('%'||#searchText#||'%')
+        	</isNotEmpty>
+       	</isNotEmpty>
+       	<isNotEmpty property="status">
+       		<isEqual property="status" compareValue="2" prepend="AND">
+       			BNO != '999'
+       		</isEqual>
+       		<isEqual property="status" compareValue="3" prepend="AND">
+       			BNO = '999'
+       		</isEqual>
+       	</isNotEmpty>
+	</select>
+	
+	<!-- 소외계층 검색 리스트 카운트 -->
+	<select id="searchAlienationCount" resultClass="int">
+	SELECT 
+		NVL(SUM(A.QTY),0) 
+	FROM 
+		TM_READER_NEWS A, TM_AGENCY B 
+	WHERE 
+		A.BOSEQ = B.SERIAL 
+		AND READTYPECD = #READTYPECD#
+		<isNotEmpty property="boSeq" prepend="AND">
+       		BOSEQ = #boSeq#
+       	</isNotEmpty>
+       	<isNotEmpty property="searchKey">
+       		<isNotEmpty property="searchText" prepend="AND">
+        		UPPER(READNM) like UPPER('%'||#searchText#||'%')
+        	</isNotEmpty>
+       	</isNotEmpty>
+       	AND BNO != '999'
+	</select>
+	
+	<!-- 소외계층 엑셀 저장 -->
+	<select id="excelAlienationList" resultClass="java.util.HashMap">
+	SELECT 
+		READNO, <!-- 독자번호 -->	
+		NEWSCD, <!-- 신문코드 --> 
+		SEQ, <!-- 일련번호 --> 
+		BOSEQ, <!-- 지국일련번호 -->
+		FUNC_AGENT_NM(BOSEQ) JIKUKNM,  <!-- 지국명 -->
+		COMPANY, <!-- 회사코드 -->
+		(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9000' AND CODE = COMPANY) AS COMPANYNM, <!-- 회사명 -->
+		(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '9001' AND CODE = OFFINM) AS OFFINM, <!-- 부서명 -->
+		SABUN, <!-- 사번 -->
+		READNM, <!-- 성명 -->
+		DLVADRS1||''||DLVADRS2 AS ADDR, <!-- 주소 -->
+		NEWADDR,
+		(CASE WHEN HOMETEL1 IS NULL AND HOMETEL2 IS NULL AND HOMETEL3 IS NULL THEN MOBILE1||'-'||MOBILE2||'-'||MOBILE3 ELSE HOMETEL1||'-'||HOMETEL2||'-'||HOMETEL3 END) AS TEL, 
+		QTY,
+		UPRICE, <!-- 가격 -->
+		INDT, <!-- 입력일자 -->
+		SUBSTR(STDT,1,4 )||'-'||SUBSTR(STDT,5,2 )||'-'||SUBSTR(STDT,7,2 ) AS STDT, <!-- 중지일자 -->
+		BNO
+	FROM 
+       	TM_READER_NEWS A, TM_AGENCY B
+    WHERE 
+       	A.BOSEQ = B.SERIAL
+       	AND READTYPECD = #READTYPECD#
+       	<isNotEmpty property="boSeq" prepend="AND">
+       		BOSEQ = #boSeq#
+       	</isNotEmpty>
+       	<isNotEmpty property="searchKey">
+       		<isNotEmpty property="searchText" prepend="AND">
+        		UPPER(READNM) like UPPER('%'||#searchText#||'%')
+        	</isNotEmpty>
+       	</isNotEmpty>
+       	<isNotEmpty property="status">
+       		<isEqual property="status" compareValue="2" prepend="AND">
+       			BNO != '999'
+       		</isEqual>
+       		<isEqual property="status" compareValue="3" prepend="AND">
+       			BNO = '999'
+       		</isEqual>
+       	</isNotEmpty>
+    ORDER BY INDT DESC
+	</select>
+	
+	<!-- 소외계층 엑셀 저장 -->
+	<select id="alienationInfo" resultClass="java.util.HashMap">
+	SELECT
+		READNO, <!-- 독자번호 -->	
+		NEWSCD, <!-- 신문코드 --> 
+		SEQ, <!-- 일련번호 --> 
+		BOSEQ, <!-- 지국일련번호 -->
+		FUNC_AGENT_NM(BOSEQ) JIKUKNM,  <!-- 지국명 -->
+		READNM, <!-- 성명 -->
+		DLVADRS1,
+		DLVADRS2, <!-- 주소 -->
+		NEWADDR,
+		MOBILE1,
+		MOBILE2,
+		MOBILE3, <!-- 휴대폰 -->
+		HOMETEL1,
+		HOMETEL2,
+		HOMETEL3, <!-- 집전화 --> 
+		QTY, <!-- 부수 -->
+		UPRICE, <!-- 가격 -->
+		INDT, <!-- 입력일자 -->
+		HJDT,
+		SUBSTR(STDT,1,4 )||'-'||SUBSTR(STDT,5,2 )||'-'||SUBSTR(STDT,7,2 ) AS STDT, <!-- 중지일자 -->
+		BNO,
+		(SELECT EMAIL FROM TM_READER B WHERE A.READNO = B.READNO) EMAIL,
+		REMK,
+		DLVZIP
+	FROM 
+       	TM_READER_NEWS A
+    WHERE 
+       	A.READTYPECD = #READTYPECD#
+       	AND A.BOSEQ = #boSeq#
+       	AND A.READNO = #readNo#
+       	AND A.NEWSCD = #newsCd#
+       	AND A.SEQ = #seq#
+	</select>
+	
+	<!-- 통합 독자 수정 -->
+	<update id="updateTmreader">
+	UPDATE 
+ 		TM_READER 
+ 	SET
+		EMAIL = #eMail#,
+		BIDT = #bidt#,
+		TASKCD = #taskCd#,
+		INTFLDCD = #intFldCd#,
+		CHGDT = SYSDATE,
+		CHGPS = #chgps#
+ 	WHERE 
+ 		READNO = #readNo#
+	</update>
+	
+	<!-- 뉴스 수정 -->
+	<update id="updateNews">
+	UPDATE 
+ 		TM_READER_NEWS 
+ 	SET
+		 READNM = #readNm#,
+		 OFFINM = #offiNm#,
+		 COMPANY = #company#,
+		 SABUN = #sabun#,
+		 HOMETEL1 = #homeTel1#,
+		 HOMETEL2 = #homeTel2#,
+		 HOMETEL3 = #homeTel3#,
+		 MOBILE1 = #mobile1#,
+		 MOBILE2 = #mobile2#,
+		 MOBILE3 = #mobile3#,
+		 DLVZIP = #dlvZip#,
+		 DLVADRS1 = #dlvAdrs1#,
+		 DLVADRS2 = #dlvAdrs2#,
+		 NEWADDR = #newaddr# ,
+		 BDMNGNO = #bdMngNo# ,
+		 CHGDT = SYSDATE,
+		 CHGPS = #chgps#,
+		 REMK = #remk#
+ 	WHERE 
+ 		READNO = #readNo#
+ 		AND BOSEQ = #boSeq#
+ 		AND NEWSCD = #newsCd#
+ 		AND SEQ = #seq#
+	</update>
+	
+	<!-- readno 조회 -->
+	<select id="getReadNo" resultClass="int">
+		SELECT nvl(max(readno), 0)+1 FROM TM_READER 
+	</select>
+	
+	<!-- 통합 독자 생성 -->
+	<insert id="insertTmreader">
+		INSERT INTO TM_READER
+			(READNO, EMAIL, BIDT, TASKCD, INTFLDCD, INDT, INPS, CHGDT, CHGPS) 
+		values
+			(#readNo#, #eMail#, #bidt#, #taskCd#, #intFldCd#, SYSDATE, #agency_serial#, SYSDATE, #agency_serial# )
+	</insert>
+	
+	<!-- 구독정보  생성 -->
+	<insert id="inserTmreaderNews">
+		INSERT INTO TM_READER_NEWS
+			(readNo, newsCd, seq, boSeq, boReadNo, gno, bno, sno, readTypeCd, readNm, offiNm, homeTel1, homeTel2, homeTel3, mobile1, mobile2, mobile3,
+			dlvZip, dlvAdrs1, dlvAdrs2, dlvStrNm, dlvStrNo, aptCd, aptDong, aptHo, sgType, sgInfo, sgTel1, sgTel2, sgTel3, uPrice, qty, rsdTypeCd, dlvTypeCd,
+			dlvPosiCd, hjPathCd, hjTypeCd, hjPsregCd, hjPsnm, hjDt, sgBgmm, sgEdmm, sgCycle, aplcDt, aplcNo, remk, indt, inps, chgDt, chgPs,
+			spgCd, bnsBookCd, company ,sabun, NEWADDR, BDMNGNO)
+		values
+			(#readNo#, #newsCd#, (SELECT lpad(NVL(MAX(SEQ),0)+1, 4, 0) FROM TM_READER_NEWS WHERE READNO = #readNo# AND NEWSCD = #newsCd#), #agency_serial#, '', LPAD(#gno#,3,0), LPAD(#bno#,3,0), LPAD(#sno#,2,0), #readTypeCd#, #readNm#, #offiNm#, #homeTel1#, #homeTel2#, #homeTel3#,
+			#mobile1#, #mobile2#, #mobile3#, #dlvZip#, #dlvAdrs1#, #dlvAdrs2#, #dlvStrNm#, #dlvStrNo#, #aptCd#, #aptDong#, #aptHo#, #sgType#, #sgInfo#, 
+			#sgTel1#, #sgTel2#, #sgTel3#, #uPrice#, #qty#, #rsdTypeCd#, #dlvTypeCd#, #dlvPosiCd#, #hjPathCd#, #hjTypeCd#, #hjPsregCd#, #hjPsnm#, #hjDt#,
+			#sgBgmm#, #sgEdmm#, '1', #aplcDt#, #aplcNo#, #remk#, SYSDATE, #inps#, to_date(#indt# , 'YYYYMMDD'), #chgPs#, #spgCd#, #bnsBookCd# , #company# , #sabun#, #newaddr#, #dbMngNo#)
+	</insert>
+	
+	<!-- 수금 내역 -->
+	<select id="collectionList" resultClass="java.util.HashMap">
+	SELECT 
+		READNO,<!-- 독자번호 -->
+		NEWSCD,<!-- 신문코드 -->
+		YYMM,<!-- 구독년월 -->
+		SEQ,<!-- 일련번호 -->
+		BOSEQ,<!-- 지국일련번호 -->
+		SGBBCD,<!-- 수금방법 -->
+		(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = SGBBCD) SGBBNM,<!-- 수금방법명 -->
+		SGGBCD,<!-- 수금구분 -->
+		DECODE(BILLAMT , '' , 0 , BILLAMT ) BILLAMT,<!-- 청구금액 -->
+		BILLQTY,<!-- 청구부수 -->
+		SGYYMM,<!-- 수금년월 -->
+		DECODE(AMT , '' , 0 , AMT ) AMT,<!-- 수금금액 -->
+		LOSSAMT,<!-- 결손금액 -->
+		FEE1,<!-- 수수료1 -->
+		FEE2,<!-- 수수료2 -->
+		FEE3,<!-- 수수료3 -->
+		SNDT,<!-- 수납일자 -->
+		ICDT,<!-- 이체일자 -->
+		CLDT,<!-- 처리일자 -->
+		WRKNO,<!-- 작업번호 -->
+		EDIPROCNO,<!-- EDI처리번호 -->
+		AUTOPROCNO,<!-- 자동이체처리번호 -->
+		BILLTYPECD,<!-- 수납구분 -->
+		REMK,<!-- 비고 -->
+		INDT,<!-- 입력일자 -->
+		INPS,<!-- 입력자 -->
+		CHGDT,<!-- 변경일자 -->
+		CHGPS<!-- 변경자 --> 
+	FROM 
+		TM_READER_SUGM
+	WHERE 
+		BOSEQ = #boSeq#
+		AND READNO = #readNo#
+		AND NEWSCD = #newsCd#
+		AND SEQ = #seq#
+		<isNotEmpty property="yymm" prepend="AND">
+			YYMM = #yymm#
+		</isNotEmpty>
+	ORDER BY YYMM ASC
+	</select>
+	
+	<!-- 독자 번호 조회 -->
+	<select id="getReaderSeq" resultClass="java.util.HashMap">
+	SELECT SEQ FROM TM_READER_NEWS WHERE READNO = #readNo# AND BOSEQ = #boSeq# AND ROWNUM = 1
+	</select>
+	
+	<!-- 교육용 독자 수금 등록 -->
+	<insert id="saveSugm">
+	INSERT INTO TM_READER_SUGM
+		(READNO, NEWSCD, YYMM, SEQ, BOSEQ, SGBBCD, SGGBCD, BILLAMT, BILLQTY, SGYYMM, AMT, LOSSAMT, FEE1, FEE2, FEE3, SNDT, ICDT, CLDT, INDT, INPS, CHGDT, CHGPS )
+	VALUES
+		( #readNo#, '100', #yymm#, #seq#, #boSeq#, '023', '023', (CASE WHEN #uPrice# IS NOT NULL THEN #uPrice# ELSE '0' END), #qty#, 
+		(SELECT SGYYMM
+		   FROM (SELECT SGYYMM
+		   		   FROM TM_MONTHCLOSE_HIST
+		  	      ORDER BY SGYYMM DESC)
+	      WHERE ROWNUM = 1),	
+		#uPrice#, '' , 0, 0, 0, #snDt#, #snDt#, to_char(sysdate,'yyyymmdd'), sysdate, 'SYSTEM', '', '')
+	</insert>
+	
+	<!-- 교육용 독자 수금정보 수정 -->
+	<update id="updateReaderSugm">
+    UPDATE 
+ 		TM_READER_SUGM 
+ 	SET
+		SGBBCD = '023' ,
+		BILLQTY = #qty# ,
+		SGYYMM = (SELECT SGYYMM
+					FROM (SELECT SGYYMM
+					  		FROM TM_MONTHCLOSE_HIST
+						   ORDER BY SGYYMM DESC)
+				   WHERE ROWNUM = 1),	
+		AMT = #uPrice# ,
+		LOSSAMT = TO_NUMBER(BILLAMT) - TO_NUMBER(#uPrice#),
+		SNDT = #snDt# ,
+		ICDT = #snDt# ,
+		CLDT = to_char(sysdate,'yyyymmdd') ,
+		CHGDT = sysdate ,
+		CHGPS = 'SYSTEM'
+	where
+		READNO = #readNo# AND NEWSCD = '100' AND YYMM = #yymm# AND SEQ = #seq# AND BOSEQ = #boSeq#
+	</update>
+	
+</sqlMap>

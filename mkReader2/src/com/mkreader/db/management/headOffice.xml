@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="management.headOffice">
+	<!-- 이번달 임시수금처리여부 확인 -->
+	<select id="selectCurrentSugmYn" resultClass="int">
+		 SELECT COUNT(*) AS rowCnt
+		  FROM TM_EMP_SUGM 
+		 WHERE YYMM = #sugmYYMM#
+	</select>
+	
+	<!-- 당월임시수금리스트 -->
+	<select id="selectTmpSugmList" resultClass="java.util.HashMap">
+		  SELECT READNO
+		  		  , (SELECT readnm FROM TM_READER_NEWS WHERE NEWSCD=A.NEWSCD AND READNO = A.READNO AND BNO !='999') AS READNM
+			      , NEWSCD
+			      , (SELECT cname FROM TC_COMMON WHERE CDCLSF='100' AND CODE = A.NEWSCD AND USEYN='Y') AS NEWSCDNM
+			      , YYMM
+			      , FUNC_AGENT_NM(BOSEQ) AS JIKUKNM
+			      , SGYYMM
+			      , BILLAMT
+			      , AMT
+			      , BILLQTY
+		   FROM TM_EMP_SUGM A
+		  WHERE YYMM= #sugmYYMM#
+		  ORDER BY BOSEQ, READNM
+	</select>
+	
+	<!-- 임시테이블 입력 -->
+	<insert id="insertTmEmpSugmTable">
+		INSERT INTO TM_EMP_SUGM 
+				 (READNO, NEWSCD, YYMM, SEQ, BOSEQ, SGYYMM , SGBBCD, SGGBCD, BILLAMT, AMT, SNDT , ICDT , CLDT , BILLQTY)
+		SELECT READNO, NEWSCD
+		       , #sugmYYMM#
+		       , SEQ, BOSEQ
+		       , #sugmYYMM#
+		       , '023', '023', UPRICE, UPRICE 
+		       , #sugmYYMMDD#, #sugmYYMMDD#, #sugmYYMMDD#
+		       , QTY
+		FROM TM_READER_NEWS A
+	   WHERE 1=1 
+		  AND BNO != '999'
+		  AND SGBGMM &lt;= #sugmYYMM#
+		  AND READTYPECD IS NOT NULL
+		  AND READTYPECD = '016'
+		  AND SGTYPE IS NOT NULL
+		  AND SGTYPE = '023'
+		  AND UPRICE &lt;&gt; 0
+		  AND
+				( SELECT YYMM FROM TM_READER_SUGM B
+		          WHERE A.READNO = B.READNO
+		             AND A.NEWSCD = B.NEWSCD
+		             AND A.SEQ = B.SEQ
+		             AND A.BOSEQ = B.BOSEQ
+		             AND B.YYMM = #sugmYYMM#)  IS NULL
+	</insert>
+	
+	<!-- 본사 입금현황(지국별) -->
+	<select id="selectJikukTmpSugmList" resultClass="java.util.HashMap">
+			SELECT B.BOSEQ AS BOSEQ
+			        , FUNC_AGENT_NM(B.BOSEQ) AS BOSEQ_NM 
+			        , SUM(AMT)  AS AMT
+			        , SUM(BILLQTY) AS BILLQTY
+			        , NVL2(MIN(C.ZONE), FUNC_COMMON_CDNM('019',MIN(C.ZONE)),'') AS ZONE
+			        , NVL2(MIN(C.AREA1), FUNC_COMMON_CDNM('002',MIN(C.AREA1)),'')  AS AREA1
+			        , NVL2(MIN(C.PART), FUNC_COMMON_CDNM('018',MIN(C.PART)),NVL2(MIN(C.AREA), FUNC_COMMON_CDNM('003',MIN(C.AREA)),'')) AS PART
+			 FROM TM_READER_NEWS A, TM_EMP_SUGM B, TM_AGENCY C
+			WHERE A.READNO = B.READNO AND A.SEQ = B.SEQ AND A.NEWSCD = B.NEWSCD
+			   AND B.BOSEQ = C.SERIAL
+			   AND B.YYMM = #sugmYYMM#
+			   AND A.READTYPECD = '016'
+			   AND A.SGTYPE = '023'
+			GROUP BY B.BOSEQ
+			ORDER BY B.BOSEQ
+	</select>
+	
+	<!-- 본사 입금현황(전체지국) -->
+	<select id="selectAllJikukTmpSugmList" resultClass="java.util.HashMap">
+			SELECT X.SERIAL AS BOSEQ
+			       , FUNC_AGENT_NM(X.SERIAL) AS BOSEQ_NM
+		           , NVL(Y.AMT,0) AS AMT
+		           , NVL(Y.BILLQTY,0) AS BILLQTY
+		           , Y.ZONE AS ZONE
+		           , Y.AREA1 AS AREA1
+		           , Y.PART AS PART
+			FROM (SELECT B.BOSEQ
+			                 , SUM(AMT) AS AMT
+			                 , SUM(BILLQTY) AS BILLQTY
+			                 , NVL2(MIN(C.ZONE), FUNC_COMMON_CDNM('019',MIN(C.ZONE)),'')  AS ZONE
+			                 , NVL2(MIN(C.AREA1), FUNC_COMMON_CDNM('002',MIN(C.AREA1)),'')  AS AREA1
+			                 , NVL2(MIN(C.PART), FUNC_COMMON_CDNM('018',MIN(C.PART)),NVL2(MIN(C.AREA), FUNC_COMMON_CDNM('003',MIN(C.AREA)),'')) AS PART
+			           FROM TM_READER_NEWS A
+			                 , TM_EMP_SUGM B
+			                 , TM_AGENCY C
+			          WHERE A.READNO = B.READNO AND A.SEQ = B.SEQ AND A.NEWSCD = B.NEWSCD
+			         	 AND B.BOSEQ = C.SERIAL
+			        	 AND B.YYMM = #sugmYYMM#
+			        	 AND A.READTYPECD = '016'
+			        	 AND A.SGTYPE = '023'
+			          GROUP BY B.BOSEQ
+			          ) Y, TM_AGENCY X
+			WHERE X.SERIAL = Y.BOSEQ(+)
+			ORDER BY X.SERIAL
+	</select>
+	
+	<!-- 부서조회 -->
+	<select id="selectPartList" resultClass="java.util.HashMap">
+		   SELECT CODE
+			       , CNAME  
+			       , CDCLSF 
+			    FROM tc_common 
+			   WHERE CDCLSF='90002' 
+			    AND resv1='82100'
+			    AND USEYN='Y'
+	</select>
+	
+	<!-- 본사사원 리스트 조회 -->
+	<select id="selectTmpUserList" resultClass="java.util.HashMap">
+		 SELECT ID
+			     , COMPCD
+			     , NAME
+			     , PWD
+			     , USEYN
+			     , USERGB
+			     , LOCALCODE
+		  FROM tmp_user
+		 WHERE COMPCD = #COMPCD#
+		 ORDER BY NAME
+	</select>
+</sqlMap>

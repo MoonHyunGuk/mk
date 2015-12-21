@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="admin">
+	
+	<!-- 로그인 체크 - 관리자 -->
+	<select id="getAdminLogin" resultClass="java.util.HashMap">
+		SELECT 
+			ID
+			,USERGB
+			,COMPCD
+			,NAME
+		FROM 
+			TMP_USER
+		WHERE 
+			ID = #USERID#
+			AND
+			PWD = #PASSWD#
+			AND
+			USEYN = 'Y'
+	</select>
+	
+	<!-- 로그인 체크 - 지국 -->
+	<select id="getAgencyLogin" resultClass="java.util.HashMap">
+		SELECT 
+			NUMID
+			,SERIAL
+			,NAME
+		FROM 
+		<isEmpty property="NameYn">
+			TM_AGENCY
+		</isEmpty> 
+		<isEqual property="NameYn" compareValue="Y">
+			TM_AGENCY@MKCRM_TO_MKDEV3
+		</isEqual>	
+		WHERE 
+		    1=1
+		<isEmpty property="NameYn" prepend=" AND">
+			USERID = TRIM(#USERID#)
+		</isEmpty> 
+		<isEqual property="NameYn" prepend=" AND" compareValue="Y">
+			TRIM(NAME) = TRIM(#USERID#)
+		</isEqual>		
+		<isNotEqual property="PASSWD" prepend=" AND" compareValue="aorudmanage">
+			PASSWD = #PASSWD#
+		</isNotEqual>			
+	</select>
+	
+	<!-- 지국 아이디가져오기 -->
+	<select id="getAgencyUserId" resultClass="String">
+		SELECT 
+			USERID
+		FROM 
+			TM_AGENCY
+		WHERE 
+			TRIM(NAME) = TRIM(#USERID#)
+	</select>
+	
+	<!-- 지국 아이디 여부 확인 -->
+	<select id="getAgency" resultClass="int" >
+		SELECT count(*)
+		FROM 
+			TM_AGENCY
+		WHERE
+		    1=1
+		<isEmpty property="NameYn" prepend=" AND">
+			USERID = #USERID#
+		</isEmpty> 
+		<isEqual property="NameYn" prepend=" AND" compareValue="Y">
+			TRIM(NAME) = TRIM(#USERID#)
+		</isEqual>		
+			AND
+			ROWNUM = 1
+	</select>
+	
+	<!-- 사원 아이디 여부 확인 -->
+	<select id="chkMemberYn" resultClass="int" >
+		SELECT count(*)
+		 FROM TMP_USER
+	    WHERE ID = #USERID#
+	   	   AND USEYN = 'Y'
+	</select>
+	
+	<!-- 지대통보서 로그인 -->
+	<select id="chkJiaeLogin" resultClass="String">
+		SELECT CASE WHEN chkCnt > 0 THEN 'Y'
+		          ELSE 'N'
+		          END AS CHKYN
+		 FROM (
+				SELECT COUNT(*) AS chkCnt 
+				 FROM TM_AGENCY
+				WHERE USERID = #BOSEQ#
+				  AND PASSWD = #PASSWD# 
+		)A
+	</select>
+	
+	
+	<!-- 메인 신규독자리스트 -->
+	<select id="applyReaderList" resultClass="java.util.HashMap">
+		SELECT 
+			APLCDT, <!-- 신청일자 --> 
+			READNM, <!-- 독자명 --> 
+			(SELECT CNAME FROM TC_COMMON WHERE CDCLSF = '013' AND USEYN = 'Y' AND CODE=HJPATHCD AND ROWNUM=1) AS PATHNAME,
+			(SELECT CNAME FROM TC_COMMON WHERE CDCLSF = '119' AND USEYN = 'Y' AND CODE=SGTYPECD AND ROWNUM=1) AS SGTYPENAME
+        FROM 
+        	TM_READER_APLC
+        WHERE 
+        	INPS != 'MKWEB'
+        	AND 
+        	INPS IS NOT NULL
+        	AND
+        	( SGTYPECD != '021' OR SGTYPECD IS NULL )
+        	AND
+        	( BOACPTSTAT = '02' OR BOACPTSTAT IS NULL )
+        	AND
+        	APLCDT BETWEEN TO_CHAR((SYSDATE-30),'YYYYMMDD') AND TO_CHAR((SYSDATE),'YYYYMMDD')
+        <isNotEmpty property="BOSEQ" prepend=" AND">
+			BOSEQ = #BOSEQ# 
+		</isNotEmpty>
+		ORDER BY 
+			APLCDT DESC
+	</select>
+	
+	<!-- 메인 자동이체 리스트 -->
+	<select id="resultBillList" resultClass="java.util.HashMap">
+		SELECT 
+			TO_CHAR(INDATE,'YYYY-MM-DD') AS INDATE
+			, USERNAME
+			, BANK_NAME
+			, BANK_NUM
+			, (SELECT BANKNAME FROM TBL_BANK WHERE BANKNUM = SUBSTR(BANK,1,3)) AS BANK
+			, STATUS
+		FROM 
+			(
+				SELECT
+					INDATE
+					, USERNAME
+					, BANK_NAME
+					, BANK_NUM
+					, BANK
+					, STATUS
+				FROM
+					TBL_USERS
+					<isNotEmpty property="BOSEQ">
+						WHERE REALJIKUK = #BOSEQ# AND RDATE IS NOT NULL 
+					</isNotEmpty>
+				UNION ALL
+				SELECT 
+					INDATE
+					, USERNAME
+					, BANK_NAME
+					, BANK_NUM
+					, BANK	
+					, STATUS
+				FROM 
+					TBL_USERS_STU
+					<isNotEmpty property="BOSEQ">
+						WHERE REALJIKUK = #BOSEQ# AND RDATE IS NOT NULL 
+					</isNotEmpty>
+			)
+		WHERE 
+			STATUS = #STATUS#
+			AND
+			TO_CHAR(INDATE,'YYYYMMDD') = TO_CHAR((SYSDATE-1),'YYYYMMDD')
+		ORDER BY 
+			INDATE DESC
+	</select>
+	
+	<!-- 메인 자동이체일반-->
+	<select id="getResultBill" resultClass="java.util.HashMap">
+		SELECT 
+			COUNT(1) AS CNT
+			,SUM(CAST(( CASE WHEN CMSRESULT = '00000' THEN CMSMONEY ELSE '0' END) AS INT)) AS CMSMONEY
+		FROM 
+			TBL_EA_LOG
+		WHERE 
+			CMSTYPE='EA21' 
+			AND 
+			SUBSTR(CMSDATE,1,4) = TO_CHAR(SYSDATE,'YYMM')
+			AND
+			CMSRESULT = '00000'
+			<isNotEmpty property="JIKUK" prepend=" AND">
+				usernumid in (
+					select numid from tbl_users where realjikuk = #JIKUK#
+				)
+			</isNotEmpty>
+	</select>
+	
+	<!-- 메인 자동이체학생-->
+	<select id="getResultBillStu" resultClass="java.util.HashMap">
+		SELECT 
+			COUNT(1) AS CNT
+			,SUM(CAST(( CASE WHEN CMSRESULT = '00000' THEN CMSMONEY ELSE '0' END) AS INT)) AS CMSMONEY
+		FROM 
+			TBL_EA_LOG_STU
+		WHERE 
+			CMSTYPE='EA21' 
+			AND 
+			SUBSTR(CMSDATE,1,4) = TO_CHAR(SYSDATE,'YYMM')
+			AND
+			CMSRESULT = '00000'
+			<isNotEmpty property="JIKUK" prepend=" AND">
+				usernumid in (
+					select numid from tbl_users_stu where realjikuk = #JIKUK#
+				)
+			</isNotEmpty>
+	</select>
+	
+	<!-- 메인 지로입금 -->
+	<select id="getGiroEdi" resultClass="java.util.HashMap">
+		SELECT 
+			COUNT(*) AS CNT,
+			NVL(SUM(E_MONEY),0) AS E_MONEY
+		FROM
+			EDI
+		WHERE
+			E_WDATE = TO_CHAR(SYSDATE,'YYYYMMDD')
+			AND
+			E_ERROR = '0'
+			<isNotEmpty property="JIKUK" prepend=" AND">
+				E_JCODE = #JIKUK#
+			</isNotEmpty>
+	</select>
+	
+	<!-- 메인알림 -->
+	<select id="getMainInfo" resultClass="java.util.HashMap">
+		SELECT 
+			B.* 
+		FROM
+			(
+			SELECT 
+				A.*
+				, ROWNUM AS RNUM
+			FROM
+				(
+					SELECT 
+							SEQ
+							,TITL
+							,POS_MANAGE
+							,MAIN_RELATE
+							,WRT_DEPTH
+							,CNT
+							,SAVE_FNM
+							,REAL_FNM
+							,FILE_PATH
+							,INDT
+							,INPS
+							,CHGDT
+							,CHGPS
+							,TYPECD
+							,EMAIL
+					FROM
+						TM_BBS
+					WHERE
+						1=1
+						<isNotEmpty property="TYPECD">
+							<iterate property="TYPECD" open="(" close=")" conjunction="," prepend="AND TYPECD IN">
+								#TYPECD[]#
+							</iterate>
+						</isNotEmpty>
+					ORDER BY 
+						LENGTH(SEQ) DESC,
+            			SEQ DESC
+				) A
+			) B
+		WHERE 
+			ROWNUM = 1
+	</select>
+	
+	<!-- 부서코드 조회 -->
+	<select id="getUserCompCd" resultClass="String">
+		 SELECT COMPCD
+		  FROM TMP_USER
+		 WHERE ID = #userId#
+		    AND USEYN = 'Y' 
+	</select>
+	
+	<select id="getJikukList" resultClass="java.util.HashMap">
+		SELECT B.NAME,
+		       B.SERIAL,
+		       C.SUBSEQ,
+		       C.SUBNAME,
+		       NVL2(A.BUNKUKCD, C.JIKUK_TEL, B.JIKUK_TEL) JIKUK_TEL, 
+		       NVL2(A.BUNKUKCD, C.JIKUK_HANDY, B.JIKUK_HANDY) JIKUK_HANDY,
+		       SUBSTR(A.ZIP,0,3) || '-' || SUBSTR(A.ZIP,4,6) AS ZIP,
+		       A.TXT,
+          	   COUNT(*)OVER(PARTITION BY B.SERIAL) AS PARTCNT,
+       		   COUNT(*)OVER(PARTITION BY B.SERIAL, C.SUBSEQ) AS PARTCNT2
+		  FROM TM_ZIPCODE A,
+		  	   TM_AGENCY B,
+		       TM_AGENCY_SUB C
+		 WHERE A.JISERIAL = B.SERIAL
+		   AND A.JISERIAL = C.BOSEQ(+)
+		   AND A.BUNKUKCD = C.SUBSEQ(+)
+				<isNotEmpty property="SEARCHKEY1" prepend=" AND">
+					(B.NAME LIKE #SEARCHKEY1#||'%' OR C.SUBNAME LIKE #SEARCHKEY1#||'%')
+				</isNotEmpty>
+				<isNotEmpty property="SEARCHKEY2" prepend=" AND" >
+					A.TXT LIKE '%'||#SEARCHKEY2#||'%'
+				</isNotEmpty>
+	     ORDER BY B.NAME, A.BUNKUKCD DESC, A.ZIP, A.TXT
+	</select>
+	
+	<select id="getNewAddrWithoutBoseq"  resultClass="java.util.HashMap">
+		 SELECT FUNC_AGENT_NM(C.BOSEQ) BOSEQNM
+	             , BOSEQ
+	             , ZIP_CD
+	             , GUADDR
+	             , ROADADDR
+	             , LW_DNG_CD
+				 , BD_MNG_NO
+                 , COUNT(*)OVER(PARTITION BY BOSEQ) AS PARTCNT
+	      FROM (
+			         SELECT A.BOSEQ
+				             , A.ZIP_CD
+				             , A.SD_NM || ' ' || A.SGG_NM || ' ' || A.LW_EPMNDNG_NM|| ' ' || NVL(A.LW_RI_NM,'') || A.LOT_NO1||CASE WHEN A.LOT_NO2 = 0 THEN '' ELSE '-'||A.LOT_NO2 END AS guAddr
+				             , A.ROAD_NM|| ' ' || NVL(A.BD_NO1,'') || CASE WHEN A.BD_NO2 = 0 THEN '' ELSE '-'||A.BD_NO2 END AS roadAddr
+				             , A.LW_DNG_CD
+				             , A.BD_MNG_NO
+				      FROM TBL_ROAD_CD A
+				       WHERE 1=1
+			               <isNotEmpty property="opText">
+								<isEqual property="opType" compareValue="jibun" prepend="AND">
+									(LW_EPMNDNG_NM || ' ' || LOT_NO1 || '-' || LOT_NO2) like '%'||#opText#||'%'
+								</isEqual>
+								<isEqual property="opType" compareValue="doro" prepend="AND">
+									(ROAD_NM || ' ' || BD_NO1 || '-' || BD_NO2) like #opText#||'%'
+								</isEqual>
+						</isNotEmpty>
+				          AND A.BOSEQ IS NULL
+	        )C
+	        ORDER BY GUADDR,ROADADDR
+	</select>
+	
+	<!-- 로그인 체크 - 관리자 -->
+	<select id="getUserName" resultClass="String">
+		SELECT 
+			NAME
+		FROM 
+			TMP_USER
+		WHERE 
+			ID = #userId#
+			AND
+			USEYN = 'Y'
+	</select>
+	
+	<select id="getNewAddrById" resultClass="java.util.HashMap">
+		SELECT 
+							   A.LW_DNG_CD || A.BD_MNG_NO AS ID
+							 , FUNC_AGENT_NM(A.boseq) boseqnm
+							 , A.BOSEQ
+				             , A.ZIP_CD
+                             , A.SD_NM || ' ' || A.SGG_NM || ' ' || NVL2(A.LW_EPMNDNG_NM, A.LW_EPMNDNG_NM || ' ', '') || A.ROAD_NM || ' ' || A.BD_NO1 || DECODE(A.BD_NO2, 0, '', '-' || A.BD_NO2) || NVL2(A.SGG_BD_NM, ' ' || A.SGG_BD_NM, '') AS road_text
+							 , A.SD_NM || ' ' || A.SGG_NM || ' ' || NVL2(A.LW_EPMNDNG_NM, A.LW_EPMNDNG_NM || ' ', '') || NVL2(A.LW_EPMNDNG_NM, A.LW_RI_NM, A.LW_EPMNDNG_NM) || ' ' || A.LOT_NO1 || DECODE(A.LOT_NO1, 0, '', '-' || A.LOT_NO2) || NVL2(A.SGG_BD_NM, ' ' || A.SGG_BD_NM, '') AS beopjeong_text
+							 , A.SD_NM || ' ' || A.SGG_NM || ' ' || NVL2(A.ADM_DNG_NM, A.ADM_DNG_NM || ' ', '') || NVL2(A.ADM_DNG_NM, A.LW_RI_NM, A.ADM_DNG_NM) || ' ' || A.LOT_NO1 || DECODE(A.LOT_NO1, 0, '', '-' || A.LOT_NO2) || NVL2(A.SGG_BD_NM, ' ' || A.SGG_BD_NM, '') AS haengjeong_text
+                             , A.SD_NM AS sido_name
+                             , A.SGG_NM AS sigungu_name
+                             , A.ROAD_NM AS road_name
+                             , A.BD_NO1 AS building_bonbeon
+                             , A.BD_NO2 AS building_bubeon
+                             , A.SGG_BD_NM AS sigungu_building_name
+                             , A.LW_EPMNDNG_NM AS beopjeongdong_name
+                             , A.LW_RI_NM AS ri
+                             , A.ADM_DNG_NM AS haengjeongdong_name
+                             , A.LOT_NO1 AS bonbeon
+                             , A.LOT_NO2 AS bubeon
+				             , A.LW_DNG_CD AS beopjeongdong_code
+				             , A.BD_MNG_NO AS building_code
+                             , B.JIKUK_TEL
+                             , B.JIKUK_HANDY
+                             , A.BUNKUKCD
+                             , CASE WHEN A.BUNKUKCD IS NOT NULL THEN (SELECT SUBNAME FROM TM_AGENCY_SUB WHERE BOSEQ=A.BOSEQ AND SUBSEQ=A.BUNKUKCD) ELSE '' END AS bunkukname
+						FROM TBL_ROAD_CD A LEFT OUTER JOIN TM_AGENCY B ON A.BOSEQ=B.USERID
+						WHERE 1=1
+						AND A.LW_DNG_CD=#lwDngCd#
+						AND A.BD_MNG_NO=#bdMngNo#
+	</select>
+	
+</sqlMap>

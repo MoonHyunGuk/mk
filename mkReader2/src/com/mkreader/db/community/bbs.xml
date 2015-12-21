@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="community.bbs">
+	<resultMap id="resultBbs" class="hashMap" >
+		<result column="SEQ" property="SEQ"/>
+		<result column="TITL" property="TITL"/>
+		<result column="CONT" property="CONT" jdbcType="CLOB" javaType="String"/>
+		<result column="POS_MANAGE" property="POS_MANAGE"/>
+		<result column="MAIN_RELATE" property="MAIN_RELATE"/>
+		<result column="WRT_DEPTH" property="WRT_DEPTH"/>
+		<result column="CNT" property="CNT"/>
+		<result column="SAVE_FNM" property="SAVE_FNM"/>
+		<result column="REAL_FNM" property="REAL_FNM"/>
+		<result column="FILE_PATH" property="FILE_PATH"/>
+		<result column="INDT" property="INDT"/>
+		<result column="INPS" property="INPS"/>
+		<result column="CHGDT" property="CHGDT"/>
+		<result column="CHGPS" property="CHGPS"/>
+		<result column="TYPECD" property="TYPECD"/>
+		<result column="EMAIL" property="EMAIL"/>
+		<result column="IS_READ" property="IS_READ"/>
+	</resultMap>
+	
+	<resultMap id="resultContents" class="hashMap" >
+		<result column="SEQ" property="SEQ"/>
+		<result column="TITLE" property="TITLE"/>
+		<result column="CNT" property="CNT"/>
+		<result column="FILENM" property="FILENM"/>
+		<result column="REALNM" property="REALNM"/>
+		<result column="INPS" property="INPS"/>
+		<result column="INPSNM" property="INPSNM"/>
+		<result column="INDT" property="INDT"/>
+		<result column="CONTENTS" property="CONTENTS" jdbcType="CLOB" javaType="String"/>
+	</resultMap>
+
+	<!-- 지국구분코드 불러오기 -->
+	<select id="getJikukType" resultClass="string">
+		SELECT 
+			TYPE <!-- 지국구분코드 -->
+		FROM 
+			TM_AGENCY
+		WHERE 
+			USERID = #JIKUK#
+	</select>
+	
+	<!-- 리스트 -->
+	<select id="getList" resultClass="java.util.HashMap">
+		SELECT 
+			B.*
+		FROM
+			(
+				SELECT
+					ROWNUM AS RNUM
+					, A.*
+				FROM 
+					(
+						SELECT
+							SEQ
+							,TITL
+							,POS_MANAGE
+							,MAIN_RELATE
+							,WRT_DEPTH
+							,CNT
+							,SAVE_FNM
+							,REAL_FNM
+							,FILE_PATH
+							,INDT
+							,INPS
+							,CHGDT
+							,CHGPS
+							,TYPECD
+							,EMAIL
+							,CASE WHEN (SELECT COUNT(NUMID) FROM TM_BBS_VIEW_HISTORY WHERE BOSEQ=#JIKUK# AND SEQ=TM_BBS.SEQ) = 1 THEN 'Y' ELSE 'N' END AS IS_READ
+						FROM
+							TM_BBS 
+						WHERE
+							1=1
+							<isNotEmpty property="TYPECD">
+								<iterate property="TYPECD" open="(" close=")" conjunction="," prepend="AND TYPECD IN">
+									#TYPECD[]#
+								</iterate>
+							</isNotEmpty>
+							<isNotEmpty property="SEARCH_KEY">
+								<isEqual property="SEARCH_TYPE" compareValue="TITL" prepend="AND">
+									TITL like '%'||#SEARCH_KEY#||'%'
+								</isEqual>
+							</isNotEmpty>
+						ORDER BY 
+							INDT DESC,
+							SEQ DESC
+					) A
+				) B
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 카운트 -->
+	<select id="getCount" resultClass="int">
+		SELECT
+			COUNT(*) AS CNT
+		FROM
+			TM_BBS
+		WHERE
+			1=1
+			<isNotEmpty property="TYPECD">
+				<iterate property="TYPECD" open="(" close=")" conjunction="," prepend="AND TYPECD IN">
+					#TYPECD[]#
+				</iterate>
+			</isNotEmpty>
+			<isNotEmpty property="SEARCH_KEY">
+				<isEqual property="SEARCH_TYPE" compareValue="TITL" prepend="AND">
+					TITL like '%'||#SEARCH_KEY#||'%'
+				</isEqual>
+			</isNotEmpty>
+	</select>
+	
+	<!-- 조회수 증가 -->
+	<update id="updateCnt">
+		UPDATE
+			TM_BBS 
+		SET
+			CNT = TO_NUMBER((SELECT CNT FROM TM_BBS WHERE SEQ = #SEQ#) + 1)
+		WHERE
+			SEQ = #SEQ#
+	</update>
+
+	<!-- 상세 -->
+	<select id="getView" parameterClass="map" resultMap="resultBbs" >
+		SELECT
+				SEQ
+				,TITL
+				,CONT
+				,POS_MANAGE
+				,MAIN_RELATE
+				,WRT_DEPTH
+				,CNT
+				,SAVE_FNM
+				,REAL_FNM
+				,FILE_PATH
+				,INDT
+				,INPS
+				,CHGDT
+				,CHGPS
+				,TYPECD
+				,EMAIL
+				,CASE WHEN (SELECT COUNT(NUMID) FROM TM_BBS_VIEW_HISTORY WHERE BOSEQ=#JIKUK# AND SEQ=TM_BBS.SEQ) = 1 THEN 'Y' ELSE 'N' END AS IS_READ
+		FROM
+			TM_BBS
+		WHERE
+			SEQ = #SEQ#
+	</select>
+	
+	<insert id="insertNoticeViewHistory">
+		<selectKey keyProperty="NUMID" resultClass="int" type="pre">
+			SELECT nvl(max(NUMID), 0)+1 FROM TM_BBS_VIEW_HISTORY
+		</selectKey>
+		INSERT INTO TM_BBS_VIEW_HISTORY(NUMID,SEQ,BOSEQ,INDT)
+		VALUES (#NUMID#,#SEQ#,#JIKUK#,SYSDATE)
+	</insert>
+	
+	<select id="getNotReadNoticeJikukList" resultClass="java.util.HashMap">
+		SELECT NUMID
+			   ,USERID
+			   ,SERIAL
+			   ,NAME
+			   ,NAME2
+			   ,JIKUK_TEL
+			   ,JIKUK_HANDY
+			   ,JIKUK_FAX
+			   ,MANAGER
+			   ,JIKUK_EMAIL
+			   ,NVL2(AREA1, FUNC_COMMON_CDNM('002',AREA1),'') AREA1_NM
+			   ,NVL2(TYPE, FUNC_COMMON_CDNM('017',TYPE),'') TYPE_NM
+			   ,NVL2(ZONE, FUNC_COMMON_CDNM('019',ZONE),'') ZONE_NM
+		FROM TM_AGENCY
+		WHERE 
+			TYPE IN (101,102)
+			AND USEAGP='Y'
+			AND SERIAL NOT IN(SELECT BOSEQ FROM TM_BBS_VIEW_HISTORY WHERE SEQ=#SEQ#)
+		ORDER BY NAME ASC
+	</select>
+	
+	<!-- 등록 -->
+	<insert id="insert">
+		<selectKey keyProperty="SEQ" resultClass="int" type="pre">
+			SELECT nvl(max(to_number(seq)), 0)+1
+			FROM tm_bbs
+		</selectKey>
+		INSERT INTO 
+			TM_BBS
+			(
+				SEQ
+				, TITL
+				, CONT
+				, INDT
+				, INPS
+				, TYPECD
+				<isNotEmpty property="SAVE_FNM" prepend=", ">
+					SAVE_FNM
+				</isNotEmpty>
+				<isNotEmpty property="REAL_FNM" prepend=", ">
+					REAL_FNM
+				</isNotEmpty>
+				<isNotEmpty property="FILE_PATH" prepend=", ">
+					FILE_PATH
+				</isNotEmpty>
+				
+			)
+		VALUES
+			(
+				#SEQ#
+				, #TITL#
+				, #CONT#
+				, SYSDATE
+				, #INPS#
+				, #TYPECD#
+				<isNotEmpty property="SAVE_FNM" prepend=", ">
+					#SAVE_FNM#
+				</isNotEmpty>
+				<isNotEmpty property="REAL_FNM" prepend=", ">
+					#REAL_FNM#
+				</isNotEmpty>
+				<isNotEmpty property="FILE_PATH" prepend=", ">
+					#FILE_PATH#
+				</isNotEmpty>
+			)
+	</insert>
+	
+	<!-- 수정 -->
+	<update id="update">
+		UPDATE
+			TM_BBS
+		SET
+			TITL = #TITL#
+			, CONT = #CONT#
+			, CHGDT = SYSDATE
+			, CHGPS = #CHGPS#
+			, TYPECD = #TYPECD#
+			<isNotEmpty property="SAVE_FNM" prepend=", ">
+				SAVE_FNM = #SAVE_FNM#
+			</isNotEmpty>
+			<isNotEmpty property="REAL_FNM" prepend=", ">
+				REAL_FNM = #REAL_FNM#
+			</isNotEmpty>
+			<isNotEmpty property="FILE_PATH" prepend=", ">
+				FILE_PATH = #FILE_PATH#
+			</isNotEmpty>
+		WHERE
+			SEQ = #SEQ#
+	</update> 
+	
+	<!-- 파일명 지우기 -->
+	<delete id="updateFileName">
+		UPDATE
+			TM_BBS
+		SET
+			SAVE_FNM = null
+			, REAL_FNM = null
+			, FILE_PATH = null
+		WHERE
+			SEQ = #SEQ#
+	</delete>
+	
+	<!-- 공지사항 삭제 -->
+	<delete id="delete">
+		DELETE FROM
+			TM_BBS
+		WHERE 
+			SEQ = #SEQ#
+	</delete>
+
+
+	<!-- 자료실 리스트 -->
+	<select id="getDataList" resultClass="java.util.HashMap">
+		SELECT 
+			B.*
+		FROM
+			(
+				SELECT
+					ROWNUM AS RNUM
+					, A.*
+				FROM 
+					(
+						SELECT
+							*
+						FROM
+							TM_DATA
+						WHERE
+							1=1
+							<isNotEmpty property="TYPECD">
+								<iterate property="TYPECD" open="(" close=")" conjunction="," prepend="AND TYPECD IN">
+									#TYPECD[]#
+								</iterate>
+							</isNotEmpty>
+							<isNotEmpty property="SEARCH_KEY">
+								<isEqual property="SEARCH_TYPE" compareValue="TITL" prepend="AND">
+									TITL like '%'||#SEARCH_KEY#||'%'
+								</isEqual>
+							</isNotEmpty>
+						ORDER BY 
+							INDT DESC,
+							SEQ DESC
+					) A
+				) B
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 자료실 카운트 -->
+	<select id="getDataCount" resultClass="int">
+		SELECT
+			COUNT(*) AS CNT
+		FROM
+			TM_DATA
+		WHERE
+			1=1
+			<isNotEmpty property="TYPECD">
+				<iterate property="TYPECD" open="(" close=")" conjunction="," prepend="AND TYPECD IN">
+					#TYPECD[]#
+				</iterate>
+			</isNotEmpty>
+			<isNotEmpty property="SEARCH_KEY">
+				<isEqual property="SEARCH_TYPE" compareValue="TITL" prepend="AND">
+					TITL like '%'||#SEARCH_KEY#||'%'
+				</isEqual>
+			</isNotEmpty>
+	</select>
+	
+	<!-- 자료실 조회수 증가 -->
+	<update id="updateDataListCnt">
+		UPDATE
+			TM_DATA 
+		SET
+			CNT = TO_NUMBER((SELECT CNT FROM TM_DATA WHERE SEQ = #SEQ#) + 1)
+		WHERE
+			SEQ = #SEQ#
+	</update>
+	
+	<!-- 자료실 상세 -->
+	<select id="getDataView" resultClass="java.util.HashMap">
+		SELECT
+			*
+		FROM
+			TM_DATA
+		WHERE
+			SEQ = #SEQ#
+	</select>
+	
+	<!-- 자료실 등록 -->
+	<insert id="insertData">
+		<selectKey keyProperty="SEQ" resultClass="int" type="pre">
+			SELECT nvl(max(to_number(seq)), 0)+1
+			FROM TM_DATA
+		</selectKey>
+		INSERT INTO 
+			TM_DATA
+			(
+				SEQ
+				, TITL
+				, CONT
+				, INDT
+				, INPS
+				, TYPECD
+				<isNotEmpty property="SAVE_FNM" prepend=", ">
+					SAVE_FNM
+				</isNotEmpty>
+				<isNotEmpty property="REAL_FNM" prepend=", ">
+					REAL_FNM
+				</isNotEmpty>
+				<isNotEmpty property="FILE_PATH" prepend=", ">
+					FILE_PATH
+				</isNotEmpty>
+				
+			)
+		VALUES
+			(
+				#SEQ#
+				, #TITL#
+				, #CONT#
+				, SYSDATE
+				, #INPS#
+				, #TYPECD#
+				<isNotEmpty property="SAVE_FNM" prepend=", ">
+					#SAVE_FNM#
+				</isNotEmpty>
+				<isNotEmpty property="REAL_FNM" prepend=", ">
+					#REAL_FNM#
+				</isNotEmpty>
+				<isNotEmpty property="FILE_PATH" prepend=", ">
+					#FILE_PATH#
+				</isNotEmpty>
+			)
+	</insert>
+	
+	<!-- 수정 -->
+	<update id="updateData">
+		UPDATE
+			TM_DATA
+		SET
+			TITL = #TITL#
+			, CONT = #CONT#
+			, CHGDT = SYSDATE
+			, CHGPS = #CHGPS#
+			, TYPECD = #TYPECD#
+			<isNotEmpty property="SAVE_FNM" prepend=", ">
+				SAVE_FNM = #SAVE_FNM#
+			</isNotEmpty>
+			<isNotEmpty property="REAL_FNM" prepend=", ">
+				REAL_FNM = #REAL_FNM#
+			</isNotEmpty>
+			<isNotEmpty property="FILE_PATH" prepend=", ">
+				FILE_PATH = #FILE_PATH#
+			</isNotEmpty>
+		WHERE
+			SEQ = #SEQ#
+	</update> 
+	
+	<!-- 공지사항 삭제 -->
+	<delete id="deleteData">
+		DELETE FROM
+			TM_DATA
+		WHERE 
+			SEQ = #SEQ#
+	</delete>
+	
+	<!-- 게시판 목록 조회 -->
+	<select id="retrieveBoard" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT A.SEQ,
+					   A.TITLE,
+					   A.CONTENTS,
+					   A.FILENM,
+					   A.REALNM,
+					   NVL(A.CNT,0) CNT,
+					   A.INDT,
+					   A.INPS,
+					   (SELECT NAME FROM TMP_USER WHERE ID = A.INPS) INPSNM,
+					   A.CHGDT,
+					   A.CHGPS
+				  FROM TM_EMP_BOARD A
+				 WHERE 1=1
+				<isNotEmpty property="seq" prepend="AND">
+					A.SEQ = #seq#
+				</isNotEmpty>
+				 ORDER BY A.INDT DESC, A.SEQ DESC
+		 		)C
+			)D
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND	RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 게시판 목록 전체 카운트조회 -->
+	<select id="retrieveBoardCount" resultClass="int">
+		SELECT COUNT(1) COUNT
+		  FROM TM_EMP_BOARD
+		 WHERE 1=1
+		<isNotEmpty property="seq" prepend="AND">
+			SEQ = #seq#
+		</isNotEmpty>
+	</select>
+	
+	<!-- 게시물 조회 -->
+	<select id="getContents" parameterClass="map" resultMap="resultContents" >
+		SELECT A.SEQ,
+			   A.TITLE,
+			   NVL(A.CNT, 0) CNT,
+			   A.FILENM,
+			   A.REALNM,
+			   A.INDT,
+			   A.INPS,
+			   (SELECT NAME FROM TMP_USER WHERE ID = A.INPS) INPSNM,
+			   A.CONTENTS
+		  FROM TM_EMP_BOARD A
+		 WHERE 1=1
+		<isNotEmpty property="seq" prepend="AND">
+			A.SEQ = #seq#
+		</isNotEmpty>
+    </select>
+
+	<!-- 유저명 조회 -->
+	<select id="getUserNm" resultClass="String" >
+		SELECT NAME
+		  FROM TMP_USER
+		 WHERE ID = #loginId#
+    </select>
+
+	<!-- 게시물 등록 -->
+	<insert id="saveBoard">
+		INSERT INTO TM_EMP_BOARD
+		       (SEQ,
+			   TITLE,
+			   CONTENTS,
+			   CNT,
+			   FILENM,
+			   REALNM,
+			   INDT,
+			   INPS)
+		VALUES ( (SELECT NVL(MAX(TO_NUMBER(SEQ)),0)+1 FROM TM_EMP_BOARD),
+				#title#,
+				#content#,
+				0,
+				#fileNm#,
+				#realNm#,
+				SYSDATE,
+				#loginId#
+		       )
+	</insert>
+
+	<!-- 게시물 수정 -->
+	<update id="updateBoard">
+		UPDATE TM_EMP_BOARD
+		   SET TITLE = #title#,
+			   CONTENTS = #content#,
+			   FILENM = #fileNm#,
+			   REALNM = #realNm#,
+			   CHGDT = SYSDATE,
+			   CHGPS = #loginId#
+		 WHERE SEQ = #seq#
+	</update>
+	
+	<!-- 게시물 삭제 -->
+	<delete id="deleteBoard">
+		DELETE 
+		  FROM TM_EMP_BOARD
+		 WHERE SEQ = #seq#
+	</delete>
+	
+	<!-- 게시물 수정 -->
+	<update id="updateBoardCnt">
+		UPDATE TM_EMP_BOARD
+		   SET CNT = NVL(CNT,0)+1
+		 WHERE SEQ = #seq#
+	</update>
+	
+	<!-- 파일 삭제 -->
+	<update id="deleteFile">
+		UPDATE TM_EMP_BOARD
+		   SET FILENM = '',
+		   	   REALNM = ''
+		 WHERE SEQ = #seq#
+	</update>
+	
+	<select id="getMainNoticeList" resultClass="java.util.HashMap">
+		SELECT 
+			B.*
+		FROM
+			(
+				SELECT
+					ROWNUM AS RNUM
+					, A.*
+				FROM 
+					(
+						SELECT
+							SEQ
+							,TITL
+							,POS_MANAGE
+							,MAIN_RELATE
+							,WRT_DEPTH
+							,CNT
+							,SAVE_FNM
+							,REAL_FNM
+							,FILE_PATH
+							,INDT
+							,INPS
+							,CHGDT
+							,CHGPS
+							,TYPECD
+							,EMAIL
+							,CASE WHEN (SELECT COUNT(NUMID) FROM TM_BBS_VIEW_HISTORY WHERE BOSEQ=#JIKUK# AND SEQ=TM_BBS.SEQ) = 1 THEN 'Y' ELSE 'N' END AS IS_READ
+						FROM
+							TM_BBS
+						WHERE
+							1=1
+							<isNotEmpty property="TYPECD">
+								<iterate property="TYPECD" open="(" close=")" conjunction="," prepend="AND TYPECD IN">
+									#TYPECD[]#
+								</iterate>
+							</isNotEmpty>
+	    					AND SYSDATE &lt;= TRUNC(INDT+5)
+						ORDER BY 
+							INDT DESC,
+							SEQ DESC
+					) A
+					WHERE IS_READ='N'
+				) B
+		WHERE
+			RNUM &gt; 0
+			AND
+			RNUM &lt;= 2
+	</select>
+	
+</sqlMap>

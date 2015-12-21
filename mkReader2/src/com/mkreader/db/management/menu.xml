@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="management.menu">
+	<!-- 메뉴리스트 -->
+	<select id="selectMenuList" resultClass="java.util.HashMap">
+		 SELECT MENU_ID
+		         , MENU_DEPTH
+		         , PARENT_MENU_ID 
+		         , MENU_NAME 
+		         , MENU_URL
+		         , LTRIM(SYS_CONNECT_BY_PATH(menu_name,'>'),'>') AS depth_fullname
+		         , (SELECT MENU_ID FROM TM_MENU WHERE MENU_ORDER = '1' AND PARENT_MENU_ID = A.MENU_ID) AS SUB_MENU_ID
+		         , TRIM(POPUP_YN) AS POPUP_YN
+		  FROM TM_MENU A
+		 WHERE COMPCD = '82101'
+		  START WITH parent_menu_id='0' CONNECT BY PRIOR menu_id=parent_menu_id
+		 ORDER BY menu_id,menu_depth,parent_menu_id,menu_order ASC
+	</select>
+	
+	<!-- 부서명조회 -->
+	<select id="selectPartList" resultClass="java.util.HashMap">
+	   SELECT CODE
+		       , CNAME 
+		    FROM tc_common 
+		   WHERE CDCLSF='90002' 
+		     AND RESV1 ='82100'
+		     AND CODE IN ('82101','82102','82104','82105','82106')
+		   ORDER BY SORTFD
+	</select>
+</sqlMap>

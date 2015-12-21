@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="reader.delivery">
+	<!-- 배달 명단 조회 -->	
+	<select id="retrieveDeliveryList" resultClass="java.util.HashMap">
+	SELECT 
+		GNO, GNO AS GNM, COUNT(GNO) AS COUNT, MIN(BNO) AS MINBNO, MAX(BNO) AS MAXBNO
+	FROM 
+		TM_READER_NEWS 
+	WHERE 
+		1 = 1
+	<isNotEmpty property="agency_serial" prepend="AND">
+		BOSEQ = #agency_serial#
+	</isNotEmpty>
+	<iterate property="newsCd" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+		#newsCd[]#
+	</iterate>
+	AND BNO !='999'
+	GROUP BY GNO ORDER BY GNO
+	</select>
+	
+</sqlMap>

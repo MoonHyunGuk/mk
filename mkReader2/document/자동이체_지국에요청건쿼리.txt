@@ -1,0 +1,42 @@
+-- tbl_users 테이블 데이터를 tm_reader_news 테이블로 이전(스크립트 실행)하기 위해서
+-- tbl_users 에 jikuk,readno 컬럼을 unique 하게 가지며 news 에 매칭되는 정보가 필요하여
+-- 지국에 요청했음. (2011-12-16 정과장님께 전달함)
+ 
+
+-- 다부수 일반 독자 목록 가져옴
+select A.jikuk, A.readno from (
+    select * from tbl_users where status != 'EA99' and status != 'XX'
+) A
+where A.readno is not null and A.readno != '' group by A.jikuk,A.readno having count(A.readno) >= 2
+
+
+-- 다부수 일반 독자 상세정보
+select jikuk,readno,username,addr1,addr2,phone,handy from tbl_users 
+where status != 'EA99' and ((jikuk='512031' and readno='00095') 
+or (jikuk='512031' and readno='02485') 
+or (jikuk='512015' and readno='06055') 
+or (jikuk='512013' and readno='11815') 
+or (jikuk='511013' and readno='18068') 
+or (jikuk='512036' and readno='19452') 
+or (jikuk='512020' and readno='20087') 
+or (jikuk='512020' and readno='20441') 
+or (jikuk='512008' and readno='23412') 
+or (jikuk='512033' and readno='34669') 
+or (jikuk='511025' and readno='42877') )
+order by jikuk, readno
+
+
+-- 다부수 본사학생 독자 목록 가져옴
+select A.jikuk, A.readno from (
+	select * from tbl_users_stu where status != 'EA99' and status != 'XX' and jikuk is not null and jikuk != ''
+) A
+where A.readno is not null and A.readno != '' group by A.jikuk,A.readno having count(A.readno) >= 2
+
+
+-- 다부수 본사학생 독자 상세정보
+select * from tbl_users_stu where jikuk = '512036' and readno = '22477'
+
+
+
+
+

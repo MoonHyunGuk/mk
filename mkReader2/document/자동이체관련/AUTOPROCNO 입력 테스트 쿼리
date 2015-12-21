@@ -1,0 +1,83 @@
+-- 학생
+-- 자동이체 학생 AUTOPROCNO 입력 쿼리
+-- 검증 학생의 경우 4500원으로 수금테이블에 등록되는 지국과 7500원으로 등록되는 지국이 있으므로
+-- 수금 테이블 총 합을 구할시 참조 case when mod(billamt,4500)=0 AND mod(billamt,7500)=0 then (billamt/7500)*7500 WHEN mod(billamt,4500)=0 AND mod(billamt,7500)!=0 then (billamt/4500)*7500 else billamt end
+UPDATE TM_READER_SUGM x SET AUTOPROCNO =(
+SELECT numid   FROM TBL_EA_LOG_stu a , TM_READER_SUGM b
+WHERE
+trim(cmstype) = 'EA21'
+AND cmsdate = '120305'
+AND cmsresult='00000'
+AND b.readno = a.readno
+AND b.cldt = '20120305'
+AND b.icdt = '20120305'
+AND b.sndt = '20120305'
+AND b.sgbbcd='021' AND b.sggbcd='021'
+AND b.yymm BETWEEN '201201' AND TO_CHAR(SYSDATE , 'YYYYMM')
+AND a.readno = x.readno
+AND b.readno = x.READNO
+AND b.BOSEQ = x.BOSEQ
+AND b.NEWSCD = x.NEWSCD
+AND b.SEQ = x.SEQ
+AND b.YYMM = x.YYMM
+)
+WHERE EXISTS(
+SELECT numid   FROM TBL_EA_LOG_stu a , TM_READER_SUGM b
+WHERE
+trim(cmstype) = 'EA21'
+AND cmsdate = '120305'
+AND cmsresult='00000'
+AND b.readno = a.readno
+AND b.cldt = '20120305'
+AND b.icdt = '20120305'
+AND b.sndt = '20120305'
+AND b.sgbbcd='021' AND b.sggbcd='021'
+AND b.yymm BETWEEN '201201' AND TO_CHAR(SYSDATE , 'YYYYMM')
+AND a.readno = x.readno
+AND b.readno = x.READNO
+AND b.BOSEQ = x.BOSEQ
+AND b.NEWSCD = x.NEWSCD
+AND b.SEQ = x.SEQ
+AND b.YYMM = x.YYMM
+)
+
+-- 일반
+-- 자동이체 일반 AUTOPROCNO 입력 쿼리
+UPDATE TM_READER_SUGM x SET AUTOPROCNO =(
+SELECT numid   FROM TBL_EA_LOG a , TM_READER_SUGM b
+WHERE
+trim(cmstype) = 'EA21'
+AND cmsdate = '120305'
+AND cmsresult='00000'
+AND b.readno = a.readno
+AND b.cldt = '20120305'
+AND b.icdt = '20120305'
+AND b.sndt = '20120305'
+AND b.sgbbcd='021' AND b.sggbcd='021'
+AND b.yymm BETWEEN '201201' AND TO_CHAR(SYSDATE , 'YYYYMM')
+AND a.readno = x.readno
+AND b.readno = x.READNO
+AND b.BOSEQ = x.BOSEQ
+AND b.NEWSCD = x.NEWSCD
+AND b.SEQ = x.SEQ
+AND b.YYMM = x.YYMM
+)
+WHERE EXISTS(
+SELECT numid   FROM TBL_EA_LOG a , TM_READER_SUGM b
+WHERE
+trim(cmstype) = 'EA21'
+AND cmsdate = '120305'
+AND cmsresult='00000'
+AND b.readno = a.readno
+AND b.cldt = '20120305'
+AND b.icdt = '20120305'
+AND b.sndt = '20120305'
+AND b.sgbbcd='021' AND b.sggbcd='021'
+AND b.yymm BETWEEN '201201' AND TO_CHAR(SYSDATE , 'YYYYMM')
+AND a.readno = x.readno
+AND b.readno = x.READNO
+AND b.BOSEQ = x.BOSEQ
+AND b.NEWSCD = x.NEWSCD
+AND b.SEQ = x.SEQ
+AND b.YYMM = x.YYMM
+)

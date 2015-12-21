@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="management.adminManage">
+
+	<!-- 지국리스트 조회 -->
+	<select id="getAgencyList" resultClass="java.util.HashMap">
+	  SELECT B.*
+	    FROM ( SELECT ROWNUM RNUM, A.* 
+	     	         FROM ( SELECT NUMID,         <!-- 일련번호 -->
+				                           SERIAL,          <!-- 지국번호 -->
+				                           AREA1,          <!-- 부서 -->
+				                           NVL2(AREA1, FUNC_COMMON_CDNM('002',AREA1),'') AREA1_NM,          <!-- 부서명 -->
+				                           NVL2(TYPE, FUNC_COMMON_CDNM('017',TYPE),'') TYPE_NM,          <!-- 구분명 -->
+				                           NVL2(ZONE, FUNC_COMMON_CDNM('019',ZONE),'') ZONE_NM,          <!-- 지역명 -->
+				                           NAME,           <!-- 지국명 -->
+				                           NAME2,         <!-- 지국장명 -->
+				                           JIKUK_TEL,             	 <!-- 지국전화번호 -->
+				                           JIKUK_HANDY,      <!-- 지국장휴대폰번호 -->
+				                           MANAGER     <!-- 지국담당자 -->
+				                  FROM TM_AGENCY 
+				                 WHERE 1=1				                 
+				                <isNotEmpty property="area1" prepend="AND">
+				                		<isEqual property = "area1" compareValue='0'>
+												AREA1 IS NULL			                		
+				                		</isEqual>
+				                		<isNotEqual property = "area1" compareValue='0'>
+				                				AREA1 = #area1#
+				                		</isNotEqual>							    	       
+								</isNotEmpty>
+								<isNotEmpty property="manager" prepend="AND">
+				                		<isEqual property = "manager" compareValue='0'>
+												MANAGER IS NULL			                		
+				                		</isEqual>
+				                		<isNotEqual property = "manager" compareValue='0'>
+				                				MANAGER = #manager#
+				                		</isNotEqual>							    	       
+								</isNotEmpty>
+								<isNotEmpty property="txt" prepend="AND">
+				                		<isEqual property = "type" compareValue='1'>
+												NAME LIKE #txt#||'%' 		
+				                		</isEqual>
+				                		<isEqual property = "type" compareValue='2'>
+				                				SERIAL LIKE #txt#||'%'
+				                		</isEqual>							    	       
+								</isNotEmpty>
+								<isNotEmpty property="opName2" prepend="AND">
+										NAME2 LIKE #opName2#||'%' 		
+								</isNotEmpty>
+								<isNotEmpty property="agencyType" prepend="AND">
+				                		<isEqual property = "agencyType" compareValue='0'>
+												TYPE IS NULL			                		
+				                		</isEqual>
+				                		<isNotEqual property = "agencyType" compareValue='0'>
+				                				TYPE = #agencyType#
+				                		</isNotEqual>							    	       
+								</isNotEmpty>
+								<isNotEmpty property="agencyArea" prepend="AND">
+				                		<isEqual property = "agencyArea" compareValue='0'>
+												ZONE IS NULL			                		
+				                		</isEqual>
+				                		<isNotEqual property = "agencyArea" compareValue='0'>
+				                				ZONE = #agencyArea#
+				                		</isNotEqual>							    	       
+								</isNotEmpty>
+								<isNotEmpty property="part" prepend="AND">
+				                		<isEqual property = "part" compareValue='0'>
+												PART IS NULL			                		
+				                		</isEqual>
+				                		<isNotEqual property = "part" compareValue='0'>
+				                				PART = #part#
+				                		</isNotEqual>							    	       
+								</isNotEmpty>
+				                 ORDER BY SERIAL
+	                          ) A
+	              ) B
+	    WHERE RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		   AND RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+
+	</select>
+
+	<!-- 지국 리스트 총 카운트 -->
+	<select id="getAgencyListCnt" resultClass="int">
+		SELECT COUNT(1) COUNT
+         FROM  TM_AGENCY
+        WHERE 1=1
+        <isNotEmpty property="area1" prepend="AND">
+              		<isEqual property = "area1" compareValue='0'>
+						AREA1 IS NULL			                		
+              		</isEqual>
+              		<isNotEqual property = "area1" compareValue='0'>
+              				AREA1 = #area1#
+              		</isNotEqual>							    	       
+		</isNotEmpty>
+		<isNotEmpty property="manager" prepend="AND">
+              		<isEqual property = "manager" compareValue='0'>
+						MANAGER IS NULL			                		
+              		</isEqual>
+              		<isNotEqual property = "manager" compareValue='0'>
+              				MANAGER = #manager#
+              		</isNotEqual>							    	       
+		</isNotEmpty>
+		<isNotEmpty property="txt" prepend="AND">
+              		<isEqual property = "type" compareValue='1'>
+						NAME LIKE '%'||#txt#||'%' 		
+              		</isEqual>
+              		<isEqual property = "type" compareValue='2'>
+              			SERIAL LIKE '%'||#txt#||'%'
+              		</isEqual>							    	       
+		</isNotEmpty>
+		<isNotEmpty property="agencyType" prepend="AND">
+              		<isEqual property = "agencyType" compareValue='0'>
+						TYPE IS NULL			                		
+              		</isEqual>
+              		<isNotEqual property = "agencyType" compareValue='0'>
+              			TYPE = #agencyType#
+              		</isNotEqual>							    	       
+		</isNotEmpty>
+		<isNotEmpty property="agencyArea" prepend="AND">
+              		<isEqual property = "agencyArea" compareValue='0'>
+						ZONE IS NULL			                		
+              		</isEqual>
+              		<isNotEqual property = "agencyArea" compareValue='0'>
+              			ZONE = #agencyArea#
+              		</isNotEqual>							    	       
+		</isNotEmpty>
+		<isNotEmpty property="part" prepend="AND">
+              		<isEqual property = "part" compareValue='0'>
+						PART IS NULL			                		
+              		</isEqual>
+              		<isNotEqual property = "part" compareValue='0'>
+              			PART = #part#
+              		</isNotEqual>							    	       
+		</isNotEmpty>
+	</select>
+	
+	<!-- 지국 관리자 목록 -->
+	<select id="getManager"  resultClass="java.util.HashMap">
+		SELECT DISTINCT TRIM(MANAGER) AS MANAGER
+		  FROM TM_AGENCY
+		 WHERE MANAGER IS NOT NULL 
+		 ORDER BY MANAGER ASC
+	</select>
+	
+
+	<!-- 지국정보 조회 -->
+	<select id="getAgencyInfo" resultClass="java.util.HashMap">
+	   SELECT NUMID,         <!-- 일련번호 -->
+	   			  USERID,         <!-- 지국아이디 -->
+  		          PASSWD,       <!-- 비밀번호 -->
+		          SERIAL,          <!-- 지국번호 -->
+		          NAME,           <!-- 지국명 -->
+		          NAME_SUB,    <!-- 지국명2 -->
+		          NAME2,         <!-- 지국장명 -->
+		          FUNC_SPLIT_TELNO(JIKUK_TEL, 1) JIKUK_TEL1,             	 <!-- 지국전화번호1 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_TEL, 2) JIKUK_TEL2,             	 <!-- 지국전화번호2 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_TEL, 3) JIKUK_TEL3,            		 <!-- 지국전화번호3 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_HANDY, 1) JIKUK_HANDY1,      <!-- 지국장휴대폰번호1 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_HANDY, 2) JIKUK_HANDY2,      <!-- 지국장휴대폰번호2 -->
+		          FUNC_SPLIT_TELNO(JIKUK_HANDY, 3) JIKUK_HANDY3,      <!-- 지국장휴대폰번호3 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_FAX, 1) JIKUK_FAX1,             	  <!-- 지국팩스번호1 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_FAX, 2) JIKUK_FAX2,            	  <!-- 지국팩스번호2 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_FAX, 3) JIKUK_FAX3,             	  <!-- 지국팩스번호3 -->
+		          MANAGER,     <!-- 지국담당자 -->
+		          AREA1,          <!-- 부서 -->
+		          NVL2(AREA1, FUNC_COMMON_CDNM('002',AREA1),'') AREA1_NM,          <!-- 부서명 -->
+		          AREA,            <!-- 지역 -->
+		          NVL2(AREA, FUNC_COMMON_CDNM('003',AREA),'') AREA_NM,                <!-- 지역명 -->
+		          TYPE,         
+		          NVL2(TYPE, FUNC_COMMON_CDNM('017',TYPE),'') TYPE_NM,                 <!-- 구분명 -->
+                  PART,         
+		          NVL2(PART, FUNC_COMMON_CDNM('018',PART),'') PART_NM,                 <!-- 파트명 -->
+                  ZONE,         
+		          NVL2(ZONE, FUNC_COMMON_CDNM('019',ZONE),'') ZONE_NM,                <!-- 지역명 -->
+		          JIKUK_EMAIL,  <!-- 지국장이메일 -->
+		          ZIP,               <!-- 우편번호 -->
+		          ADDR1,         <!-- 주소1 -->
+		          IDEN_NO,       <!--  사업자번호 -->
+		          GIRO_NO,       <!-- 지로번호 -->
+		          APPROVAL_NO,      <!-- 승인번호 -->
+		          BANK,      	  <!-- 은행코드 -->
+		          BANK_NUM,      <!-- 계좌번호 -->
+		          SDATE,           <!-- 계약일 -->
+		          EDATE,           <!-- 해약일 -->
+		          RDATE,           <!-- 등록일 -->
+		          ADMIN,          <!-- 등록자 -->
+		          MEMO            <!-- 메모 -->
+ 	     FROM TM_AGENCY
+	   WHERE 1=1
+       AND NUMID= #numId#
+	</select>
+	
+	
+	<!-- 지국정보 수정(지국) -->
+	<update id="updateAgencyInfo"  parameterClass="java.util.HashMap">
+		UPDATE TM_AGENCY
+		      SET PASSWD = #passwd#,
+		   		    NAME = #name#,
+		   		    NAME_SUB = #nameSub#,
+			        NAME2 = #name2#,
+			        JIKUK_TEL = #jikuk_Tel#,
+			   	    JIKUK_HANDY = #jikuk_Handy#,
+			   	    JIKUK_FAX = #jikuk_Fax#,
+			        JIKUK_EMAIL = #jikuk_Email#,			        
+			        MANAGER = #manager#,
+		            AREA1 = #area1#,
+		            AREA = #area#,
+		            TYPE = #agencyType#,
+		            PART = #part#,
+		            ZONE = #agencyArea#,
+			        ZIP = #zip#,
+			        ADDR1 = #addr1#,
+			        IDEN_NO = #iden_No#,
+			        GIRO_NO = #giro_No#,
+			        APPROVAL_NO = #approval_No#,
+			        BANK = #bank#,
+			        BANK_NUM = #bankNum#,
+			        SDATE = #sdate#,
+			        EDATE = #edate#,
+			        RDATE = #rdate#,
+			        ADMIN = #admin#,
+			        MEMO  = #memo#,
+			        DELIVERY_NM1 = #name2#,
+			        DELIVERY_NUM1 = #jikuk_Handy#
+		 WHERE NUMID = #numId#
+ 	</update>
+ 
+  	<!-- 신규 지국 등록 -->
+	<insert id="insertAgencyInfo"  parameterClass="java.util.HashMap">
+		 INSERT INTO TM_AGENCY
+		                    (NUMID,USERID,PASSWD,SERIAL,NAME,NAME2,JIKUK_TEL,JIKUK_HANDY,JIKUK_FAX,MANAGER,ZIP,TYPE,PART,ZONE,
+		                    AREA1,AREA,JIKUK_EMAIL,JIKUK_EMAIL2,SDATE,EDATE,RDATE,ADMIN,MEMO,USEAGP,ADDR1,IDEN_NO,GIRO_NO,APPROVAL_NO,NAME_SUB,BANK, BANK_NUM, DELIVERY_NM1, DELIVERY_NUM1)
+		  	    VALUES ((SELECT NVL(MAX(NUMID)+1, 1) FROM TM_AGENCY), 
+		  	    			 #userId#,
+		            		 #passwd#, 
+		            		 #userId#, 
+		            		 #name#, 
+		            		 #name2#, 
+		            		 #jikuk_Tel#, 
+		            		 #jikuk_Handy#, 
+		            		 #jikuk_Fax#, 
+		            		 #manager#, 
+		            		 #zip#, 
+		            		 #agencyType#,
+				             #part#,
+				             #agencyArea#,
+		            		 #area1#, 
+		            		 #area#, 
+		            		 #jikuk_Email#,
+		            		 #jikuk_Email2#, 
+		            		 #sdate#, 
+		            		 #edate#, 
+		            		 TO_CHAR(SYSDATE, 'YYYY-MM-DD'), 
+		            		 #admin#, 
+		            		 #memo#, 
+		            		 'Y',
+		            		 #addr1#, 
+		            		 #iden_No#,
+		            		 #giro_No#, 
+		            		 #approval_No#,
+		            		 #nameSub#,
+		            		 #bank#,
+		            		 #bankNum#,
+		            		 #name2#, 
+		            		 #jikuk_Handy# 
+		            		 )
+   	</insert>
+ 
+    <!-- 지국정보 삭제 -->
+	<delete id="deleteAgencyInfo"  parameterClass="java.util.HashMap">
+		 DELETE FROM TM_AGENCY 
+     	 	      WHERE USERID = #userId#
+ 	</delete>
+ 	
+    <!-- 지국정보 조회 -->
+	<select id="getDupAgency" resultClass="java.util.HashMap">
+		SELECT USERID 
+		 FROM TM_AGENCY
+		WHERE USERID = #userId#
+    </select>
+    
+    <!-- 지국정보 삭제전 해당지국 사용여부 조회 -->
+	<select id="getAgencyUse" resultClass="java.util.HashMap">
+		SELECT BOSEQ 
+		 FROM TM_READER_NEWS
+	    WHERE BOSEQ = #userId#
+	       AND ROWNUM = 1
+    </select>
+    
+ 	<!-- 공통코드 조회 -->
+	<select id="getCode" resultClass="java.util.HashMap">
+		SELECT CDCLSF, 
+				   CODE,
+				   CNAME 
+		  FROM TC_COMMON
+		WHERE  USEYN = 'Y'
+	 	    AND CDCLSF = #cdclsf#
+		ORDER BY SORTFD, CODE
+
+	</select>
+	
+	 <!-- 은행코드 조회 -->
+	<select id="getBankCode" resultClass="java.util.HashMap">
+		SELECT BANKNUM, BANKNAME 
+		  FROM TBL_BANK
+		 WHERE TRIM(BANKNUM) IS NOT NULL
+		 ORDER BY BANKNUM
+	</select>
+
+
+	<!-- 새주소리스트 조회 (관할구역관리용) -->
+	<select id="searchNewAddr" resultClass="java.util.HashMap">
+		SELECT SUBSTR(ZIP_CD, 1, 3)||'-'||SUBSTR(ZIP_CD, 4, 3) AS ZIP_CD,
+			   SD_NM||' '||SGG_NM||' '||LW_EPMNDNG_NM||' '||LOT_NO1||DECODE(LOT_NO2, 0, '', '-'||LOT_NO2) AS ADDR,
+			   BD_NM, 
+		       ROAD_NM||' '||BD_NO1||DECODE(BD_NO2, 0, '', '-'||BD_NO2 ) AS ROADNM,
+		       BD_MNG_NO
+		  FROM TBL_ROAD_CD
+		 WHERE 1=1
+		   AND LW_EPMNDNG_NM LIKE #searchValue#||'%'
+
+		<isNotEmpty property="lotNo1">
+			<isEqual property="lotType1" compareValue="or">
+				<iterate property="lotNo1" open="(" close=")" conjunction="OR" prepend="AND ">
+			   		LOT_NO1 = #lotNo1[]#
+			   	</iterate>
+			</isEqual>
+			<isEqual property="lotType1" compareValue="between">
+				<isNotEmpty property="lotNo1_1">
+					AND LOT_NO1 BETWEEN #lotNo1# AND #lotNo1_1#
+				</isNotEmpty>
+				<isEmpty property="lotNo1_1">
+					AND LOT_NO1 = #lotNo1#
+				</isEmpty>
+			</isEqual>
+			<isEmpty property="lotType1">
+				AND LOT_NO1 = #lotNo1#
+			</isEmpty>			
+		</isNotEmpty>
+
+		<isNotEmpty property="lotNo2">
+			<isEqual property="lotType2" compareValue="or">
+				<iterate property="lotNo2" open="(" close=")" conjunction="OR" prepend="AND ">
+			   		LOT_NO2 = #lotNo2[]#
+			   	</iterate>
+			</isEqual>
+			<isEqual property="lotType2" compareValue="between">
+				<isNotEmpty property="lotNo2_1">
+					AND LOT_NO2 BETWEEN #lotNo2# AND #lotNo2_1#
+				</isNotEmpty>
+				<isEmpty property="lotNo2_1">
+					AND LOT_NO2 = #lotNo2#
+				</isEmpty>
+			</isEqual>
+			<isEmpty property="lotType2">
+				AND LOT_NO2 = #lotNo2#
+			</isEmpty>	
+		</isNotEmpty>
+		
+		<isNotEmpty property="boseq">
+		   AND BOSEQ = #boseq#
+		</isNotEmpty>
+		<isEmpty property="boseq">
+		   AND BOSEQ IS NULL
+		</isEmpty>
+	</select>
+
+	<!-- 관할지국 업데이트 (관할구역관리용) -->
+	<update id="updateMngJikuk">
+		UPDATE 
+			TBL_ROAD_CD
+		SET
+			BOSEQ = #boseq#
+		WHERE
+			BD_MNG_NO = #bdMngNo#
+	</update>
+	
+	
+	<!-- 발송연락처 조회 -->
+	<select id="selectDeliveryNumbers" resultClass="java.util.HashMap">
+		SELECT DELIVERY_NUM1
+				, DELIVERY_NM1
+				, DELIVERY_NUM2
+				, DELIVERY_NM2
+				, DELIVERY_NUM3
+				, DELIVERY_NM3
+		  FROM TM_AGENCY
+		WHERE
+			SERIAL = #boseq#
+		  AND
+		    USEAGP = 'Y'
+	</select>
+	
+	<!-- 발송연락처 조회 -->
+	<select id="selectDeliveryNumbersForAdmin" resultClass="java.util.HashMap">
+		SELECT SERIAL
+     			, NAME
+     			, DELIVERY_NUM1
+				, DELIVERY_NM1
+				, DELIVERY_NUM2
+				, DELIVERY_NM2
+				, DELIVERY_NUM3
+				, DELIVERY_NM3
+		  FROM TM_AGENCY
+		WHERE
+		    USEAGP = 'Y'
+		   AND 
+		    SUBSTR(SERIAL, 0, 1) in ('5', '6')
+		ORDER BY SERIAL, NAME
+	</select>
+	
+	<!-- 발송연락처등록 -->
+	<update id="updateDeliveryNumbers">
+		UPDATE 
+			TM_AGENCY
+		SET
+			DELIVERY_NUM1 = #deliveryNum1#,
+			DELIVERY_NM1 = #deliveryNm1#,
+			DELIVERY_NUM2 = #deliveryNum2#,
+			DELIVERY_NM2 = #deliveryNm2#,
+			DELIVERY_NUM3 = #deliveryNum3#,
+			DELIVERY_NM3 = #deliveryNm3#
+		WHERE
+			SERIAL = #boseq#
+		  AND
+		    USEAGP = 'Y'
+	</update>
+	
+	<!-- 발송연락처엑셀다운 -->
+	<select id="selectDeliveryNumbersForExcel" resultClass="java.util.HashMap">
+		 SELECT  NAME
+                 , SERIAL
+                 , DELIVERY_NM1 AS USERNAME 
+			     , DELIVERY_NUM1 AS PHONENUM
+				 , DELIVERY_NM2  AS USERNAME_1
+			     , DELIVERY_NUM2 AS PHONENUM_1
+			     , DELIVERY_NM3 AS USERNAME_2 
+			     , DELIVERY_NUM3 AS PHONENUM_2
+		  FROM TM_AGENCY
+		 WHERE USEAGP = 'Y'
+		    AND SUBSTR(SERIAL, 0, 1) in ('5', '6')
+		 ORDER BY SERIAL, NAME
+	</select>
+
+</sqlMap>

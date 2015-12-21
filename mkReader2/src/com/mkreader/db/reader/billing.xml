@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="reader.billing">
+	<resultMap id="tblUsersMap" class="hashmap">
+		<result property="NUMID" column="NUMID" />
+		<result property="JIKUK" column="JIKUK" />
+		<result property="INTYPE" column="INTYPE" />
+		<result property="USERNAME" column="USERNAME" />
+		<result property="USERID" column="USERID" />
+		<result property="PASSWD" column="PASSWD" />
+		<result property="JUMIN1" column="JUMIN1" />
+		<result property="JUMIN2" column="JUMIN2" />
+		<result property="SAUP" column="SAUP" />
+		<result property="GUBUN" column="GUBUN" />
+		<result property="EMAIL" column="EMAIL" />
+		<result property="PHONE" column="PHONE" />
+		<result property="HANDY" column="HANDY" />
+		<result property="BIRTHD" column="BIRTHD" />
+		<result property="SL" column="SL" />
+		<result property="LEVELS" column="LEVELS" />
+		<result property="DIFF" column="DIFF" />
+		<result property="INDATE" column="INDATE" />
+		<result property="LASTDATE" column="LASTDATE" />
+		<result property="COUNTERS" column="COUNTERS" />
+		<result property="LOGS" column="LOGS" />
+		<result property="SDATE" column="SDATE" />
+		<result property="WHOSTEP" column="WHOSTEP" />
+		<result property="RDATE" column="RDATE" />
+		<result property="RDATE_RESULT" column="RDATE_RESULT" />
+		<result property="BANK" column="BANK" />
+		<result property="BANK_NUM" column="BANK_NUM" />
+		<result property="BANK_NAME" column="BANK_NAME" />
+		<result property="REL" column="REL" />
+		<result property="BANK_MONEY" column="BANK_MONEY" />
+		<result property="BUSU" column="BUSU" />
+		<result property="R_OUT_DATE" column="R_OUT_DATE" />
+		<result property="R_OUT_RESULT" column="R_OUT_RESULT" />
+		<result property="STATUS" column="STATUS" />
+		<result property="TRASHS" column="TRASHS" />
+		<result property="READNO" column="READNO" />
+		<result property="REALJIKUK" column="REALJIKUK" />
+		<result property="SERIAL" column="SERIAL" />
+		<result property="MEMO" column="MEMO" jdbcType="CLOB" javaType="string" />
+		<result property="FULLADDR" column="FULLADDR"  />
+	</resultMap>
+	<!-- 일반 자동이체 목록 조회 -->	
+	<select id="getBillingList" resultClass="java.util.HashMap">
+	SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT 
+					NUMID,
+					JIKUK,
+					(SELECT NAME FROM TM_AGENCY WHERE SERIAL = REALJIKUK) JIKUKNM,
+					INTYPE,
+					USERNAME,
+					USERID,
+					PASSWD,
+					JUMIN1,
+					JUMIN2,
+					SAUP,
+					GUBUN,
+					EMAIL,
+					NVL(FUNC_LAST_CHANGE_ADRS(READNO), ZIP1||ZIP2||'|'||ADDR1||'|'||ADDR2||'|'||NEWADDR||'|'||BDMNGNO) AS FULLADDR, 
+					PHONE,
+					HANDY,
+					BIRTHD,
+					SL,
+					LEVELS,
+					DIFF,
+					INDATE,
+					LASTDATE,
+					COUNTERS,
+					LOGS,
+					MEMO,
+					SDATE,
+					WHOSTEP,
+					RDATE,
+					RDATE_RESULT,
+					BANK,
+					TRIM(BANK_NUM) BANK_NUM,
+					BANK_NAME,
+					REL,
+					BANK_MONEY,
+					BUSU,
+					R_OUT_DATE,
+					R_OUT_RESULT,
+					STATUS,
+					TRASHS,
+					READNO,
+					REALJIKUK,
+					SERIAL		
+				FROM 
+					TBL_USERS
+				WHERE 
+					STATUS = 'EA00'
+					AND REALJIKUK = #realJikuk#
+					AND RDATE IS NOT NULL
+				ORDER BY INDATE DESC
+			)C
+		)D
+		where
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 일반 자동이체 카운트 조회(초기값 신청중) -->
+	<select id="getBillingCount" resultClass="int">
+		SELECT COUNT(1) COUNT FROM TBL_USERS WHERE STATUS = 'EA00' AND REALJIKUK = #realJikuk# AND RDATE IS NOT NULL
+	</select>
+
+	<!-- 일반 자동이체 검색 조회 -->
+	<select id="searchBilling" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT
+					NUMID,
+					JIKUK,
+					FUNC_AGENT_NM(REALJIKUK) JIKUKNM,
+					INTYPE,
+					USERNAME,
+					USERID,
+					PASSWD,
+					JUMIN1,
+					JUMIN2,
+					SAUP,
+					GUBUN,
+					EMAIL,
+					NVL(FUNC_LAST_CHANGE_ADRS(READNO), ZIP1||ZIP2||'|'||addr1||'|'||addr2||'|'||newaddr||'|'||BDMNGNO) AS FULLADDR,
+					PHONE,
+					REPLACE(HANDY, 'NULL' , '') HANDY,
+					BIRTHD,
+					SL,
+					LEVELS,
+					DIFF,
+					INDATE,
+					LASTDATE,
+					COUNTERS,
+					LOGS,
+					MEMO,
+					SDATE,
+					WHOSTEP,
+					RDATE,
+					RDATE_RESULT,
+					BANK,
+					TRIM(BANK_NUM) BANK_NUM,
+					BANK_NAME,
+					REL,
+					BANK_MONEY,
+					BUSU,
+					R_OUT_DATE,
+					R_OUT_RESULT,
+					STATUS,
+					TRASHS,
+					READNO,
+					REALJIKUK,
+					SERIAL
+					FROM
+					TBL_USERS
+				WHERE
+					1 = 1
+					AND REALJIKUK = #realJikuk#
+					AND RDATE IS NOT NULL
+					<isNotEmpty property="search_key" >
+						<isEqual property="search_type" compareValue="userName" prepend="AND">
+							USERNAME like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="jikuk" prepend="AND">
+							REALJIKUK in (SELECT SERIAL FROM TM_AGENCY WHERE NAME like '%'||#search_key#||'%')
+						</isEqual>
+						<isEqual property="search_type" compareValue="bankNum" prepend="AND">
+							BANK_NUM like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="bankName" prepend="AND">
+							BANK_NAME like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="unique" prepend="AND">
+							JIKUK||SERIAL like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="saup" prepend="AND">
+							SAUP like '%'||#search_key#||'%'
+						</isEqual>
+					</isNotEmpty>
+					<isNotEqual property="status" compareValue="ALL" prepend="AND">
+						STATUS = #status#
+					</isNotEqual>
+					ORDER BY INDATE DESC
+			)C
+		)D
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+
+	<!-- 일반 자동이체 검색 조회 카운트 -->
+	<select id="searchBillingCount" resultClass="int">
+		SELECT
+			COUNT(1) COUNT
+		FROM
+			TBL_USERS
+		WHERE
+			1 = 1
+			AND REALJIKUK = #realJikuk#
+			AND RDATE IS NOT NULL
+			<isNotEmpty property="search_key" >
+				<isEqual property="search_type" compareValue="userName" prepend="AND">
+					USERNAME like '%'||#search_key#||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="jikuk" prepend="AND">
+					REALJIKUK in (SELECT SERIAL FROM TM_AGENCY WHERE NAME like '%'||#search_key#||'%')
+				</isEqual>
+				<isEqual property="search_type" compareValue="bankNum" prepend="AND">
+					BANK_NUM like '%'||#search_key#||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="bankName" prepend="AND">
+					BANK_NAME like '%'||#search_key#||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="unique" prepend="AND">
+					JIKUK||SERIAL like '%'||#search_key#||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="saup" prepend="AND">
+					SAUP like '%'||#search_key#||'%'
+				</isEqual>
+			</isNotEmpty>
+			<isNotEqual property="status" compareValue="ALL" prepend="AND">
+				STATUS = #status#
+			</isNotEqual>
+			ORDER BY INDATE DESC
+	</select>
+
+	<!-- 자동이체 정보 상세 조회 -->
+	<select id="billingInfo" resultClass="java.util.HashMap" resultMap="tblUsersMap">
+		SELECT
+			NUMID,
+			JIKUK,
+			INTYPE,
+			USERNAME,
+			USERID,
+			PASSWD,
+			JUMIN1,
+			JUMIN2,
+			SAUP,
+			GUBUN,
+			EMAIL,
+			NVL(FUNC_LAST_CHANGE_ADRS(READNO), ZIP1||ZIP2||'|'||addr1||'|'||addr2||'|'||newaddr||'|'||BDMNGNO) AS FULLADDR,
+			PHONE,
+			REPLACE(HANDY, 'NULL' , '') HANDY,
+			BIRTHD,
+			SL,
+			LEVELS,
+			DIFF,
+			TO_CHAR(INDATE, 'YYYY-MM-DD PM HH:MI:SS') INDATE,
+			LASTDATE,
+			COUNTERS,
+			LOGS,
+			MEMO,
+			SDATE,
+			WHOSTEP,
+			RDATE,
+			RDATE_RESULT,
+			SUBSTR(BANK,0,3) BANK,
+			TRIM(BANK_NUM) BANK_NUM,
+			BANK_NAME,
+			REL,
+			BANK_MONEY,
+			BUSU,
+			R_OUT_DATE,
+			R_OUT_RESULT,
+			STATUS,
+			TRASHS,
+			READNO,
+			REALJIKUK,
+			SERIAL
+			FROM
+			TBL_USERS
+		WHERE
+			1 = 1
+			<isNotEmpty property="numId" prepend="AND">
+				NUMID = #numId#
+			</isNotEmpty>
+	</select>
+
+	<!-- 자동이체 납부내역 조회 -->
+	<select id="paymentHist" resultClass="java.util.HashMap">
+		SELECT
+			NUMID,
+			(SELECT USERNAME FROM TBL_USERS WHERE NUMID = USERNUMID) USERNAME,
+			SERIALNO,
+			FILENAME,
+			CMSTYPE,
+			CMSDATE,
+			CMSMONEY,
+			CMSRESULT,
+			USERID,
+			USERNUMID,
+			CODENUM,
+			RDATE,
+			SUBSMONTH,
+			ORDERNO,
+			CHECKED,
+			READNO
+			FROM
+			TBL_EA_LOG
+		WHERE
+			1 =1
+			AND USERNUMID = #numId#
+			<isNotEmpty property="cmsType" prepend="AND">
+				TRIM(CMSTYPE) = #cmsType#
+			</isNotEmpty>
+			ORDER BY CMSDATE
+	</select>
+
+	<!-- 자동이체 정보 등록 -->
+	<insert id="savePayment">
+	INSERT INTO TBL_USERS
+		(INTYPE , NUMID , SERIAL , JIKUK , USERNAME , SAUP , EMAIL , ADDR1 , ADDR2 , PHONE , HANDY , LEVELS , DIFF , INDATE ,
+		LASTDATE , COUNTERS , MEMO , WHOSTEP , BANK , BANK_NUM , BANK_NAME , BANK_MONEY , BUSU , STATUS , REALJIKUK , RDATE , READNO, NEWADDR, BDMNGNO, DLVZIP)
+	VALUES
+		(#inType# , (SELECT nvl(max(NUMID), 0)+1 FROM TBL_USERS) , (SELECT LPAD(NVL(MAX(SERIAL),0)+1,5,'0') FROM TBL_USERS WHERE JIKUK = #realJikuk# AND LENGTH(SERIAL) = 5 AND SERIAL &lt; '90000'),
+		#realJikuk# , #userName# , #saup# , #email# , #addr1# , #addr2# , #phone# , #handy# , '3' , 'Y' , SYSDATE , SYSDATE , '0' , #memo# , #whoStep# , #bankInfo#,
+		#bankNum# , #bankName# , #bankMoney# , #busu# , 'EA00' , #realJikuk# , SYSDATE , #readNo#, #newaddr#, #dbMngNo#, #dlvZip#)
+	</insert>
+	
+	<!-- 자동이체 정보 수정 -->
+	<update id="updatePaymentFinal">
+	UPDATE 
+		TBL_USERS
+	SET
+		USERNAME = #userName# , 
+		SAUP = #saup# , 
+		EMAIL = #email#, 
+		PHONE = #phone# ,
+		HANDY = #handy# ,
+		BANK = #bankInfo# ,
+		BANK_NUM = #bankNum# ,
+		BANK_NAME = #bankName# ,
+		BANK_MONEY = #bankMoney# ,
+		BUSU = #busu# ,
+		LASTDATE = SYSDATE
+	WHERE
+		NUMID = #numId#
+	</update>
+	
+	<!-- 자동이체 정보 조회 -->
+	<select id="checkBilling" resultClass="java.util.HashMap">
+	SELECT 
+		NUMID,
+		STATUS
+	FROM
+		TBL_USERS
+	WHERE
+		READNO = #readNo#
+		AND REALJIKUK = #agency_serial#
+		AND ROWNUM = '1'
+	</select>
+	
+	<!-- 자동이체 상태 수정 -->
+	<update id="updateStatus">
+	UPDATE
+		TBL_USERS
+	SET
+		LASTDATE = SYSDATE,
+		STATUS = 'EA00',
+		R_OUT_DATE = ''
+		<isNotEmpty property="status" prepend=",">
+			SERIAL = (SELECT LPAD(NVL(MAX(SERIAL),0)+1,5,'0') FROM TBL_USERS WHERE JIKUK = #realJikuk# AND LENGTH(SERIAL) = 5 AND SERIAL &lt; '90000')
+		</isNotEmpty>
+	WHERE
+		numId = #numId#
+	</update>
+	
+	<!-- 자동이체 일련번호 조회 -->
+	<select id="getNumId" resultClass="string">
+	SELECT 
+		NUMID
+	FROM
+		TBL_USERS
+	WHERE
+		READNO = #readNo#
+		AND REALJIKUK = #agency_serial#
+		AND (STATUS != 'EA99' AND STATUS = 'EA21')
+		AND ROWNUM = '1'
+	</select>
+	
+	<!-- 자동이체 일련번호 조회 (자동이체x -> 자동이체)-->
+	<select id="getNumIdForNew" resultClass="string">
+	SELECT 
+		NUMID
+	FROM
+		TBL_USERS
+	WHERE
+		READNO = #readNo#
+		AND REALJIKUK = #agency_serial#
+		AND (STATUS = 'EA00' AND STATUS != 'EA99')
+	</select>
+	
+	<!-- 자동이체 해지 -->
+	<update id="removePayment">
+		UPDATE
+			TBL_USERS
+		SET
+			STATUS = 'EA13-',
+			LASTDATE = SYSDATE,
+			R_OUT_DATE = SYSDATE
+		WHERE
+			NUMID = #numId#
+			AND READNO = #readNo#
+	</update>
+	
+	<!-- 계좌정보 변경  -->
+	<update id="updateBankInfo">
+	UPDATE 
+		TBL_USERS
+	SET
+		LASTDATE = SYSDATE,
+		SAUP = #saup# , 
+		HANDY = #handy# ,
+		BANK = #bankInfo# ,
+		BANK_NUM = #bankNum# ,
+		BANK_NAME = #bankName# ,
+		BANK_MONEY = #bankMoney#
+		<isNotEmpty property="status" prepend=",">
+		STATUS = #status#,
+		SERIAL = (SELECT LPAD(NVL(MAX(SERIAL),0)+1,5,'0') FROM TBL_USERS WHERE JIKUK = #realJikuk# AND LENGTH(SERIAL) = 5 AND SERIAL &lt; '90000')
+		</isNotEmpty>
+	WHERE
+		NUMID = #numId#
+	</update>
+	
+	<!-- 기존 데이터 복사 복사데이터를 해지상태로 변경 -->
+	<insert id="cloneBankInfo">
+	INSERT INTO TBL_USERS
+		(NUMID, JIKUK, INTYPE, USERNAME, USERID, PASSWD, JUMIN1, JUMIN2, SAUP, GUBUN, EMAIL, ZIP1, ZIP2, ADDR1, ADDR2, PHONE, HANDY, BIRTHD, SL,
+		LEVELS, DIFF, INDATE, LASTDATE, COUNTERS, LOGS, MEMO, SDATE, WHOSTEP, RDATE, RDATE_RESULT, BANK, BANK_NUM, BANK_NAME, REL, BANK_MONEY, BUSU,
+		R_OUT_DATE, R_OUT_RESULT, STATUS, TRASHS, READNO, REALJIKUK, SERIAL, NEWADDR, BDMNGNO)
+	SELECT
+		(SELECT nvl(max(NUMID), 0)+1 FROM TBL_USERS), JIKUK, INTYPE, USERNAME, USERID, PASSWD, JUMIN1, JUMIN2, SAUP, GUBUN, EMAIL, ZIP1, ZIP2, ADDR1, ADDR2, PHONE, HANDY, BIRTHD, SL,
+		LEVELS, DIFF, INDATE, SYSDATE, COUNTERS, LOGS, MEMO, SDATE, WHOSTEP, RDATE, RDATE_RESULT, BANK, BANK_NUM, BANK_NAME, REL, BANK_MONEY, BUSU,
+		R_OUT_DATE, R_OUT_RESULT, 'EB13-', TRASHS, READNO, REALJIKUK, SERIAL, NEWADDR, BDMNGNO
+	FROM
+		TBL_USERS WHERE NUMID = #numId#
+	</insert>
+	
+	<!-- 통화 내역 -->
+	<select id="callLog" resultClass="java.util.HashMap">
+	SELECT 
+		NUMID,
+		CALLSEQ,
+		TYPECD,
+		TO_CHAR(INDATE,'YYYY-MM-DD HH24:MI:SS') INDATE,
+		REMK
+	FROM 
+		TBL_CALL_LOG
+	WHERE 
+		NUMID = #numId#
+		AND TYPECD = #typeCd#
+		ORDER BY CALLSEQ
+	</select>
+	
+	<!-- 통화내역 생성 -->
+	<insert id="insertCallLog">
+		<selectKey keyProperty="callSeq" resultClass="String" type="pre">
+			SELECT LPAD(NVL(MAX(CALLSEQ),0)+1, 4, 0) FROM TBL_CALL_LOG WHERE NUMID = #numId#
+		</selectKey>
+		INSERT INTO TBL_CALL_LOG
+			(NUMID, CALLSEQ, TYPECD, REMK, INDATE) 
+		VALUES
+			(#numId#, #callSeq#, #typeCd#, #remk#, SYSDATE)
+	</insert>
+	
+	<!-- 통화로그 카운트 -->
+	<select id="countCalllog" resultClass="int">
+	SELECT
+		COUNT(*)
+	FROM
+		TBL_CALL_LOG
+	WHERE
+		NUMID = #numId#
+		AND TYPECD = '1'
+	</select>
+	
+</sqlMap>

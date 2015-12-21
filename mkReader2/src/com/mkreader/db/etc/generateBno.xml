@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="etc.generateBno">
+
+	<!-- 지국 목록 -->
+	<select id="getAgencyList" resultClass="java.util.HashMap">
+	SELECT 
+			A.SERIAL AS BOSEQ
+	       , A.NAME AS BONM
+           , COUNT(A.SERIAL) CNT
+		FROM 
+			TM_AGENCY A,
+            TM_READER_NEWS B
+        WHERE A.SERIAL = B.BOSEQ
+          AND B.HJTYPECD = 'ABC' AND B.SNO = '99' 
+        GROUP BY A.SERIAL, A.NAME
+		ORDER BY SERIAL
+	</select>
+
+	<!-- 검색조건 대상 및 주소 추출 -->
+	<select id="getAddrList" resultClass="java.util.HashMap">
+	SELECT BOSEQ, READNO, NEWSCD, SEQ, GNO, BNO,
+		       REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			   INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			   LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A') AS ADDR,
+		       
+		       TRIM(SUBSTR(REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			                  INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			                  LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A')
+		              , 1, INSTR(REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			                     INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			                     LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A'),' ', 1, 4)-1)) AS ADDR1,
+		                         
+		       TRIM(SUBSTR(REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			                  INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			                  LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A')
+		              , 1, INSTR(REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			                     INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			                     LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A'),' ', 1, 3)-1)) AS ADDR2,
+		                         
+		       TRIM(SUBSTR(REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			                  INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			                  LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A')
+		              , 1, INSTR(REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			                     INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			                     LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A'),' ', 1, 2)-1)) AS ADDR3,
+		                         
+		       TRIM(SUBSTR(REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			                  INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			                  LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A')
+		              , 1, INSTR(REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+			                     INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+			                     LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A'),' ', 1, 1)-1)) AS ADDR4
+		FROM TM_READER_NEWS
+		WHERE BOSEQ = #boseq#
+		  AND HJTYPECD = 'ABC'
+		  AND SNO = '99'
+	</select>
+
+
+
+	<!-- 구역 배달번호 추출 -->
+	<select id="retrieveGnoBno" resultClass="java.util.HashMap">
+		 SELECT GNO, BNO FROM (
+		         SELECT GNO, BNO
+				   FROM TM_READER_NEWS A
+				  WHERE BOSEQ = #boseq#
+				    AND BNO != '999'
+				    <isNotEmpty property="prevGno" prepend="AND">
+				    	   GNO = #prevGno#
+					</isNotEmpty>
+				    AND (HJTYPECD != 'ABC' OR HJTYPECD IS NULL)
+				    AND (SNO != '99' OR SNO IS NULL)
+				    AND REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))),
+				            	INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), #gu#)+1,
+					            LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2),#apt#,'A') LIKE #addr#||'%' 		
+		          ORDER BY GNO, BNO DESC
+		        )
+		 WHERE ROWNUM = 1			            
+	</select>
+	
+	
+	<!-- 구역 배달번호 업데이트 -->
+	<update id="updateBno">
+		  UPDATE TM_READER_NEWS
+    			SET GNO = #gno#
+        			, BNO = #bno#
+    	   WHERE READNO = #readno# AND NEWSCD = #newscd# AND SEQ = #seq#
+	</update>
+	
+</sqlMap>

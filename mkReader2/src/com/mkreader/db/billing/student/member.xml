@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="billing.student.member">
+
+
+	<!-- 유저정보 불러오기 -->
+	<select id="getUserInfo" resultClass="java.util.HashMap">
+		SELECT 
+			*
+		FROM
+			TBL_USERS_STU
+		WHERE
+			NUMID = #NUMID#
+	</select>
+	
+	<!-- 지국리스트 불러오기 -->
+	<select id="getJikukList" resultClass="java.util.HashMap">
+		SELECT 
+			SERIAL
+			, NAME 
+		FROM 
+			TBL_JIKUK 
+		WHERE 
+			SERIAL IS NOT NULL
+			<isNotEmpty property="SERIAL" prepend=" AND">
+				SERIAL = #SERIAL# 
+			</isNotEmpty> 
+		ORDER BY NAME
+	</select>
+	
+	<!-- 은행정보 불러오기 -->
+	<select id="getBankList" resultClass="java.util.HashMap">
+		SELECT 
+			BANKNUM
+			, BANKNAME 
+		FROM 
+			TBL_BANK 
+		ORDER BY 
+			BANKNUM
+	</select>
+	
+	<!-- 은행 시리얼넘버 불러오기 -->
+	<select id="getTopSerial" resultClass="string">
+		SELECT 
+			TOP 1 SERIAL 
+		FROM 
+			TBL_USERS_STU
+		WHERE 
+			JIKUK = #JIKUK#
+		ORDER BY 
+			SERIAL DESC
+	</select>
+	
+	<!-- 회원정보수정 -->
+	<update id="updateMeberInfo">
+		UPDATE 
+			TBL_USERS_STU 
+		SET 
+			INTYPE = #INTYPE#
+			, JIKUK = #JIKUK#
+			, GUBUN = #GUBUN#
+			, SERIAL = #SERIAL#
+			, USERNAME = #USERNAME#
+			, PHONE = #TELEPHONE#
+			, ZIP1 = #ZIP1#
+			, ZIP2 = #ZIP2#
+			, ADDR1 = #ADDR1#
+			, ADDR2 = #ADDR2#
+			, BANK_NAME = #BANK_USERNAME#
+			, BANK = #BANK#
+			, BANK_NUM = #BANK_NUM#
+			, BANK_MONEY = #BANK_MONEY#
+			, SAUP = #BANK_OWN#
+			, HANDY = #HANDY#
+			, SDATE = #SDATE#
+			, READNO = #READNO#
+			, EMAIL = #EMAIL#
+			, BUSU = #BUSU#
+			, MEMO = #MEMO#
+			, STU_SCH = #STU_SCH#
+			, STU_PART = #STU_PART#
+			, STU_CLASS = #STU_CLASS#
+			, STU_PROF = #STU_PROF#
+			, STU_ADM = #STU_ADM#
+			, STU_CALLER = #STU_CALLER#
+			<isNotEmpty property="JIKUK">
+				<isEmpty property="RDATE" prepend=", ">
+					RDATE = GETDATE()
+				</isEmpty>
+			</isNotEmpty>
+		WHERE 
+			NUMID = #NUMID#
+	</update>
+	
+</sqlMap>

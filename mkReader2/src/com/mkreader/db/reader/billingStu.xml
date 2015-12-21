@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="reader.billingStu">
+	<resultMap id="tblUsersStuMap" class="hashmap">
+		<result property="NUMID" column="NUMID"/>
+		<result property="JIKUK" column="JIKUK"/>
+		<result property="INTYPE" column="INTYPE"/>
+		<result property="USERNAME" column="USERNAME"/>
+		<result property="USERID" column="USERID"/>
+		<result property="PASSWD" column="PASSWD"/>
+		<result property="JUMIN1" column="JUMIN1"/>
+		<result property="JUMIN2" column="JUMIN2"/>
+		<result property="SAUP" column="SAUP"/>
+		<result property="GUBUN" column="GUBUN"/>
+		<result property="EMAIL" column="EMAIL"/>
+		<result property="ZIP1" column="ZIP1"/>
+		<result property="ZIP2" column="ZIP2"/>
+		<result property="ADDR1" column="ADDR1"/>
+		<result property="ADDR2" column="ADDR2"/>
+		<result property="NEWADDR" column="NEWADDR" />
+		<result property="BDMNGNO" column="BDMNGNO" />
+		<result property="PHONE" column="PHONE"/>
+		<result property="HANDY" column="HANDY"/>
+		<result property="BIRTHD" column="BIRTHD"/>
+		<result property="SL" column="SL"/>
+		<result property="LEVELS" column="LEVELS"/>
+		<result property="DIFF" column="DIFF"/>
+		<result property="INDATE" column="INDATE"/>
+		<result property="LASTDATE" column="LASTDATE"/>
+		<result property="COUNTERS" column="COUNTERS"/>
+		<result property="LOGS" column="LOGS" jdbcType="CLOB" javaType="string"/>
+		<result property="MEMO" column="MEMO" jdbcType="CLOB" javaType="string"/>
+		<result property="SDATE" column="SDATE"/>
+		<result property="WHOSTEP" column="WHOSTEP"/>
+		<result property="RDATE" column="RDATE"/>
+		<result property="RDATE_RESULT" column="RDATE_RESULT"/>
+		<result property="BANK" column="BANK"/>
+		<result property="BANK_NUM" column="BANK_NUM"/>
+		<result property="BANK_NAME" column="BANK_NAME"/>
+		<result property="REL" column="REL"/>
+		<result property="BANK_MONEY" column="BANK_MONEY"/>
+		<result property="BUSU" column="BUSU"/>
+		<result property="R_OUT_DATE" column="R_OUT_DATE"/>
+		<result property="R_OUT_RESULT" column="R_OUT_RESULT"/>
+		<result property="STATUS" column="STATUS"/>
+		<result property="TRASHS" column="TRASHS" jdbcType="CLOB" javaType="string"/>
+		<result property="STU_SCH" column="STU_SCH"/>
+		<result property="STU_PART" column="STU_PART"/>
+		<result property="STU_CLASS" column="STU_CLASS"/>
+		<result property="STU_PROF" column="STU_PROF"/>
+		<result property="STU_ADM" column="STU_ADM"/>
+		<result property="STU_CALLER" column="STU_CALLER"/>
+		<result property="READNO" column="READNO"/>
+		<result property="SERIAL" column="SERIAL"/>
+		<result property="REALJIKUK" column="REALJIKUK"/>
+	</resultMap>
+	
+	<!-- 학생 자동이체 목록 조회(초기값 신청중) -->	
+	<select id="getBillingList" resultClass="java.util.HashMap">
+	SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT 
+					NUMID,
+					JIKUK,
+					FUNC_AGENT_NM(REALJIKUK) JIKUKNM,  
+					INTYPE,
+					USERNAME,
+					USERID,
+					PASSWD,
+					JUMIN1,
+					JUMIN2,
+					SAUP,
+					GUBUN,
+					EMAIL,
+					ZIP1,
+					ZIP2,
+					ADDR1,
+					ADDR2,
+					NEWADDR, 
+					PHONE,
+					HANDY,
+					BIRTHD,
+					SL,
+					LEVELS,
+					DIFF,
+					INDATE,
+					LASTDATE,
+					COUNTERS,
+					LOGS,
+					MEMO,
+					SDATE,
+					WHOSTEP,
+					RDATE,
+					RDATE_RESULT,
+					BANK,
+					TRIM(BANK_NUM) BANK_NUM,
+					BANK_NAME,
+					REL,
+					BANK_MONEY,
+					BUSU,
+					R_OUT_DATE,
+					R_OUT_RESULT,
+					STATUS,
+					TRASHS,
+					STU_SCH,
+					STU_PART,
+					STU_CLASS,
+					STU_PROF,
+					STU_ADM,
+					STU_CALLER,
+					READNO,
+					SERIAL,
+					REALJIKUK		
+				FROM 
+					TBL_USERS_STU
+				WHERE 
+					STATUS = 'EA00'
+					AND REALJIKUK = #realJikuk#
+					AND RDATE IS NOT NULL
+					ORDER BY INDATE DESC
+			)C
+		)D
+		where
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 학생 자동이체 카운트 조회(초기값 신청중) -->	
+	<select id="getBillingCount" resultClass="int">
+	SELECT COUNT(1) COUNT FROM TBL_USERS_STU WHERE STATUS = 'EA00' AND REALJIKUK = #realJikuk# AND RDATE IS NOT NULL
+	</select>
+	
+	<!-- 학생 자동이체 검색 조회 -->
+	<select id="searchBilling" resultClass="java.util.HashMap">
+	SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT 
+					NUMID,
+					JIKUK,
+					FUNC_AGENT_NM(REALJIKUK) JIKUKNM,  
+					INTYPE,
+					USERNAME,
+					USERID,
+					PASSWD,
+					JUMIN1,
+					JUMIN2,
+					SAUP,
+					GUBUN,
+					EMAIL,
+					ZIP1,
+					ZIP2,
+					ADDR1,
+					ADDR2,
+					NEWADDR, 
+					PHONE,
+					HANDY,
+					BIRTHD,
+					SL,
+					LEVELS,
+					DIFF,
+					INDATE,
+					LASTDATE,
+					COUNTERS,
+					LOGS,
+					MEMO,
+					SDATE,
+					WHOSTEP,
+					RDATE,
+					RDATE_RESULT,
+					BANK,
+					TRIM(BANK_NUM) BANK_NUM,
+					BANK_NAME,
+					REL,
+					BANK_MONEY,
+					BUSU,
+					R_OUT_DATE,
+					R_OUT_RESULT,
+					STATUS,
+					TRASHS,
+					STU_SCH,
+					STU_PART,
+					STU_CLASS,
+					STU_PROF,
+					STU_ADM,
+					STU_CALLER,
+					READNO,
+					SERIAL,
+					REALJIKUK		
+				FROM 
+					TBL_USERS_STU
+				WHERE 
+					1 = 1
+					AND REALJIKUK = #realJikuk#
+					AND RDATE IS NOT NULL
+					<isNotEmpty property="search_key" >
+						<isEqual property="search_type" compareValue="userName" prepend="AND">
+							USERNAME like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="jikuk" prepend="AND">
+							REALJIKUK in (SELECT SERIAL FROM TM_AGENCY WHERE NAME like '%'||#search_key#||'%')
+						</isEqual>
+						<isEqual property="search_type" compareValue="bankNum" prepend="AND">
+							BANK_NUM like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="bankName" prepend="AND">
+							BANK_NAME like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="unique" prepend="AND">
+							JIKUK||SERIAL like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="saup" prepend="AND">
+							SAUP like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="stuSch" prepend="AND">
+							STU_SCH like '%'||#search_key#||'%'
+						</isEqual>
+						<isEqual property="search_type" compareValue="stuProf" prepend="AND">
+							STU_PROF like '%'||#search_key#||'%'
+						</isEqual>
+					</isNotEmpty>
+					<isNotEqual property="status" compareValue="ALL" prepend="AND">
+						STATUS = #status#
+					</isNotEqual>
+				ORDER BY INDATE DESC
+			)C
+		)D
+		where
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 학생 자동이체 검색 조회 카운트 -->
+	<select id="searchBillingCount" resultClass="int">
+	SELECT 
+		COUNT(1) COUNT		
+	FROM 
+		TBL_USERS_STU
+	WHERE 
+		1 = 1
+		AND REALJIKUK = #realJikuk#
+		AND RDATE IS NOT NULL
+		<isNotEmpty property="search_key" >
+			<isEqual property="search_type" compareValue="userName" prepend="AND">
+				USERNAME like '%'||#search_key#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="jikuk" prepend="AND">
+				REALJIKUK in (SELECT SERIAL FROM TM_AGENCY WHERE NAME like '%'||#search_key#||'%')
+			</isEqual>
+			<isEqual property="search_type" compareValue="bankNum" prepend="AND">
+				BANK_NUM like '%'||#search_key#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="bankName" prepend="AND">
+				BANK_NAME like '%'||#search_key#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="unique" prepend="AND">
+				JIKUK||SERIAL like '%'||#search_key#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="saup" prepend="AND">
+				SAUP like '%'||#search_key#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="stuSch" prepend="AND">
+				STU_SCH like '%'||#search_key#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="stuProf" prepend="AND">
+				STU_PROF like '%'||#search_key#||'%'
+			</isEqual>
+		</isNotEmpty>
+		<isNotEqual property="status" compareValue="ALL" prepend="AND">
+			STATUS = #status#
+		</isNotEqual>
+	ORDER BY INDATE DESC
+	</select>
+	
+	<!-- 자동이체 정보 상세 조회 -->	
+	<select id="billingInfo" resultClass="java.util.HashMap" resultMap="tblUsersStuMap">
+	SELECT 
+		NUMID,                                                         					
+		JIKUK,                                     					
+		FUNC_AGENT_NM(REALJIKUK) JIKUKNM,              					
+		INTYPE,                                    					
+		USERNAME,                                  					
+		USERID,                                    					
+		PASSWD,                                    					
+		JUMIN1,                                    					
+		JUMIN2,                                    					
+		SAUP,                                      					
+		GUBUN,                                     					
+		EMAIL,                                     					
+		ZIP1,                                      					
+		ZIP2,                                      					
+		ADDR1,                                     					
+		ADDR2,         
+		NEWADDR, 
+		BDMNGNO,                            					
+		PHONE,                                     					
+		REPLACE(HANDY, 'NULL' , '') HANDY,         					               
+		BIRTHD,                                    					
+		SL,                                        					
+		LEVELS,                                    					
+		DIFF,                                      					
+		TO_CHAR(INDATE, 'YYYY-MM-DD PM HH:MI:SS') INDATE,                                          
+		LASTDATE,                                  					
+		COUNTERS,                                  					
+		LOGS,                                      					
+		MEMO,                                      					
+		SDATE,                                     					
+		WHOSTEP,                                   					
+		RDATE,                                     					
+		RDATE_RESULT,                              					
+		SUBSTR(BANK,0,3) BANK,                                           
+		TRIM(BANK_NUM) BANK_NUM,                                  					
+		BANK_NAME,                                 					
+		REL,                                       					
+		BANK_MONEY,                                					
+		BUSU,                                      					
+		R_OUT_DATE,                                					
+		R_OUT_RESULT,                              					
+		STATUS,                                    					
+		TRASHS,                                    					
+		STU_SCH,                                   					
+		STU_PART,                                  					
+		STU_CLASS,                                 					
+		STU_PROF,                                  					
+		STU_ADM,                                   					
+		STU_CALLER,                                					
+		READNO,                                    					
+		SERIAL,                                    					
+		REALJIKUK                                  						
+	FROM 
+		TBL_USERS_STU
+	WHERE 
+		1 = 1
+		<isNotEmpty property="numId" prepend="AND">
+			NUMID = #numId#
+		</isNotEmpty>
+	</select>
+	
+	<!-- 자동이체 납부내역 조회 -->	
+	<select id="paymentHist" resultClass="java.util.HashMap">
+	SELECT 
+		NUMID,
+		(SELECT USERNAME FROM TBL_USERS WHERE NUMID = USERNUMID) USERNAME,
+		SERIALNO,
+		FILENAME,
+		CMSTYPE,
+		CMSDATE,
+		CMSMONEY,
+		CMSRESULT,
+		USERID,
+		USERNUMID,
+		CODENUM,
+		RDATE,
+		SUBSMONTH,
+		ORDERNO,
+		CHECKED,
+		READNO
+	FROM
+		TBL_EA_LOG_STU
+	WHERE 
+		1 =1 
+		AND USERNUMID = #numId#
+		<isNotEmpty property="cmsType" prepend="AND">
+		TRIM(CMSTYPE) = #cmsType#
+		</isNotEmpty>
+		ORDER BY CMSDATE
+	</select>
+	
+	<!-- 자동이체 납부내역 조회 -->	
+	<select id="refundHist" resultClass="java.util.HashMap">
+	SELECT 
+		NUMID,
+		CHASU,
+		GUBUN,
+		USERNUMID,
+		USERNAME,
+		JUMIN,
+		JIKUK,
+		JIKUK_NAME,
+		BANK_NAME,
+		TRIM(BANK_NUM) BANK_NUM,
+		BANK_USERNAME,
+		REFUND_PRICE,
+		REFUND_DATE,
+		REGDATE,
+		TXT
+	FROM 
+		TBL_EA_REFUND_ALL 
+	WHERE 
+		USERNUMID = #numId#
+	AND CHASU > 0 
+	ORDER BY REFUND_DATE DESC
+	</select>
+	
+	<!-- 자동이체 일시 정지, 일시 정지 해제 , 임의해지 -->
+	<update id="updateTblUserStuState">
+	UPDATE
+		TBL_USERS_STU
+	SET
+		LASTDATE = SYSDATE,
+		LEVELS = #levels#
+		<isNotEqual property="condition" compareValue="" prepend=",">
+		STATUS = #condition#
+		</isNotEqual>
+ 	WHERE 
+ 		NUMID = #numId#
+
+	</update>
+		
+	<!-- 자동이체 정보 수정 -->
+	<update id="updatePaymentFinal">
+	UPDATE 
+		TBL_USERS_STU
+	SET
+		LASTDATE = SYSDATE,
+		USERNAME = #userName# , 
+		STU_SCH = #stuSch# ,
+		STU_PART = #stuPart# ,
+		STU_CLASS = #stuClass# ,
+		STU_PROF = #stuProf# ,
+		STU_ADM = #stuAdm# ,
+		STU_CALLER = #stuCaller# ,
+		SAUP = #saup# , 
+		EMAIL = #email#, 
+		ZIP1 = #zip1# , 
+		ZIP2 = #zip2# , 
+		ADDR1 = #addr1# , 
+		ADDR2 = #addr2# ,
+		NEWADDR = #newaddr# ,
+		BDMNGNO = #bdMngNo# ,
+		PHONE = #phone# ,
+		HANDY = #handy# ,
+		BANK = #bankInfo# ,
+		BANK_NUM = #bankNum# ,
+		BANK_NAME = #bankName# ,
+		BANK_MONEY = #bankMoney# ,
+		BUSU = #busu# ,
+		REALJIKUK = #realJikuk# ,
+		JIKUK =  #realJikuk# ,
+		RDATE = SYSDATE ,
+		READNO = #readNo#
+	WHERE
+		NUMID = #numId#
+	</update>
+	
+	<!-- 자동이체 일련번호 조회 -->
+	<select id="getNumId" resultClass="string">
+	SELECT 
+		NUMID
+	FROM
+		TBL_USERS_STU
+	WHERE
+		READNO = #readNo#
+		AND REALJIKUK = #agency_serial#
+		AND STATUS != 'EA99'
+		AND ROWNUM = '1'
+	</select>
+	
+	<!-- 자동이체 해지 -->
+	<update id="removePayment">
+		UPDATE
+			TBL_USERS_STU
+		SET
+			LASTDATE = SYSDATE,
+			STATUS = 'EA13-',
+			R_OUT_DATE = SYSDATE
+		WHERE
+			NUMID = #numId#
+			AND READNO = #readNo#
+	</update>
+	
+	<!-- 계좌정보 변경  -->
+	<update id="updateBankInfo">
+	UPDATE 
+		TBL_USERS_STU
+	SET
+		LASTDATE = SYSDATE,
+		SAUP = #saup# , 
+		HANDY = #handy# ,
+		BANK = #bankInfo# ,
+		BANK_NUM = #bankNum# ,
+		BANK_NAME = #bankName# ,
+		BANK_MONEY = #bankMoney#
+		<isNotEmpty property="status" prepend=",">
+		STATUS = #status#,
+		NUMID = #newNumId#
+		</isNotEmpty>
+	WHERE
+		NUMID = #numId#
+		<isNotEmpty property="status" prepend="AND">
+		STATUS = 'EA21'
+		</isNotEmpty>
+	</update>
+	
+	<!-- 기존 데이터 복사 복사데이터를 해지상태로 변경 -->
+	<insert id="cloneBankInfo">
+	INSERT INTO TBL_USERS_STU
+		(NUMID, JIKUK, INTYPE, USERNAME, USERID, PASSWD, JUMIN1, JUMIN2, SAUP, GUBUN, EMAIL, ZIP1, ZIP2, ADDR1, ADDR2, PHONE, HANDY, BIRTHD, SL,
+		LEVELS, DIFF, INDATE, LASTDATE, COUNTERS, LOGS, MEMO, SDATE, WHOSTEP, RDATE, RDATE_RESULT, BANK, BANK_NUM, BANK_NAME, REL, BANK_MONEY, BUSU,
+		R_OUT_DATE, R_OUT_RESULT, STATUS, TRASHS, STU_SCH, STU_PART, STU_CLASS, STU_PROF, STU_ADM, STU_CALLER, READNO, REALJIKUK, SERIAL, NEWADDR, BDMNGNO)
+	SELECT
+		NUMID, JIKUK, INTYPE, USERNAME, USERID, PASSWD, JUMIN1, JUMIN2, SAUP, GUBUN, EMAIL, ZIP1, ZIP2, ADDR1, ADDR2, PHONE, HANDY, BIRTHD, SL,
+		LEVELS, DIFF, INDATE, SYSDATE, COUNTERS, LOGS, MEMO, SDATE, WHOSTEP, RDATE, RDATE_RESULT, BANK, BANK_NUM, BANK_NAME, REL, BANK_MONEY, BUSU,
+		SYSDATE, R_OUT_RESULT, 'EB13-', TRASHS, STU_SCH, STU_PART, STU_CLASS, STU_PROF, STU_ADM, STU_CALLER, READNO, REALJIKUK, SERIAL, NEWADDR, BDMNGNO
+	FROM
+		TBL_USERS_STU WHERE NUMID = #numId#
+	</insert>
+	
+	<!-- 통화로그 카운트 -->
+	<select id="countCalllog" resultClass="int">
+	SELECT
+		COUNT(*)
+	FROM
+		TBL_CALL_LOG
+	WHERE
+		NUMID = #numId#
+		AND TYPECD = '2'
+	</select>
+	
+	<!-- newnumid조회 -->
+	<select id="newNumId" resultClass="int">
+	SELECT nvl(max(NUMID), 0)+1 FROM TBL_USERS_STU
+	</select>
+	
+	<select id="logCopy" resultClass="String">
+	SELECT FUNC_EA_LOG_STU_COPY(#numId#,#newNumId#) FROM DUAL
+	</select>
+	
+	<!-- 로그 수정 -->
+	<update id="updateLog">
+	UPDATE 
+		TBL_EA_LOG_STU
+	SET
+		USERNUMID = #newNumId#
+	WHERE
+		USERNUMID = #numId#
+	</update>
+	
+</sqlMap>

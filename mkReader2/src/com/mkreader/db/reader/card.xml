@@ -1,0 +1,1364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="reader.card">
+
+	<!-- 카드독자 대상 조회 -->
+	<select id="cardReaderList" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT NUMID,
+					   CARD_SEQ,
+					   GUBUN,
+					   READNO,
+					   ID,
+					   USERNAME,
+					   BOSEQ,
+					   FUNC_AGENT_NM(BOSEQ) JIKUKNAME,
+					   ZIP,
+					   ADDR1,
+					   ADDR2,
+					   NEWADDR,
+					   BDMNGNO,
+					   TELNO1,
+					   TELNO2,
+					   TELNO3,
+					   HANDY1,
+					   HANDY2,
+					   HANDY3,
+					   EMAIL,
+					   QTY,
+					   UPRICE,
+					   INTFLDCD,
+					   STATUS,
+					   APLCDT,
+					   STDT,
+					   REMK,
+					   NTDT,
+					   NTPS,
+					   INDT,
+					   INPS,
+					   CHGDT,
+					   CHGPS,
+					   (SELECT TRIM(JOIN_YN) FROM TM_TNEWSPAPERHIST WHERE A.CARD_SEQ=SEQNO AND A.ID=USERID AND A.BOSEQ=OFFICECODE) AS JOIN_YN
+				  FROM TBL_CARD_READER A
+				 WHERE 1=1
+				 <isNotEmpty property="realJikuk" prepend="AND">
+					BOSEQ = #realJikuk#
+				 </isNotEmpty>
+				 <isNotEqual property="status" compareValue="all" prepend="AND">
+					STATUS = #status#
+				 </isNotEqual>
+				 <isNotEqual property="flag" compareValue="search" prepend="AND">
+				 	SUBSTR(APLCDT,0,6) = TO_CHAR(SYSDATE,'YYYYMM')
+				 </isNotEqual>
+				 <isNotEmpty property="search_key">
+					<isEqual property="search_type" compareValue="userName" prepend="AND">
+						USERNAME like '%'||#search_key#||'%'
+					</isEqual>
+					<isEqual property="search_type" compareValue="cardSeq" prepend="AND">
+						CARD_SEQ = #search_key#
+					</isEqual>
+					<isEqual property="search_type" compareValue="readNo" prepend="AND">
+						READNO = #search_key#
+					</isEqual>
+					<isEqual property="search_type" compareValue="readerId" prepend="AND">
+						ID = #search_key#
+					</isEqual>
+					<isEqual property="search_type" compareValue="opAddr" prepend="AND">
+						(ADDR1 LIKE '%'||#search_key#||'%' OR ADDR2 LIKE '%'||#search_key#||'%' OR NEWADDR LIKE '%'||#search_key#||'%')
+					</isEqual>
+					<isEqual property="search_type" compareValue="opHandy" prepend="AND">
+						HANDY2||HANDY3 LIKE '%'||#search_key#||'%'
+					</isEqual>
+				</isNotEmpty>
+				 ORDER BY NVL(STDT,APLCDT)  DESC, CARD_SEQ DESC
+				)C
+			)D
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND	RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+
+	<!-- 카드독자 카운트 조회 -->
+	<select id="cardReaderListCount" resultClass="int">
+		SELECT COUNT(1) COUNT
+		  FROM TBL_CARD_READER
+		 WHERE 1=1
+		<isNotEmpty property="realJikuk" prepend="AND">
+			BOSEQ = #realJikuk#
+		</isNotEmpty>
+ 		<isNotEqual property="status" compareValue="all" prepend="AND">
+			STATUS = #status#
+		</isNotEqual>
+		<isNotEqual property="flag" compareValue="search" prepend="AND">
+		 	SUBSTR(APLCDT,0,6) = TO_CHAR(SYSDATE,'YYYYMM')
+		</isNotEqual>
+		<isNotEmpty property="search_key">
+			<isEqual property="search_type" compareValue="userName" prepend="AND">
+				USERNAME like '%'||#search_key#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="cardSeq" prepend="AND">
+				CARD_SEQ = #search_key#
+			</isEqual>
+			<isEqual property="search_type" compareValue="readNo" prepend="AND">
+				READNO = #search_key#
+			</isEqual>
+			<isEqual property="search_type" compareValue="readerId" prepend="AND">
+				ID = #search_key#
+			</isEqual>
+			<isEqual property="search_type" compareValue="opAddr" prepend="AND">
+				(ADDR1 LIKE '%'||#search_key#||'%' OR ADDR2 LIKE '%'||#search_key#||'%' OR NEWADDR LIKE '%'||#search_key#||'%')
+			</isEqual>
+			<isEqual property="search_type" compareValue="opHandy" prepend="AND">
+				HANDY2||HANDY3 LIKE '%'||#search_key#||'%'
+			</isEqual>
+		</isNotEmpty>
+	</select>
+
+	<!-- 카드독자 대상 조회 -->
+	<select id="retrieveCardReader" resultClass="java.util.HashMap">
+		SELECT *
+		  FROM TBL_CARD_READER
+		 WHERE 1=1
+		   AND CARD_SEQ = #cardSeq#
+		   AND APLCDT = #aplcDt#
+		<isEqual property="status" compareValue="해지">
+		 ORDER BY STATUS
+		</isEqual>
+	</select>
+	
+	<!-- 카드독자 대상 조회 -->
+	<select id="retrieveCardReaderForExcelUpload" resultClass="java.util.HashMap">
+		SELECT *
+		  FROM TBL_CARD_READER
+		 WHERE 1=1
+		   AND CARD_SEQ = #cardSeq#
+		   AND APLCDT = #aplcDt#
+		   AND STDT IS NULL
+		<isEqual property="status" compareValue="해지">
+		 ORDER BY STATUS
+		</isEqual>
+	</select>
+	
+	<!-- 카드독자 정보수정 -->		   
+	<update id="updateCardReader">
+		UPDATE TBL_CARD_READER
+		   SET READNO = #readNo#,
+			   USERNAME = #readNm#,
+			   BOSEQ = #boseq#,
+			   TELNO1 = #telNo1#,
+			   TELNO2 = #telNo2#,
+			   TELNO3 = #telNo3#,
+			   HANDY1 = #handy1#,
+			   HANDY2 = #handy2#,
+			   HANDY3 = #handy3#,
+			   ZIP = #zip#,
+			   ADDR1 = #addr1#,
+			   ADDR2 = #addr2#,
+			   EMAIL = #email#,
+			   QTY = #qty#,
+			   UPRICE = NVL(#uprice#, 15000*#qty#),
+			   INTFLDCD = #intfldcd#,
+			   NEWYN = #newYn#,
+			<isEqual property="noticeYnVal" compareValue="1">  
+				<isEqual property="oldNtdt" compareValue="0">
+			  	   NTDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+			   	   NTPS = #loginId#,
+		   	   	</isEqual>
+			</isEqual>
+				NEWADDR = #newaddr#,
+		   	   BDMNGNO = #bdMngNo#,
+		   	   CHGDT = SYSDATE,
+		       CHGPS = #loginId#
+		 WHERE 1=1
+		   AND CARD_SEQ = #cardSeq#
+		   <isNotEmpty property="readNo">
+			   AND READNO = #readNo#
+		   </isNotEmpty> 
+	</update>
+
+	<!-- 카드독자정보 테이블 상태 수정(파일처리용) -->
+	<update id="completeCardReaderFromFile">
+		UPDATE TBL_CARD_READER
+		   SET STATUS = #status#,
+		  	   GUBUN = #gubun#,
+		  	   NTDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+		   	   NTPS = #loginId#,
+		   	   NEWYN = #newYn#,
+			   CHGDT = SYSDATE,
+		       CHGPS = #loginId#
+		 WHERE 1=1
+		   AND CARD_SEQ = #cardSeq#
+		   AND READNO = #readNo#
+	</update>
+
+	<update id="updateCardReadNo">
+		UPDATE TBL_CARD_READER
+		   SET STATUS = #status#,
+		  	   GUBUN = #gubun#,
+		   	   READNO = #readNo#,
+			   USERNAME = #readNm#,
+			   BOSEQ = #boseq#,
+			   ZIP = #zip#,
+			   ADDR1 = #addr1#,
+			   ADDR2 = #addr2#,
+			   EMAIL = #email#,
+			   QTY = #qty#,
+			   UPRICE = NVL(#uprice#, 15000*#qty#),
+			   INTFLDCD = #intfldcd#,
+			   REMK = #remk#,
+			   NEWYN = #newYn#,
+			<isEqual property="status" compareValue="1">
+		  	   NTDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+		   	   NTPS = #loginId#,
+			</isEqual>
+		   	   CHGDT = SYSDATE,
+		       CHGPS = #loginId#
+		 WHERE 1=1
+		   AND CARD_SEQ = #cardSeq#
+	</update>
+
+	<!-- 카드독자 해지신청처리 -->
+	<update id="closeCardReader">
+		UPDATE TBL_CARD_READER
+		   SET STATUS = #status#,
+		   	   STDT = #stDt#,
+			<isEqual property="status" compareValue="2">
+		 	   REMK = #remk#,
+			</isEqual>
+			<isEqual property="status" compareValue="4">
+		 	   REMK = #remk#,
+			</isEqual>
+		   	   CHGDT = SYSDATE,
+		       CHGPS = #loginId#
+		 WHERE 1=1
+		   AND CARD_SEQ = #cardSeq#
+		   <isNotEmpty property="oldReadNo">
+			   AND READNO = #oldReadNo#
+		   </isNotEmpty> 
+	</update>
+	
+	<!-- 카드독자 해지신청처리 -->
+	<update id="closeCardReaderForExcel">
+		UPDATE TBL_CARD_READER
+		   SET STATUS = #status#,
+		   	   STDT = #stDt#,
+			<isEqual property="status" compareValue="2">
+		 	   REMK = #remk#,
+			</isEqual>
+			<isEqual property="status" compareValue="4">
+		 	   REMK = #remk#,
+			</isEqual>
+		   	   CHGDT = SYSDATE,
+		       CHGPS = #loginId#
+		 WHERE 1=1
+		   AND CARD_SEQ = #cardSeq#
+		   AND STDT IS NULL
+		   AND APLCDT = #aplcDt#
+		   <isNotEmpty property="oldReadNo">
+			   AND READNO = #oldReadNo#
+		   </isNotEmpty> 
+	</update>
+
+	<!-- 카드독자정보 생성 -->
+	<insert id="insertCardReader">
+	    INSERT INTO TBL_CARD_READER
+					(NUMID,
+					 CARD_SEQ, GUBUN, READNO, ID, USERNAME,
+					 BOSEQ, TELNO1, TELNO2, TELNO3, HANDY1, HANDY2, HANDY3, 
+					 EMAIL, QTY, UPRICE, INTFLDCD,
+					 STATUS, NTDT, APLCDT, REMK, INDT, INPS,
+					 BDMNGNO, NEWADDR, ZIP, ADDR1, ADDR2)
+			   VALUES
+					(NVL((SELECT MAX(NUMID)+1 FROM TBL_CARD_READER), 1),
+					 #cardSeq#, #gubun#, #readNo#, #userId#, #readNm#,
+					 #boseq#, #telno1#, #telno2#, #telno3#, #handy1#, #handy2#, #handy3#,
+					 #email#, #qty#, #uprice#, NVL(#intfldcd#, (SELECT CODE FROM TC_COMMON WHERE cdclsf = '116' AND CNAME = #intfld#)),
+					 NVL(#status#,0), #ntDt#,
+					 #aplcDt#, #remk#, SYSDATE, #loginId#,
+					 #bdMngNo#, #newaddr#, #zip#, #addr1#, #addr2#)
+	</insert>
+
+	<!-- 카드독자정보 생성 (파일처리용)-->
+	<insert id="insertCardReaderFromFile">
+	    INSERT INTO TBL_CARD_READER
+					(NUMID,
+					 CARD_SEQ, GUBUN, READNO, ID, USERNAME,
+					 BOSEQ, TELNO1, TELNO2, TELNO3, HANDY1, HANDY2, HANDY3, 
+					 EMAIL, QTY, UPRICE, INTFLDCD,
+					 STATUS, NTDT, APLCDT, REMK, INDT, INPS, NEWYN,
+					 BDMNGNO, NEWADDR, ZIP, ADDR1, ADDR2)
+			   VALUES
+					(NVL((SELECT MAX(NUMID)+1 FROM TBL_CARD_READER), 1),
+					 #cardSeq#, #gubun#, #readNo#, #userId#, #readNm#,
+					 #boseq#, #telno1#, #telno2#, #telno3#, #handy1#, #handy2#, #handy3#,
+					 #email#, #qty#, 15000*#qty#, NVL(#intfldcd#, (SELECT CODE FROM TC_COMMON WHERE cdclsf = '116' AND CNAME = #intfld#)),
+					 NVL(#status#,0), #ntDt#,
+					 #aplcDt#, #remk#, SYSDATE, #loginId#, #newYn#
+					 
+					 <isNotEmpty property="bdMngNo">
+						 #bdMngNo#,
+						 (SELECT CASE WHEN SUBSTR(LW_DNG_CD, 9, 2) = '00'
+		       						  THEN SD_NM||' '||SGG_NM||' '||ROAD_NM||' '||BD_NO1||DECODE(BD_NO2, 0, '', '-'||BD_NO2 )
+		       					 	  ELSE SD_NM||' '||SGG_NM||' '||LW_EPMNDNG_NM||''||ROAD_NM||' '||BD_NO1||DECODE(BD_NO2, 0, '', '-'||BD_NO2 )
+		       			          END
+		       			    FROM TBL_ROAD_CD
+		       			   WHERE BD_MNG_NO = #bdMngNo#),
+						 (SELECT ZIP_CD FROM TBL_ROAD_CD WHERE BD_MNG_NO = #bdMngNo#),
+						 (SELECT CASE WHEN SUBSTR(LW_DNG_CD, 9, 2) = '00'
+							       	  THEN LW_EPMNDNG_NM||' '||LOT_NO1||DECODE(LOT_NO2, 0, '', '-'||LOT_NO2)
+							       	  ELSE LW_RI_NM||' '||LOT_NO1||DECODE(LOT_NO2, 0, '', '-'||LOT_NO2)
+							      END
+							FROM TBL_ROAD_CD
+						   WHERE BD_MNG_NO = #bdMngNo#),
+						 #addr2#)
+					 </isNotEmpty>
+					 <isEmpty property="bdMngNo">
+						 #bdMngNo#, #newaddr#, #zip#, #addr1#, #addr2#)
+					 </isEmpty>
+	</insert>
+	
+	<!-- 카드독자정보 생성 -->
+	<insert id="insertCardAplcReader">
+	    INSERT INTO TBL_CARD_READER
+					(NUMID,
+					 CARD_SEQ, GUBUN, READNO, ID, USERNAME,
+					 BOSEQ, TELNO1, TELNO2, TELNO3, HANDY1, HANDY2, HANDY3, 
+					 EMAIL, QTY, UPRICE, 
+					 STATUS, NTDT, NTPS, 
+					 APLCDT, REMK, INDT, INPS, NEWYN, ZIP, ADDR1, ADDR2, NEWADDR, BDMNGNO)
+			   VALUES
+					(NVL((SELECT MAX(NUMID)+1 FROM TBL_CARD_READER), 1),
+					 #cardSeq#, #gubun#, #readNo#, #userId#, #readNm#,
+					 #boseq#, #homeTel1#, #homeTel2#, #homeTel3#, #mobile1#, #mobile2#, #mobile3#,
+					 #email#, #qty#, #uprice#, 
+					 NVL(#status#,0), #ntDt#, #loginId#,
+					 #aplcDt#, #remk#, SYSDATE, #loginId#, #newYn# ,#zip#, #addr1#, #addr2#, #newaddr#,#bdMngNo#)
+	</insert>
+
+	<!-- 카드독자 대상 조회 -->
+	<select id="retrieveCardReaderInfo" resultClass="java.util.HashMap">
+		SELECT NUMID,
+			   CARD_SEQ,
+			   GUBUN,
+			   READNO,
+			   ID,
+			   USERNAME,
+			   BOSEQ,
+			   ZIP,
+			   ADDR1,
+			   ADDR2,
+			   NEWADDR,
+			   BDMNGNO,
+			   TELNO1,
+			   TELNO2,
+			   TELNO3,
+			   HANDY1,
+			   HANDY2,
+			   HANDY3,
+			   EMAIL,
+			   QTY,
+			   NVL(UPRICE, QTY*15000) UPRICE,
+			   INTFLDCD,
+			   STATUS,
+			   APLCDT,
+			   STDT,
+			   REMK,
+			   NEWYN,
+			   NTDT,
+			   NTPS,
+			   INDT,
+			   INPS,
+			   CHGDT,
+			   CHGPS,
+			   (SELECT TRIM(JOIN_YN) FROM TM_TNEWSPAPER WHERE A.CARD_SEQ=SEQNO AND A.ID=USERID) AS JOIN_YN
+		  FROM TBL_CARD_READER A
+		 WHERE 1=1
+		   <isNotEmpty property="readNo">
+			   AND READNO = #readNo#
+		   </isNotEmpty>
+		 ORDER BY DECODE(STATUS, 0, 5, STATUS) ASC
+	</select>
+	
+	<!-- 독자번로 구독 기본정보 조회 -->
+	<select id="getReaderInfo" resultClass="java.util.HashMap">
+		SELECT *
+		  FROM TM_READER_NEWS 
+		 WHERE READNO = #readNo#
+		   AND (BNO IS NULL OR BNO !='999')
+	</select>
+
+	<!-- 통합 독자 생성 -->
+	<insert id="insertTmReader">
+		INSERT INTO TM_READER
+			(READNO, EMAIL, INTFLDCD, INDT, INPS, CHGDT, CHGPS) 
+		VALUES
+			(#readNo#, #email#, #intFldCd#, SYSDATE, #loginId#, SYSDATE, #loginId# )
+	</insert>
+	
+	<!-- 구독정보 생성 -->
+	<insert id="insertTmReaderNews">
+		INSERT INTO TM_READER_NEWS
+			(READNO, NEWSCD, SEQ, BOSEQ, GNO, BNO, READTYPECD, READNM, HOMETEL1, HOMETEL2, HOMETEL3, MOBILE1, MOBILE2, MOBILE3,
+			 BDMNGNO, NEWADDR, DLVZIP, DLVADRS1, DLVADRS2,
+			 SGTYPE, UPRICE, QTY, RSDTYPECD, DLVTYPECD, HJDT, HJPATHCD,
+             SGBGMM,
+             SGEDMM, SGCYCLE, APLCDT, REMK, INDT, INPS)
+		VALUES
+			(#readNo#, #newsCd#, '0001', #boseq#, LPAD(#gno#,3,0), '000', #readTypeCd#, #readNm#, #homeTel1#, #homeTel2#, #homeTel3#, #mobile1#, #mobile2#, #mobile3#,
+			 #bdMngNo#, #newaddr#, #zip#, #addr1#, #addr2#,
+             #sgType#, NVL(#uprice#, 15000*#qty#), #qty#, #rsdTypeCd#, #dlvTypeCd#, NVL(#hjDt#, TO_CHAR(SYSDATE, 'YYYYMMDD')), #hjPathCd#,
+			 NVL(#sgBgmm#, TO_CHAR(ADD_MONTHS(SYSDATE, 1) , 'YYYYMM') ),
+			 #sgEdmm#, '1', #aplcDt#, #remk#, sysdate, #loginId# )
+	</insert>
+
+	<!-- 구독정보 생성 (파일처리용)-->
+	<insert id="insertTmReaderNewsFromFile">
+		INSERT INTO TM_READER_NEWS
+			(READNO, NEWSCD, SEQ, BOSEQ, GNO, BNO, READTYPECD, READNM, HOMETEL1, HOMETEL2, HOMETEL3, MOBILE1, MOBILE2, MOBILE3,
+			 BDMNGNO, NEWADDR, DLVZIP, DLVADRS1, DLVADRS2,
+			 SGTYPE, UPRICE, QTY, RSDTYPECD, DLVTYPECD, HJDT, HJPATHCD,
+             SGBGMM,
+             SGEDMM, SGCYCLE, APLCDT, REMK, INDT, INPS)
+		VALUES
+			(#readNo#, #newsCd#, '0001', #boseq#, LPAD(#gno#,3,0), '000', #readTypeCd#, #readNm#, #phone1#, #phone2#, #phone3#, #handy1#, #handy2#, #handy3#,
+             
+             <isNotEmpty property="bdMngNo">
+				 #bdMngNo#,
+				 (SELECT CASE WHEN SUBSTR(LW_DNG_CD, 9, 2) = '00'
+	      						  THEN SD_NM||' '||SGG_NM||' '||ROAD_NM||' '||BD_NO1||DECODE(BD_NO2, 0, '', '-'||BD_NO2 )
+	      					 	  ELSE SD_NM||' '||SGG_NM||' '||LW_EPMNDNG_NM||''||ROAD_NM||' '||BD_NO1||DECODE(BD_NO2, 0, '', '-'||BD_NO2 )
+	      			          END
+	      			    FROM TBL_ROAD_CD
+	      			   WHERE BD_MNG_NO = #bdMngNo#),
+				 (SELECT ZIP_CD FROM TBL_ROAD_CD WHERE BD_MNG_NO = #bdMngNo#),
+				 (SELECT CASE WHEN SUBSTR(LW_DNG_CD, 9, 2) = '00'
+					       	  THEN LW_EPMNDNG_NM||' '||LOT_NO1||DECODE(LOT_NO2, 0, '', '-'||LOT_NO2)
+					       	  ELSE LW_RI_NM||' '||LOT_NO1||DECODE(LOT_NO2, 0, '', '-'||LOT_NO2)
+					      END
+					FROM TBL_ROAD_CD
+				   WHERE BD_MNG_NO = #bdMngNo#),
+				 #addr2#,
+			 </isNotEmpty>
+			 <isEmpty property="bdMngNo">
+				 #bdMngNo#, #newaddr#, #zip#, #addr1#, #addr2#,
+			 </isEmpty>
+
+             #sgType#, NVL(#uprice#, 15000*#qty#), #qty#, #rsdTypeCd#, #dlvTypeCd#, NVL(#hjDt#, TO_CHAR(SYSDATE, 'YYYYMMDD')), #hjPathCd#,
+			 NVL(#sgBgmm#, TO_CHAR(ADD_MONTHS(SYSDATE, 1) , 'YYYYMM') ),
+			 #sgEdmm#, '1', #aplcDt#, #remk#, sysdate, #loginId# )
+	</insert>
+
+	
+	<!-- 구독정보 히스토리 업데이트 -->
+	<insert id="insertReaderHist">
+		INSERT INTO TH_READER_NEWS
+			(READNO, NEWSCD, CHGSEQ, SEQ, BOSEQ, BOREADNO, GNO, BNO, SNO, READTYPECD, READNM, OFFINM, HOMETEL1, HOMETEL2, HOMETEL3, MOBILE1, MOBILE2,
+			MOBILE3, DLVZIP, DLVADRS1, DLVADRS2, DLVSTRNM, DLVSTRNO, APTCD, APTDONG, APTHO, SGTYPE, SGINFO, SGTEL1, SGTEL2, SGTEL3, UPRICE, QTY,
+			RSDTYPECD, DLVTYPECD, DLVPOSICD, HJPATHCD, HJTYPECD, HJPSREGCD, HJPSNM, HJDT, SGBGMM, SGEDMM, SGCYCLE, STDT, STSAYOU, APLCDT, APLCNO,
+			REMK, INDT, INPS, CHGDT, CHGPS, SPGCD, BNSBOOKCD, HINDT, HINPS , RECEIPT, BDMNGNO, NEWADDR)
+		SELECT
+			READNO, NEWSCD, (SELECT lpad(NVL(MAX(TO_NUMBER(CHGSEQ)),0)+1, 5, 0) FROM TH_READER_NEWS WHERE READNO = #readNo# AND NEWSCD = #newsCd# AND SEQ = #seq#), SEQ, BOSEQ, 
+			BOREADNO, GNO, BNO, SNO, READTYPECD, READNM, OFFINM, HOMETEL1, HOMETEL2, HOMETEL3, MOBILE1, MOBILE2, MOBILE3, DLVZIP, DLVADRS1, DLVADRS2, 
+			DLVSTRNM, DLVSTRNO, APTCD, APTDONG, APTHO, SGTYPE, SGINFO, SGTEL1, SGTEL2, SGTEL3, UPRICE, QTY, RSDTYPECD,DLVTYPECD, DLVPOSICD, HJPATHCD,
+			HJTYPECD, HJPSREGCD, HJPSNM, HJDT, SGBGMM, SGEDMM, SGCYCLE, STDT, STSAYOU, APLCDT, APLCNO, REMK, INDT, INPS, CHGDT, CHGPS, SPGCD, BNSBOOKCD, SYSDATE, #loginId# , RECEIPT,
+			BDMNGNO, NEWADDR
+		FROM
+			TM_READER_NEWS WHERE READNO = #readNo# AND NEWSCD = #newsCd# AND SEQ = #seq#
+	</insert>
+	
+	<!-- 구독정보 수정 -->
+	<update id="updateReaderNews">
+		UPDATE TM_READER_NEWS 
+		   SET SGTYPE = '022',
+			<isEqual property="stuYn" compareValue="Y">
+		  	   READTYPECD = '011',
+		  	   UPRICE = #uprice#,
+			</isEqual>
+		       CHGDT = SYSDATE,
+		       CHGPS = #loginId#
+		 WHERE READNO = #readNo#
+		   AND NEWSCD = #newsCd#
+		   AND (BNO IS NULL OR BNO !='999')
+	</update>
+	
+	<!-- 구독신청시 독자정보 수정 -->
+	<update id="updateReaderNewsForAplc">
+		UPDATE TM_READER_NEWS 
+		   SET SGTYPE = '022',
+		       QTY = #qty#,
+		  	   UPRICE = #uprice#,
+		  	   <isNotEmpty property="readTypeCd">
+		  	   READTYPECD = #readTypeCd#,
+		  	   </isNotEmpty>
+		  	   DLVZIP = #dlvZip#,
+		  	   DLVADRS1 = #addr1#,
+		  	   DLVADRS2 = #addr2#,
+		  	   BDMNGNO = #bdMngNo#, 
+		  	   NEWADDR = #newaddr#,
+		       CHGDT = SYSDATE,
+		       CHGPS = #loginId#
+		 WHERE READNO = #readNo#
+		   AND NEWSCD = #newsCd#
+		   AND SEQ = #seq#
+		   AND (BNO IS NULL OR BNO !='999')
+	</update>
+	
+	<!-- 수금이력 입력(파일처리용) -->
+	<insert id="insertReaderSugmHist">
+		INSERT INTO TH_READER_SUGM
+			(READNO, NEWSCD, YYMM, SEQ, CHGSEQ, BOSEQ, SGBBCD, SGGBCD, BILLAMT, BILLQTY, SGYYMM, AMT, LOSSAMT, FEE1, FEE2, FEE3, SNDT, ICDT, CLDT,
+			WRKNO, EDIPROCNO, AUTOPROCNO, BILLTYPECD, REMK, INDT, INPS, CHGDT, CHGPS, HINDT, HINPS ) 
+		SELECT A.READNO, A.NEWSCD, A.YYMM, A.SEQ,
+			   (SELECT LPAD(NVL(MAX(TO_NUMBER(CHGSEQ)),0)+1,3,0)
+			      FROM TH_READER_SUGM
+			     WHERE READNO=A.READNO
+			       AND NEWSCD=A.NEWSCD 
+				   AND YYMM=A.YYMM AND SEQ=A.SEQ ),
+			   A.BOSEQ, A.SGBBCD, A.SGGBCD, A.BILLAMT, A.BILLQTY, A.SGYYMM, A.AMT, A.LOSSAMT, A.FEE1, A.FEE2, A.FEE3, A.SNDT, A.ICDT, A.CLDT, A.WRKNO,
+			   A.EDIPROCNO, A.AUTOPROCNO, A.BILLTYPECD, A.REMK, A.INDT, A.INPS, SYSDATE, #loginId#, SYSDATE, #loginId# 
+		  FROM TM_READER_SUGM A
+		 WHERE A.READNO = #readNo#
+		   AND A.NEWSCD = #newsCd#
+		   AND A.BOSEQ = #boseq#
+		   AND A.SGBBCD = '044'
+		<isEqual property="inputType" compareValue="sugm">
+	  	   AND A.SEQ = #seq#
+	  	   AND A.YYMM = #misuYymm#
+		</isEqual> 
+	</insert>
+	
+	<!-- 수금이력 입력 -->
+	<insert id="createReaderSugmHist">
+		INSERT INTO TH_READER_SUGM
+			(READNO, NEWSCD, YYMM, SEQ, CHGSEQ, BOSEQ, SGBBCD, SGGBCD, BILLAMT, BILLQTY, SGYYMM, AMT, LOSSAMT, FEE1, FEE2, FEE3, SNDT, ICDT, CLDT,
+			WRKNO, EDIPROCNO, AUTOPROCNO, BILLTYPECD, REMK, INDT, INPS, CHGDT, CHGPS, HINDT, HINPS ) 
+		SELECT A.READNO, A.NEWSCD, A.YYMM, A.SEQ,
+			   (SELECT LPAD(NVL(MAX(TO_NUMBER(CHGSEQ)),0)+1,3,0)
+			      FROM TH_READER_SUGM
+			     WHERE READNO=A.READNO
+			       AND NEWSCD=A.NEWSCD 
+				   AND YYMM=A.YYMM AND SEQ=A.SEQ ),
+			   A.BOSEQ, A.SGBBCD, A.SGGBCD, A.BILLAMT, A.BILLQTY, A.SGYYMM, A.AMT, A.LOSSAMT, A.FEE1, A.FEE2, A.FEE3, A.SNDT, A.ICDT, A.CLDT, A.WRKNO,
+			   A.EDIPROCNO, A.AUTOPROCNO, A.BILLTYPECD, A.REMK, A.INDT, A.INPS, SYSDATE, #loginId#, SYSDATE, #loginId# 
+		  FROM TM_READER_SUGM A
+		 WHERE A.READNO = #valReadNo#
+		   AND A.NEWSCD = #valNewsCd#
+		   AND A.BOSEQ = #valBoseq#
+		   AND A.SGBBCD = '044'
+	  	   AND A.SEQ = #valSeq#
+	  	   AND A.YYMM = #misuYymm#
+	</insert>
+	
+	<!-- 수금 정보 수정 -->
+	<update id="updateReaderSugm">
+		UPDATE TM_READER_SUGM
+		   SET SGGBCD = '022',
+		   	   CHGDT = SYSDATE,
+			   CHGPS = #loginId#
+		 WHERE READNO = #readNo#
+		   AND NEWSCD = #newsCd#
+		   AND BOSEQ = #boseq#
+		   AND SGBBCD = '044'
+	</update>
+	
+	<!-- 공통 코드 - 지국타입 목록 -->
+	<select id="retrieveIntfldCode" resultClass="java.util.HashMap">
+		SELECT 
+			CODE
+			,CNAME 
+		FROM 
+			TC_COMMON
+		WHERE
+			USEYN = 'Y'
+			AND 
+			CDCLSF = '116'
+		ORDER BY 
+			SORTFD, CODE
+	</select>
+
+	<!-- 구독중지 -->
+	<update id="closeNews">
+		UPDATE TM_READER_NEWS
+		   SET STDT = TO_CHAR(SYSDATE,'YYYYMMDD'),
+		   	   STSAYOU = NVL(#stSayou#, '013'),
+		       BNO = '999',
+		       CHGPS = #loginId#,
+		       CHGDT = SYSDATE
+		 WHERE READNO = #readNo#
+		   AND BNO != '999'
+	</update>
+
+	<!-- 카드수금 이력 조회 -->
+	<select id="paymentHist" resultClass="java.util.HashMap">
+		SELECT YYMM,
+			   READNO,
+			   CARD_SEQ,
+			   ICDT,
+			   BILLAMT,
+			   AMT,
+			   RESULT,
+			   CARD_CO,
+			   INDT,
+			   INPS
+		  FROM TBL_CARD_PAYMENT
+		 WHERE CARD_SEQ = #cardSeq#
+		   <isNotEmpty property="readNo">
+			   AND READNO = #readNo#
+		   </isNotEmpty>
+	</select>
+	
+	<!-- 카드수금 이력 조회 -->
+	<select id="selectCardPaymentHist" resultClass="java.util.HashMap">
+		 SELECT BILLMON
+			     , ACCTDATE
+			     , BILLINGAMT
+			     , PROCESSAMT
+			     , REJECTMSG
+			     , REJECTCODE
+			     , USERNAME
+			     , MAINKEY
+			     , FUNC_AGENT_NM(MAINKEY) BOSEQNM
+			     , PROCESSED
+			  FROM TM_TPAYBILL
+			WHERE SEQNO=#cardSeq#
+			ORDER BY BILLMON DESC
+	</select>
+	
+	
+	<!-- 카드수금 이력 입력 -->
+	<insert id="insertPayment">
+		INSERT INTO TBL_CARD_PAYMENT
+		 	        (YYMM, READNO, CARD_SEQ, ICDT, BILLAMT,
+			   		 AMT, RESULT, CARD_CO, INDT, INPS)
+		 	   VALUES
+		 	        (#yymm#, #readNo#, #cardSeq#, TO_CHAR(SYSDATE, 'YYYYMMDD'), #billAmt#,
+		 	         #amt#, #payResult#, #cardCo#, SYSDATE, #loginId#)
+	</insert>	
+
+
+<!-- 카드수금처리 관련 SQL -->
+	<!-- 카드독자 정보 조회 (수금파일용) -->
+	<select id="retrieveReaderInfo" resultClass="java.util.HashMap">
+		SELECT *
+		  FROM TM_READER_NEWS
+		 WHERE 1=1
+		   AND READNO = #readNo# 
+	</select>
+	
+	<!-- 카드독자 정보 조회 (수금처리용) -->
+	<select id="selectReaderData" resultClass="java.util.HashMap">
+		 SELECT *
+		  FROM TM_READER_NEWS
+		 WHERE READNO = #readNo#
+		   AND BOSEQ = #boseq#
+		   AND SGTYPE = '022'
+		   AND BNO != '999' 
+		ORDER BY SEQ
+	</select>
+
+	<!-- 출금월 수금 생성 여부 확인 -->
+	<select id="retrieveSugmNowYymm" resultClass="java.util.HashMap">
+		SELECT *
+		  FROM TM_READER_SUGM
+		 WHERE READNO = #readNo#
+		   AND NEWSCD = #newsCd#
+		   AND SEQ = #seq#
+		   AND YYMM = #yymm#
+	</select>
+	
+	<!-- 출금월 수금 생성 여부 확인 -->
+	<select id="selectSugmThisMonth" resultClass="java.util.HashMap">
+		 SELECT *
+		  FROM TM_READER_SUGM
+		 WHERE READNO = #valReadNo#
+		    AND BOSEQ = #valBoseq#
+		    AND NEWSCD = #valNewsCd#
+		    AND SEQ = #valSeq#
+		    AND YYMM = #yymm#
+	</select>
+	
+	<!-- 미수생성 -->
+	<insert id="insertMisu">
+		INSERT INTO TM_READER_SUGM
+	    	        (readno , newscd, yymm, seq, boseq, sgbbcd, sggbcd, billamt, billqty, amt, indt, inps)
+			  SELECT READNO, NEWSCD, #yymm#, SEQ, BOSEQ, '044', '022', UPRICE, QTY, 0, SYSDATE, #loginId#
+			    FROM TM_READER_NEWS A
+			   WHERE READNO = #readNo#
+			     AND BOSEQ = #boseq#
+			     AND NEWSCD = #newsCd#
+			     AND SEQ = #seq#
+			     AND BNO != '999'
+	</insert>
+	
+	<!-- 미수생성 -->
+	<insert id="createSugmMisu">
+		INSERT INTO TM_READER_SUGM
+	    	        (readno , newscd, yymm, seq, boseq, sgbbcd, sggbcd, billamt, billqty, amt, indt, inps)
+			  SELECT READNO, NEWSCD, #yymm#, SEQ, BOSEQ, '044', '022', UPRICE, QTY, 0, SYSDATE, #loginId#
+			    FROM TM_READER_NEWS A
+			   WHERE READNO = #valReadNo#
+			     AND BOSEQ = #valBoseq#
+			     AND NEWSCD = #valNewsCd#
+			     AND SEQ = #valSeq#
+			     AND BNO != '999'
+	</insert>
+
+	<!-- 미수조회(파일처리용) -->
+	<select id="retrieveMisuList" resultClass="java.util.HashMap">
+		SELECT *
+		  FROM TM_READER_SUGM
+		 WHERE 1=1
+		   AND SGBBCD = '044'
+		   AND READNO = #readNo#
+		   AND SEQ = #seq#
+		   AND NEWSCD = #newsCd#
+	     ORDER BY YYMM ASC
+	</select>
+	
+	<!-- 독자당 총 미수 갯수조회 -->
+	<select id="selectCardTotMisuCount" resultClass="int">
+		SELECT COUNT(*) totCnt
+		  FROM TM_READER_SUGM
+		 WHERE 1=1
+		   AND SGGBCD = '022'
+		   AND SGBBCD = '044'
+		   AND READNO = #valReadNo#
+		   AND BOSEQ = #valBoseq#		   
+		   AND NEWSCD = #valNewsCd#
+		   AND BILLAMT > 0
+		   AND YYMM &lt;= TO_CHAR(SYSDATE, 'YYYYMM')
+	     ORDER BY YYMM, SEQ ASC
+	</select>
+	
+	<!-- 미수조회 -->
+	<select id="selectCardMisuListBySeq" resultClass="java.util.HashMap">
+		SELECT *
+		  FROM TM_READER_SUGM
+		 WHERE 1=1
+		   AND SGGBCD = '022'
+		   AND SGBBCD = '044'
+		   AND READNO = #valReadNo#
+		   AND BOSEQ = #valBoseq#		   
+		   AND NEWSCD = #valNewsCd#
+		   AND SEQ = #valSeq#
+		   AND BILLAMT > 0
+		   AND YYMM &lt;= TO_CHAR(SYSDATE, 'YYYYMM')
+	     ORDER BY YYMM, SEQ ASC
+	</select>
+
+	<!-- 수금처리(파일처리용) -->
+	<update id="updateSugm">
+		UPDATE TM_READER_SUGM
+		   SET SGBBCD = '022',
+		   	   AMT = #sugmMoney#,
+		       SGYYMM = (SELECT CASE WHEN TO_CHAR(SYSDATE, 'DD') &lt; 21 
+                 	 				 THEN TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM')
+	 	      		 				 ELSE TO_CHAR(SYSDATE, 'YYYYMM')
+         	  					END
+         				   FROM DUAL),
+		       SNDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+		       ICDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+		       CLDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+		       CHGDT = SYSDATE,
+			   CHGPS = #loginId#
+	     WHERE 1=1
+		   AND READNO = #readNo#
+		   AND BOSEQ = #boseq#
+		   AND SEQ = #seq#
+		   AND NEWSCD = #newsCd#
+		   AND YYMM = #misuYymm#
+	</update>
+	
+	<!-- 수금처리 -->
+	<update id="updateCardSugm">
+		UPDATE TM_READER_SUGM
+		   SET SGBBCD = '022',
+		   	   AMT = #sugmMoney#,
+		       SGYYMM = (SELECT CASE WHEN TO_CHAR(SYSDATE, 'DD') &lt; 21 
+                 	 				 THEN TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM')
+	 	      		 				 ELSE TO_CHAR(SYSDATE, 'YYYYMM')
+         	  					END
+         				   FROM DUAL),
+		       SNDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+		       ICDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+		       CLDT = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+		       BILLTYPECD = #billTypeCd#,
+		       CHGDT = SYSDATE,
+			   CHGPS = #loginId#
+	     WHERE 1=1
+		   AND READNO = #valReadNo#
+		   AND BOSEQ = #valBoseq#
+		   AND SEQ = #valSeq#
+		   AND NEWSCD = #valNewsCd#
+		   AND YYMM = #misuYymm#
+	</update>
+	
+	<!-- 수금처리(재무,월삭제 업데이트) -->
+	<update id="updateCardSugmForException">
+		UPDATE TM_READER_SUGM
+		     SET  BILLTYPECD = #billTypeCd#,
+		           CHGDT = SYSDATE,
+			       CHGPS = #loginId#
+	     WHERE 1=1
+		   AND READNO = #valReadNo#
+		   AND BOSEQ = #valBoseq#
+		   AND SEQ = #valSeq#
+		   AND NEWSCD = #valNewsCd#
+		   AND YYMM = #misuYymm#
+	</update>
+	
+	<!-- 카드 수금 처리 결과 저장(수금파일처리용) -->
+	<insert id="insertCardDtlPayment">
+		INSERT INTO TBL_CARD_DTL_PAYMENT
+		            (NUMID,
+					 CARD_SEQ,
+					 ID,
+					 YYMM,  
+					 READNO,
+					 SEQ,
+					 BOSEQ,
+					 BILLAMT,
+					 SGYYMM,
+					 AMT,
+					 SUGM_RESULT,
+					 SUGM_RESULT_CD,
+					 INDT,
+					 INPS
+					)
+		       VALUES
+		            ((SELECT NVL(MAX(NUMID), 0)+1 FROM TBL_CARD_DTL_PAYMENT),
+		             #cardSeq#,
+		             #userid#,
+		             #yymm#,
+		             #readNo#,
+		             #seq#,
+		             #boseq#,
+		             #amt#,
+		             #misuYymm#,
+		             #sugmMoney#,
+		             #sugmResult#,
+		             #sugmResultCd#,
+		             SYSDATE,
+		             #loginId# )
+	</insert>
+	
+	<!-- 카드 수금 처리 결과 저장 -->
+	<insert id="createCardDtlPayment">
+		INSERT INTO TBL_CARD_DTL_PAYMENT
+		            (NUMID,
+					 CARD_SEQ,
+					 ID,
+					 YYMM,  
+					 READNO,
+					 SEQ,
+					 BOSEQ,
+					 BILLAMT,
+					 SGYYMM,
+					 AMT,
+					 SUGM_RESULT,
+					 SUGM_RESULT_CD,
+					 INDT,
+					 INPS
+					)
+		       VALUES
+		            ((SELECT NVL(MAX(NUMID), 0)+1 FROM TBL_CARD_DTL_PAYMENT),
+		             #seqNo#,
+		             #userId#,
+		             #billMon#,
+		             #readNo#,
+		             #seq#,
+		             #mainKey#,
+		             #processAmt#,
+		             #billmon#,
+		             #billingAmt#,
+		             #sugmResult#,
+		             #sugmResultCd#,
+		             SYSDATE,
+		             #loginId# )
+	</insert>
+
+	<!-- 카드 수금처리 결과 상세 -->
+	<select id="cardReaderDtlPaymentList" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT NUMID,
+					   CARD_SEQ,
+					   ID,
+				       YYMM,
+				       READNO,
+				       SEQ,
+				       BOSEQ,
+				       FUNC_AGENT_NM(BOSEQ) JIKUKNAME,
+				       SGYYMM,
+				       BILLAMT,
+				       AMT,
+				       SUGM_RESULT,
+				       INDT,
+				       INPS,
+				       COUNT(*)OVER(PARTITION BY CARD_SEQ) AS PARTCNT
+				  FROM TBL_CARD_DTL_PAYMENT
+				 WHERE 1=1 
+				   AND YYMM = #yymm#
+				 <isNotEmpty property="realJikuk" prepend="AND">
+					BOSEQ = #realJikuk#
+				 </isNotEmpty>
+				 <isNotEmpty property="opReadNo" prepend="AND">
+					READNO = #opReadNo#
+				 </isNotEmpty>
+				 <isNotEmpty property="opUserId" prepend="AND">
+					ID = #opUserId#
+				 </isNotEmpty>
+				 <isEqual property="status" compareValue="err" prepend="AND">
+					SUGM_RESULT_CD= '0'
+				 </isEqual>
+				 <isEqual property="status" compareValue="on" prepend="AND">
+					SUGM_RESULT_CD IS NULL
+				 </isEqual>
+				 ORDER BY BOSEQ ASC, CARD_SEQ DESC, SGYYMM ASC
+			)C
+		)D
+		WHERE RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		   AND RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 카드 수금처리 결과 상세 총갯수 -->
+	<select id="cardReaderDtlPaymentTotCnt" resultClass="int">
+			SELECT COUNT(1) COUNT
+			 FROM TBL_CARD_DTL_PAYMENT
+			WHERE 1=1 
+			  AND YYMM = #yymm#
+		 <isNotEmpty property="realJikuk" prepend="AND">
+			BOSEQ = #realJikuk#
+		 </isNotEmpty>
+		 <isNotEmpty property="opReadNo" prepend="AND">
+			READNO = #opReadNo#
+		 </isNotEmpty>
+		 <isNotEmpty property="opUserId" prepend="AND">
+			ID = #opUserId#
+		 </isNotEmpty>
+		 <isEqual property="status" compareValue="err" prepend="AND">
+			SUGM_RESULT_CD= '0'
+		 </isEqual>
+		 <isEqual property="status" compareValue="on" prepend="AND">
+			SUGM_RESULT_CD IS NULL
+		 </isEqual>
+	</select>
+	
+	<!-- 카드 수금처리 결과 상세(지국) -->
+	<select id="cardReaderDtlPaymentListJikuk" resultClass="java.util.HashMap">
+		SELECT A.NUMID,
+			   A.CARD_SEQ,
+			   A.ID,
+		       A.YYMM,
+		       A.READNO,
+	           B.READNM,
+	           B.DLVADRS1||B.DLVADRS2 ADDR,
+		       A.SEQ,
+		       A.BOSEQ,
+		       FUNC_AGENT_NM(A.BOSEQ) JIKUKNAME,
+		       A.SGYYMM,
+		       A.BILLAMT,
+		       A.AMT,
+		       A.SUGM_RESULT,
+		       A.INDT,
+		       A.INPS,
+		       COUNT(*)OVER(PARTITION BY A.CARD_SEQ) AS PARTCNT
+		  FROM TBL_CARD_DTL_PAYMENT A,
+	           TM_READER_NEWS B
+	     WHERE A.YYMM = #yymm#
+		   AND A.BOSEQ = #realJikuk#
+		   AND A.READNO = B.READNO(+)
+		   AND A.BOSEQ = B.BOSEQ(+)
+		   AND NVL2(A.READNO, B.SEQ, 1) = NVL2(A.READNO, (SELECT MAX(SEQ) FROM TM_READER_NEWS C WHERE C.READNO = A.READNO), 1)
+		 <isEqual property="status" compareValue="err" prepend="AND">
+			((A.CARD_SEQ, A.YYMM, A.READNO) IN (SELECT CARD_SEQ, YYMM, READNO FROM TBL_CARD_DTL_PAYMENT WHERE NVL(SUGM_RESULT_CD, '1') != '0')
+			OR (A.CARD_SEQ, A.YYMM) IN (SELECT CARD_SEQ, YYMM FROM TBL_CARD_DTL_PAYMENT WHERE READNO IS NULL) )
+		 </isEqual>
+		 <isEqual property="status" compareValue="on" prepend="AND">
+			(A.CARD_SEQ, A.YYMM, A.READNO) NOT IN (SELECT CARD_SEQ, YYMM, READNO FROM TBL_CARD_DTL_PAYMENT WHERE NVL(SUGM_RESULT_CD, '1') != '0')
+		 </isEqual>
+
+		 ORDER BY CARD_SEQ DESC, SGYYMM ASC
+	</select>
+	
+	<!-- 카드 청구월 조회 -->
+	<select id="cardPaymentYymm" resultClass="java.util.HashMap">
+		SELECT A.YYMM,
+			   ROWNUM RM
+		  FROM (SELECT DISTINCT(YYMM) YYMM
+				  FROM TBL_CARD_DTL_PAYMENT
+				 ORDER BY YYMM DESC) A
+		WHERE ROWNUM &lt; 21
+	</select>
+
+	<!-- 구독중지 -->
+	<update id="stopCardReader">
+		UPDATE TBL_CARD_READER
+		   SET STATUS = #status#,
+		       STDT = TO_CHAR(SYSDATE,'YYYYMMDD'),
+		       CHGDT = SYSDATE,
+		       CHGPS = #loginId#
+		 WHERE CARD_SEQ = #cardSeq#
+		   AND APLCDT = #aplcDt#
+	</update>
+
+	<!-- 일반자동이체 해지신청처리 -->
+	<update id="closeTblUsers">
+		UPDATE TBL_USERS
+		   SET STATUS = DECODE(STATUS, 'EA00', 'EA99', 'EA13-'),
+		       R_OUT_DATE = SYSDATE
+		 WHERE READNO = #readNo#
+		   AND STATUS IN ('EA00', 'EA21')
+	</update>
+
+	<!-- 학생자동이체 해지신청처리 -->
+	<update id="closeTblUsersStu">
+		UPDATE TBL_USERS_STU
+		   SET STATUS = DECODE(STATUS, 'EA00', 'EA99', 'EA13-'),
+		       R_OUT_DATE = SYSDATE
+		 WHERE READNO = #readNo#
+		   AND STATUS IN ('EA00', 'EA21')
+	</update>
+	
+	<!-- 카드구독신청 대상 조회 -->
+	<select id="cardAplcList" resultClass="java.util.HashMap">
+		 SELECT * 
+		  FROM (
+		        SELECT ROWNUM RNUM, A.* 
+		          FROM (
+		                SELECT USERNO
+		                     , USERID
+		                     , SEQNO
+		                     , USERNAME
+		                     , TELNO
+		                     , RCVTELNO
+		                     , OFFICECODE
+		                     , FUNC_AGENT_NM(OFFICECODE) AS OFFICENM
+		                     , ZIPNO
+		                     , ADDR1
+		                     , ADDR2
+		                     , ADDRDORO
+		                     , BDMNGNO
+		                     , TRIM(JOIN_YN) JOIN_YN
+		                     , USESTATE
+		                     , GUBUNCODE
+		                     , BIGO
+		                     , CASE WHEN JOIN_YN = 'Y' THEN '결합'
+		                              ELSE '일반'
+		                       END AS JOIN_YN_NM
+		                     , CASE WHEN GUBUNCODE = '0' THEN '신규'
+						              ELSE '기존'
+						       END AS GUBUNCODE_NM
+						     , TO_CHAR(INSDATE, 'YYYY-MM-DD hh24:mi:ss') AS INSDATE
+		                  FROM TM_TNEWSPAPERHIST
+		                 WHERE TO_CHAR(INSDATE, 'YYYY-MM-DD') BETWEEN #fromDate# AND #toDate#
+						<isNotEmpty property="opState">
+								AND USESTATE = #opState#
+						</isNotEmpty>
+						<isNotEmpty property="searchType">
+							<isEqual property="searchType" compareValue="userName" prepend="AND">
+								USERNAME LIKE '%'|| #searchKey# || '%'
+							</isEqual>
+							<isEqual property="searchType" compareValue="userId" prepend="AND">
+								USERID LIKE '%'|| #searchKey# || '%'
+							</isEqual>
+						</isNotEmpty>
+						 ORDER BY INSDATE DESC
+		                ) A
+		        )B
+		  WHERE RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		     AND	RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+		  ORDER BY RNUM
+	</select>
+	
+	<!-- 카드구독신청 대상 총카운트 -->
+	<select id="cardAplcListCount" resultClass="int">
+		 SELECT COUNT(*) COUNT
+          FROM TM_TNEWSPAPERHIST
+         WHERE TO_CHAR(INSDATE, 'YYYY-MM-DD') BETWEEN #fromDate# AND #toDate#
+        <isNotEmpty property="opState">
+			AND USESTATE = #opState#
+		</isNotEmpty>
+		<isNotEmpty property="searchType">
+			<isEqual property="searchType" compareValue="userName" prepend="AND">
+				USERNAME LIKE '%'|| #searchKey# || '%'
+			</isEqual>
+			<isEqual property="searchType" compareValue="userId" prepend="AND">
+				USERID LIKE '%'|| #searchKey# || '%'
+			</isEqual>
+		</isNotEmpty>
+	</select>
+	
+	<!-- 카드구독신청독자 정보 조회 -->
+	<select id="selectCardAplcReader" resultClass="java.util.HashMap">
+		  SELECT SEQNO
+			      , USERNO
+			      , USERID
+			      , USERNAME
+			      , EMAIL
+			      , TELNO
+			      , CODENO
+			      , EXPIREDATE
+			      , USESTATE
+			      , ORDERCNT
+			      , ORDERAMT
+			      , GUBUNCODE
+			      , OFFICECODE
+			      , CODENO
+			      , ACCTNO
+			      , TO_CHAR(CANCELDATE, 'YYYY-MM-DD') AS CANCELDATE
+			      , CANCELID
+			      , RCVNAME
+			      , RCVTELNO
+			      , ZIPNO
+			      , ADDR1
+			      , ADDR2
+			      , BDMNGNO
+			      , BIGO
+			      , STARTBILLMON
+			      , ADDRDORO
+			      , JOIN_YN
+			      , TO_CHAR(INSDATE, 'YYYY-MM-DD hh24:mi:ss') AS INSDATE
+			      , NVL((SELECT READNO FROM TBL_CARD_READER WHERE A.USERID=USERID AND A.SEQNO=CARD_SEQ AND A.OFFICECODE=BOSEQ),'') READNO
+			  FROM TM_TNEWSPAPERHIST A
+			 WHERE USERID = #userId#
+			   AND SEQNO = #seqNo#
+	</select>
+ 
+	<!-- 독자신청정보 테이블 지국정보 수정 -->
+	<update id="updateTnewspaperBoseq">
+		UPDATE TM_TNEWSPAPER
+		     SET OFFICECODE = #boseq#
+		         , USESTATE = '1'
+		         , UPDDATE  = SYSDATE
+		 WHERE USERID = #userId#
+		    AND SEQNO = #cardSeq#
+	</update>
+	
+	<!-- 독자신청정보 해지처리 -->
+	<update id="deleteTnewspaperUserData">
+		UPDATE TM_TNEWSPAPER
+		     SET USESTATE = '2'
+		        , UPDDATE  = SYSDATE
+		        , CANCELDATE  = SYSDATE
+		        , CANCELID = #loginId#
+		 WHERE USERID = #userId#
+		    AND SEQNO = #cardSeq#
+	</update>
+	
+	<!-- 독자신청정보 테이블 지국정보 수정 -->
+	<update id="updateTnewspaperHistBoseq">
+		UPDATE TM_TNEWSPAPERHIST
+		     SET OFFICECODE = #boseq#
+		         , USESTATE = '1'
+		         , UPDDATE  = SYSDATE
+		 WHERE USERID = #userId#
+		    AND SEQNO = #cardSeq#
+	</update>
+	
+	<!-- 독자신청정보 해지처리 -->
+	<update id="deleteTnewspaperHistUserData">
+		UPDATE TM_TNEWSPAPERHIST
+		     SET USESTATE = '2'
+		        , UPDDATE  = SYSDATE
+		        , CANCELDATE  = SYSDATE
+		        , CANCELID = #loginId#
+		 WHERE USERID = #userId#
+		    AND SEQNO = #cardSeq#
+	</update>
+	
+	<!-- 카드 결제내역리스트 조회 -->
+	<!-- (0000,1111 -> 정상 / 9999 -> 청구제외 / 9998 -> 승인취소 / 9997 -> 매입반송 / 나머지 -> 승인반송) -->
+	<select id="selectCardPaymentList" resultClass="java.util.HashMap">
+		  SELECT  BILLMON
+			        , ACCTDATE
+			        , SUM(BILLINGAMT) AS BILLINGAMT
+			        , SUM(PROCESSAMT) AS PROCESSAMT
+			        , COUNT(*) AS BILLINGCNT
+			        , REJECTCODE
+			        , CASE WHEN REJECTCODE ='0000' THEN 'OK'
+			                WHEN REJECTCODE ='1111' THEN 'OK'
+			                WHEN REJECTCODE ='9999' THEN 'EXCEPT'
+			                WHEN REJECTCODE ='9998' THEN 'CANCEL'
+			                WHEN REJECTCODE ='9997' THEN 'BUYRETURN'
+			          ELSE 'OTHER' END REJECTCODENM 
+			        , REJECTMSG
+			        , PROCESSED
+			FROM TM_TPAYBILL
+		  WHERE 1=1 
+		     AND CODE = 1
+			 AND BILLMON BETWEEN $fromDate$ AND $toDate$
+		  GROUP BY SITECODE, BILLMON, ACCTDATE, REJECTCODE, REJECTMSG, PROCESSED
+		  ORDER BY PROCESSED
+	</select>
+	
+	<!-- 카드결재내역리스트 총 갯수 -->
+	<select id="getCardPaymentTotalCount" resultClass="int">
+		  SELECT  COUNT(*) AS BILLCNT
+		   FROM TM_TPAYBILL
+		  WHERE 1=1 
+		     AND CODE = 1
+		     AND BILLMON BETWEEN $fromDate$ AND $toDate$
+	</select>
+	
+	<!-- 카드승인리스트 총 갯수 -->
+	<select id="getCardPaidTotalCount" resultClass="int">
+		SELECT COUNT(*) TOTCNT 
+   		 FROM TM_CARD_BILL_VIEW
+	</select>
+	
+	<!-- 카드 월별 결재내역 조회일 조회  -->
+	<select id="selectMaxMinBillMonth" resultClass="java.util.HashMap"> 
+		 SELECT SUBSTR(MIN(BILLMON),0,4) fromYear
+			     , SUBSTR(MAX(BILLMON),0,4) toYear
+			     , LTRIM(SUBSTR(MAX(BILLMON),5,6), 0) toMonth
+			  FROM TM_TPAYBILL
+	</select>
+	
+	<select id="getCardNumberEditInfo" resultClass="java.util.HashMap"> 
+		 SELECT A.CARD_SEQ,A.READNO,A.ID,A.USERNAME,A.BOSEQ,B.JOIN_YN,B.BATCHBILLKEY FROM TBL_CARD_READER A,TM_TNEWSPAPERHIST B
+		 WHERE A.CARD_SEQ=B.SEQNO
+		 AND A.ID=B.USERID
+		 AND A.CARD_SEQ=#cardSeq#
+		 AND A.READNO=#readNo#
+	</select>
+	
+	<update id="updateBillkey" parameterClass="java.util.HashMap">
+		UPDATE TM_TNEWSPAPERHIST SET BATCHBILLKEY=#billkey#,ACCTNO=#cardno#,CARDCHG_YN='Y',UPDDATE=SYSDATE WHERE SEQNO=#cardSeq# AND USERID=#userId#
+	</update>
+	
+	
+	<!-- 카드 결제결과 조회  -->
+	<select id="selectCardReaderPayResultToSugm" resultClass="java.util.HashMap"> 
+		 SELECT A.SEQNO
+			     , A.USERID
+			     , A.MAINKEY
+			     , A.BILLINGAMT
+			     , A.PROCESSAMT
+			     , B.READNO
+			     , B.BOSEQ
+		  FROM TM_TPAYBILL A
+			     , TBL_CARD_READER B
+		 WHERE A.BILLMON = $thisMonth$
+		    AND A.REJECTCODE = '0000'
+			AND B.CARD_SEQ = A.SEQNO
+			AND B.ID = A.USERID
+			AND B.STATUS = '1'
+	</select>
+	
+	<select id="selectCardPaymentApproveList" resultClass="java.util.HashMap">
+	 SELECT * 
+		  FROM (
+		        SELECT ROWNUM RNUM, A.* 
+		          FROM (
+					SELECT  SEQNO,
+							USERNO,
+							USERID,
+							USERNAME,
+							BILLMON,
+							CODE,
+							CODENO,
+							ACCTDATE,
+							BILLINGAMT,
+							PROCESSAMT,
+							REJECTCODE,
+							REJECTMSG,
+							MAINKEY,
+							FUNC_AGENT_NM(MAINKEY) JIKUKNAME,
+							PROCESSED,
+							CHGDATE,
+							PLTID
+						FROM TM_TPAYBILL
+					  WHERE 1=1 
+						 AND BILLMON BETWEEN #fromDate# AND #toDate#
+						 <isNotEmpty property="userId" prepend="AND">
+						 	USERID LIKE '%'|| #userId# || '%'
+						 </isNotEmpty>
+						 <isNotEmpty property="userName" prepend="AND">
+						 	USERNAME LIKE '%'|| #userName# || '%'
+						 </isNotEmpty>
+						 <isNotEmpty property="realJikuk" prepend="AND">
+							MAINKEY = #realJikuk#
+						 </isNotEmpty>
+					  ORDER BY PROCESSED
+					 ) A
+		        )B
+		  WHERE RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		     AND	RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+		  ORDER BY RNUM
+	</select>
+	
+	<select id="selectCardPaymentApproveListCount" resultClass="int">
+		 SELECT COUNT(*) COUNT
+         FROM TM_TPAYBILL
+         WHERE 1=1
+         AND BILLMON BETWEEN #fromDate# AND #toDate#
+		 <isNotEmpty property="userId" prepend="AND">
+			 	USERID LIKE '%'|| #userId# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="userName" prepend="AND">
+				USERNAME LIKE '%'|| #userName# || '%'
+		 </isNotEmpty>
+		 <isNotEmpty property="realJikuk" prepend="AND">
+			MAINKEY = #realJikuk#
+		 </isNotEmpty>
+	</select>
+	
+	<update id="setCardPayCancel" parameterClass="java.util.HashMap">
+		UPDATE TM_TPAYBILL SET REJECTCODE=#rejectcode#,REJECTMSG=#rejectmsg# WHERE USERID=#userId# AND PLTID=#pltid#
+	</update>
+	
+	<select id="selectCardPaymentResultListByMonth"  resultClass="java.util.HashMap">
+		SELECT BILLMON
+				, USERID 
+				, USERNAME
+				, SEQNO 
+				, BILLINGAMT 
+				, PROCESSAMT 
+				, REJECTMSG 
+				, FUNC_AGENT_NM(MAINKEY) BOSEQNM
+				, MAINKEY BOSEQ
+				, NVL((SELECT NVL(NEWADDR,ADDR1) || ADDR2 FROM TBL_CARD_READER WHERE ID=A.USERID AND CARD_SEQ=A.SEQNO AND BOSEQ=A.MAINKEY AND STATUS='1'),
+				 (SELECT NVL(NEWADDR,ADDR1) || ADDR2 FROM TBL_CARD_READER WHERE ID=A.USERID AND CARD_SEQ=A.SEQNO AND BOSEQ=A.MAINKEY AND STATUS='4')) ADDR
+				, NVL((SELECT HANDY1||'-'||HANDY2||'-'||HANDY3 FROM TBL_CARD_READER WHERE ID=A.USERID AND CARD_SEQ=A.SEQNO AND BOSEQ=A.MAINKEY AND STATUS='1'),
+				 (SELECT HANDY1||'-'||HANDY2||'-'||HANDY3 FROM TBL_CARD_READER WHERE ID=A.USERID AND CARD_SEQ=A.SEQNO AND BOSEQ=A.MAINKEY AND STATUS='4')) TELNO
+  		FROM TM_TPAYBILL A
+  	   WHERE BILLMON BETWEEN $fromDate$ AND $toDate$
+  	   ORDER BY PROCESSED,USERNAME
+	</select>
+	
+	<!-- 독자정보에서 카드정보 조회 -->
+	<select id="selectCardSeqForReaderNews" resultClass="java.util.HashMap">
+		 SELECT TO_CHAR(CARD_SEQ) CARD_SEQ
+		         , ID 
+		  FROM tbl_card_reader
+		 WHERE READNO = #readNo#
+		    AND BOSEQ = #boSeq#
+		    AND (STATUS = '1' AND STDT IS NULL)
+	</select>
+	
+	<!-- 독자정보에서 카드독자 해지처리 -->
+	<update id="cancelCardReaderForReaderNews">
+		UPDATE TBL_CARD_READER
+		   SET STATUS = '4',
+		   	   STDT = TO_CHAR(SYSDATE,'YYYYMMDD'),
+		   	   CHGDT = SYSDATE,
+		       CHGPS = #chgPs#
+		 WHERE 1=1
+		   AND CARD_SEQ = #cardSeq#
+		   AND ID = #id#
+	</update>
+	
+	<!-- 독자정보에서 카드신청정보 해지처리 -->
+	<update id="cancelCardPaymentForReaderNews">
+		 UPDATE TM_TNEWSPAPERHIST
+			   SET USESTATE = '2'
+			     , CANCELDATE = SYSDATE
+			     , CANCELID = #chgPs#
+			 WHERE SEQNO = #cardSeq#
+			   AND USERID = #id#
+			   AND USESTATE = '1' 
+	</update>
+</sqlMap>

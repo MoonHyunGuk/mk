@@ -1,0 +1,956 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="billing.student.cmsget">
+
+<!-- result map -->
+	<resultMap id="EA21LogMap" class="hashmap">
+		<result property="NUMID" column="NUMID" />
+		<result property="LOGDATE" column="LOGDATE" />
+		<result property="COUNTS" column="COUNTS" />
+		<result property="MONEY" column="MONEY" />
+		<result property="MEMO" column="MEMO" jdbcType="CLOB" javaType="string" />
+		<result property="ADMINID" column="ADMINID" />
+	</resultMap>
+
+	<!-- EB21 log 목록 -->
+	<select id="getEB21LogList" resultClass="map" resultMap="EA21LogMap">
+		SELECT 
+			C.*
+		FROM
+			(
+				SELECT 
+					ROWNUM AS RNUM
+					, B.*
+	  			FROM
+					(
+						SELECT 
+							*
+						FROM 
+							TBL_EA21_LOG_STU A 
+						WHERE 
+							NUMID is not null
+						ORDER BY 
+							numid desc
+					) B
+			) C
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- EB21 log 갯수 -->
+	<select id="getEB21LogCount" resultClass="int">
+		SELECT 
+			count(*) as recCount
+		FROM 
+			TBL_EA21_LOG_STU
+		WHERE 
+			numid IS NOT NULL
+	</select>
+	
+	<!-- EB13 log 정보 -->
+	<select id="getEB21LogInfo" resultClass="map" resultMap="EA21LogMap">
+		SELECT *
+		FROM (
+			SELECT 
+				*
+			FROM 
+				tbl_EA21_log_stu 
+			WHERE 
+				numid = #numid#
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	<!-- EA log 목록 -->
+	<select id="getEALogList" resultClass="java.util.HashMap">
+		select 
+			C.*
+			,(select name from TM_AGENCY where serial = C.realjikuk and rownum=1) as jikuk_name
+			,(select jikuk_tel from TM_AGENCY where serial = C.realjikuk and rownum=1) as jikuk_tel
+		from (
+		
+			select  
+				A.numid
+				,A.serialno
+				,A.codenum
+				,A.usernumid
+				,A.checked
+				,A.cmsmoney
+				,A.cmsresult
+				,A.subsmonth
+				,B.username
+				,B.phone
+				,B.addr1
+				,B.addr2
+				,B.serial
+				,B.handy
+				,B.readno
+				,B.realjikuk
+			from 
+				tbl_ea_log_stu A 
+				left outer join tbl_users_stu B 
+				on A.usernumid = B.numid
+			where 
+				1=1
+				<isNotEmpty property="cmstype" prepend=" AND ">
+					trim(A.cmstype) = #cmstype#
+				</isNotEmpty>
+				<isNotEmpty property="cmsdate" prepend=" AND "> 
+					A.cmsdate = #cmsdate#
+				</isNotEmpty>			
+			order by 
+				A.serialno
+		) C 
+		where
+			1=1
+			<isNotEmpty property="jikuk" prepend=" AND "> 
+				C.realjikuk = #jikuk#
+			</isNotEmpty>
+	</select>
+
+
+	<!-- 지국목록 -->
+	<select id="getStatStuJikukList" resultClass="java.util.HashMap">
+		SELECT 
+			DISTINCT (JIKUK)
+			,(SELECT MAX(NAME) FROM TM_AGENCY WHERE SERIAL = A.JIKUK and rownum=1) as JIKUK_NAME	
+		FROM 
+			TBL_EA_LOG_STU A 
+		WHERE 
+			( A.CMSTYPE='EA21' AND A.CMSDATE BETWEEN #S_CMSDATE# AND #E_CMSDATE#
+			<isNotEqual property="CHBX" compareValue="all">
+				<isEqual property="CHBX" compareValue="on" prepend=" AND">
+					CMSRESULT = '00000'
+				</isEqual>
+				<isEqual property="CHBX" compareValue="off" prepend=" AND">
+					CMSRESULT &lt;&gt; '00000'
+				</isEqual>
+			</isNotEqual>
+			)
+		ORDER BY 
+			JIKUK_NAME
+	</select>
+	
+	<!-- 수금테이블에 insert할 readno리스트 -->
+	<select id="getReadnoList" resultClass="java.util.HashMap" >
+		SELECT 
+			A.READNO
+		FROM 
+			(
+				SELECT 
+					READNO 
+					,NEWSCD
+					,SEQ
+				FROM 
+					TM_READER_NEWS 
+				WHERE 
+					SGTYPE = #SGTYPE#
+					AND 
+					READTYPECD = #READTYPECD#
+					and
+					BNO != '999'
+					AND 
+					SGBGMM &lt;= (SELECT TO_CHAR(SYSDATE,'YYYYMM') FROM DUAL)
+					AND
+					UPRICE &lt;&gt; 0
+			) A
+			, TBL_USERS_STU B
+		WHERE
+			A.READNO = B.READNO
+			AND
+			B.STATUS = #STATUS#
+			AND
+			B.LEVELS = #LEVELS#
+			AND
+			(
+				SELECT YYMM FROM TM_READER_SUGM C
+				WHERE A.READNO = C.READNO
+				AND A.NEWSCD = C.NEWSCD
+				AND A.SEQ = C.SEQ
+				AND C.YYMM = (SELECT TO_CHAR(SYSDATE,'YYYYMM') FROM DUAL)
+			) IS NULL
+		GROUP BY A.READNO
+		
+	    MINUS
+
+        SELECT C.READNO
+          FROM TBL_USERS_STU A,
+               TM_READER_SUGM B,
+               TBL_USERS_STU C
+         WHERE 1=1
+           AND TO_CHAR(A.R_OUT_DATE, 'YYYYMM') = #NOWMONTH#
+           AND A.READNO = B.READNO
+           AND B.AMT &lt;&gt; 0
+           AND B.SGBBCD = '021'
+           AND B.YYMM = #NOWMONTH#
+           AND C.REL IS NOT NULL
+           AND SUBSTR(C.REL, 7, 9) = A.READNO 
+
+	</select>
+	
+	
+	<!-- result map -->
+	<resultMap id="TblSugmMap" class="hashmap">
+		<result property="READNO" column="READNO" />			<!-- 독자번호 -->
+		<result property="TOTALAMT" column="TOTALAMT" />		<!-- 총 수금금액 -->
+		<result property="NUMID" column="NUMID" />				<!-- tbl_users_stu 테이블 순차번호 -->
+		<result property="JIKUK" column="JIKUK" />				<!-- tbl_users_stu 지국번호 -->
+		<result property="SERIAL" column="SERIAL" />			<!-- tbl_users_stu 일련번호 -->
+		<result property="SAUP" column="SAUP" />				<!-- 주민번호 or 사업자등록번호 -->
+		<result property="WHOSTEP" column="WHOSTEP" />			<!--  -->
+		<result property="RDATE" column="RDATE" />				<!-- 등록일 -->
+		<result property="R_OUT_DATE" column="R_OUT_DATE" />	<!--  -->
+		<result property="BANK" column="BANK" />				<!-- 거래은행코드 -->
+		<result property="BANK_NUM" column="BANK_NUM" />		<!-- 거래계좌번호 -->
+		<result property="BANK_MONEY" column="BANK_MONEY" />	<!-- tbl_users_stu 수금금액 -->
+		<result property="LOGS" column="LOGS" jdbcType="CLOB" javaType="string" />	<!--  -->
+		<result property="USERID" column="USERID" />
+		<result property="STATUS" column="STATUS" />
+		<result property="BUSU" column="BUSU" />
+		<result property="LEVELS" column="LEVELS" />
+		<result property="SUBSMONTH" column="SUBSMONTH" />
+		<result property="READNO" column="READNO" />
+		<result property="REALJIKUK" column="REALJIKUK" />
+		<result property="HANDY" column="HANDY" />
+	</resultMap>
+	
+	<select id="getSugmList" resultClass="java.util.HashMap" resultMap="TblSugmMap">
+		select 
+			  D.readno
+			, D.totalamt
+			, E.numid
+			, E.jikuk
+			, E.serial
+			, (CASE length(nvl(E.saup,' ')) WHEN 10 THEN nvl(E.saup,' ') ELSE substr(nvl(E.saup,' '),1,6) END) as saup
+			, E.whostep
+			, E.rdate
+			, E.r_out_date
+			, E.bank
+			, E.bank_num
+			, E.bank_money
+			, E.logs, nvl(E.userid, ' ') as userid
+			, E.status
+			, E.levels
+			, E.busu 
+			,'' as subsmonth
+			, E.readno
+			, E.realjikuk
+			, NVL(REPLACE(E.handy,'-',''),' ') as handy
+		from (
+				select
+					C.readno, C.totalamt
+				from (
+						select *
+						from (
+								select 
+									readno ,sum(billamt) as totalamt
+								from (
+										select 
+											A.readno, nvl((case when mod(a.billamt,4500)=0 AND mod(a.billamt,7500)=0 then (a.billamt/7500)*7500 WHEN mod(a.billamt,4500)=0 AND mod(a.billamt,7500)!=0 then (a.billamt/4500)*7500 else a.billamt end), 0) as billamt
+										from 
+											TM_READER_SUGM A
+											,(
+												select readno ,NEWSCD , SEQ , BOSEQ
+												from TM_READER_NEWS 
+												where 
+													SGTYPE = #SGTYPE#
+													and 
+													READTYPECD = #READTYPECD#
+											) B
+										where 
+											A.readno = B.readno
+											and A.readno is not null
+											AND A.SEQ = B.SEQ
+                                            AND A.NEWSCD = B.NEWSCD
+                                            AND A.BOSEQ = B.BOSEQ
+                                            and a.yymm BETWEEN '201201' AND #chedckdate#
+											and A.sgbbcd = #SGBBCD#
+											and A.sggbcd = #SGGBCD#
+									)
+								group by readno
+							)
+						where
+							totalamt &lt;&gt; 0
+					) C
+			) D
+			, (select * from tbl_users_stu where status='EA13-' or (status='EA21' and levels='3') ) E
+		where
+			D.readno = E.readno
+			<!--
+			출금일 관련 조건 
+			and
+			to_char(E.sdate,'dd') = #SDATE#
+			 -->
+	</select>
+	
+	<select id="getLastRequestDate" resultClass="string">
+		SELECT cmsdate
+		FROM (
+			SELECT
+				cmsdate 
+			FROM 
+				TBL_EA_LOG_stu 
+			WHERE 
+				trim(cmstype) = #cmstype#
+				and 
+				substr(cmsdate, 3, 4) = #cmsdate#
+				<isNotEmpty property="cmsresult">
+					<iterate property="cmsresult" prepend="AND cmsresult NOT IN" open="(" close=")" conjunction=",">
+						#cmsresult[]#
+					</iterate> 
+				</isNotEmpty>
+			ORDER BY
+				cmsdate desc 
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	<insert id="insertEB21Log">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_EA21_log_stu
+		</selectKey>
+		INSERT INTO tbl_EA21_log_stu ( 
+			numid
+			, logdate
+			, counts
+			, money
+			, memo
+			, err_str
+			, adminid
+		) VALUES ( 
+			#numid#
+			, sysdate
+			, #counts#
+			, #money#
+			, #memo#
+			, #err_str#
+			, #adminid#
+		)
+	</insert>	
+	
+	<!-- EB21 log 최상위 row data -->
+	<select id="getEB21LogFirstRow" resultMap="EA21LogMap">
+		SELECT * FROM 
+			(
+			SELECT 
+				*
+			FROM 
+				tbl_EA21_log_stu 
+			ORDER BY
+				logdate DESC
+			)
+		WHERE
+			ROWNUM = 1 
+	</select>
+	
+	<!-- EB22 log 목록 -->
+	<select id="getEB22LogList" resultClass="java.util.HashMap">
+		SELECT 
+			C.*
+		FROM
+			(
+				SELECT 
+					ROWNUM AS RNUM
+					, B.*
+	  			FROM
+					(
+						SELECT 
+							*
+						FROM 
+							tbl_cmsdata_log_stu A 
+						WHERE 
+							NUMID is not null
+						ORDER BY 
+							numid desc
+					) B
+			) C
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- EB22 log 갯수 -->
+	<select id="getEB22LogCount" resultClass="int">
+		SELECT 
+			count(*) as recCount
+		FROM 
+			tbl_cmsdata_log_stu
+		WHERE 
+			numid IS NOT NULL
+	</select>
+	
+	<!-- 입력받은 날짜에 파일이 유무 검사 -->
+	<select id="getEB22FileName" resultClass="string">
+		SELECT 
+			filename
+		FROM 
+			tbl_cmsdata_log_stu
+		WHERE
+			out_date = #out_date#
+	</select>
+	
+	<!-- tbl_cmsdata_log 목록 -->
+	<select id="getCmsdataLog" resultClass="java.util.HashMap">
+		SELECT 
+			*
+		FROM 
+			tbl_cmsdata_log_stu
+		WHERE
+			numid = #numid#
+	</select>
+	
+	<!-- EA log 갯수 -->
+	<select id="getEALogCount" resultClass="int">
+		SELECT 
+			count(*)
+		FROM 
+			tbl_EA_log_stu
+		WHERE
+			1=1
+			<isNotEmpty property="cmsresult" prepend=" AND ">
+				cmsresult = #cmsresult#
+			</isNotEmpty>
+			<isNotEmpty property="cmsresult_not" prepend=" AND ">
+				cmsresult &lt;&gt; #cmsresult_not#
+			</isNotEmpty>
+			<isNotEmpty property="cmsdate" prepend=" AND ">
+				cmsdate = #cmsdate#
+			</isNotEmpty>
+			<isNotEmpty property="cmstype" prepend=" AND ">
+				trim(cmstype) = #cmstype#
+			</isNotEmpty>
+			<isNotEmpty property="jikuk" prepend=" AND ">
+				usernumid in (
+					select numid from tbl_users_stu where realjikuk = #jikuk#
+				)
+			</isNotEmpty>
+	</select>
+	
+	<update id="updateEALog">
+		UPDATE tbl_EA_log_stu 
+		SET 
+			cmsresult = #cmsresult# 
+			<isNotEmpty property="subsmonth">
+				, subsmonth = #subsmonth#
+			</isNotEmpty>
+		WHERE
+			1=1 
+			<isNotEmpty property="cmsdate" prepend=" AND ">
+				cmsdate = #cmsdate#
+			</isNotEmpty> 
+			<isNotEmpty property="cmstype1">
+			<isNotEmpty property="cmstype2" prepend=" AND ">
+				( trim(cmstype) = #cmstype1# or trim(cmstype) = #cmstype2# )
+			</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="serialno" prepend=" AND ">
+				serialno = #serialno#
+			</isNotEmpty>			
+	</update>
+	
+	<!-- 수금처리 -->
+	<update id="updateSugm">
+		UPDATE TM_READER_SUGM
+		SET
+			SGBBCD = #SGBBCD_NEW#
+			,AMT = BILLAMT
+			<isNotEmpty property="SGYYMM">
+			,SGYYMM = #SGYYMM#
+			</isNotEmpty>
+			<isNotEmpty property="SNDT">
+				,SNDT = #SNDT#
+			</isNotEmpty>
+			<isNotEmpty property="ICDT">
+				,ICDT = #ICDT#
+			</isNotEmpty>
+			<isNotEmpty property="CLDT">
+				,CLDT = #CLDT#
+			</isNotEmpty>
+			,CHGDT = SYSDATE
+		    
+		WHERE
+			sgbbcd = #SGBBCD_OLD#
+			AND sggbcd = #SGGBCD#
+			AND yymm BETWEEN '201201' AND #subsmonth#
+			AND readno IN (
+			    SELECT readno 
+			    FROM (
+			        SELECT * FROM TBL_EA_LOG_STU 
+			        WHERE 
+			        	trim(cmstype) = #CMSTYPE# 
+			        	AND 
+			        	cmsdate = #CMSDATE#
+			    ) A
+			    WHERE
+			        serialno NOT in (
+			            SELECT serialno FROM TBL_CMSDATA_STU WHERE logdate = #CMSDATE#
+			) 
+		)
+	</update>
+	
+	<!-- 구독테이블에 수금방법 변경 -->
+	<update id="updateSugmToVisit">
+		UPDATE TM_READER_SUGM
+		SET
+			SGGBCD = #SGGBCD_NEW#    
+		WHERE
+			READNO = #READNO#
+			AND
+			NEWSCD = #NEWSCD#
+			AND
+			SGBBCD = #SGBBCD#
+			AND
+			SGGBCD = #SGGBCD_OLD#
+	</update>
+	
+	<!-- tbl_cmsdata 등록 -->
+	<insert id="insertCmsdata">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_cmsdata_stu
+		</selectKey>
+		INSERT INTO tbl_cmsdata_stu ( 
+			numid
+			, rtype
+			, serialno
+			, code
+			, bank
+			, bank_num
+			, money
+			, jumin
+			, result
+			, txt
+			, type
+			, jironum
+			, blk
+			, out_type
+			, filename
+			, logdate
+			, indate
+			, chk_id
+		) VALUES ( 
+			#numid#
+			, #rtype#
+			, #serialno#
+			, #code#
+			, #bank#
+			, #bank_num#
+			, #money#
+			, #jumin#
+			, #result#
+			, #txt#
+			, #type#
+			, #jironum#
+			, #blk#
+			, #out_type#
+			, #filename#
+			, #logdate#
+			, sysdate
+			, #chk_id#
+		)
+	</insert>
+	
+	<!-- tbl_cmsdata_log 등록 -->
+	<insert id="insertCmsdataLog">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM tbl_cmsdata_log_stu
+		</selectKey>
+		INSERT INTO tbl_cmsdata_log_stu ( 
+			numid
+			, rtype
+			, code
+			, filename
+			, out_date
+			, bank_code
+			, bank_num
+			, totals
+			, requestt
+			, request_money
+			, part
+			, part_money
+			<isNotEmpty property="err_num">
+			, err_num
+			</isNotEmpty>
+			<isNotEmpty property="chul_cost">
+			, chul_cost
+			</isNotEmpty>
+			<isNotEmpty property="ip_cost">
+			, ip_cost
+			</isNotEmpty>
+			, indate
+			, chk_id
+		) VALUES ( 
+			#numid#
+			, #rtype#
+			, #code#
+			, #filename#
+			, #out_date#
+			, #bank_code#
+			, #bank_num#
+			, #totals#
+			, #requestt#
+			, #request_money#
+			, #part#
+			, #part_money#
+			<isNotEmpty property="err_num">
+			, #err_num#
+			</isNotEmpty>
+			<isNotEmpty property="chul_cost">
+			, #chul_cost#
+			</isNotEmpty>
+			<isNotEmpty property="ip_cost">
+			, #ip_cost#
+			</isNotEmpty>
+			, sysdate
+			, #chk_id#
+		)
+	</insert>
+	
+	<!-- EB22 통계 목록 - 정상 -->
+	<select id="getEB22StatisticsNormalList" resultClass="java.util.HashMap">
+		SELECT
+			C.*
+			,(select name from tm_agency where serial = C.realjikuk and rownum=1) as JIKUK_NAME
+		FROM (
+			SELECT 
+				B.realjikuk
+				,SUM(TO_NUMBER(NVL(B.cmsmoney,0))) as CMSMONEY                        
+				,COUNT(B.cmsmoney) as CMSCOUNT
+				,SUM(case when B.cmsresult = '99999' then TO_NUMBER(NVL(B.cmsmoney,0)) else 0 end) as CMSMONEY2
+				,SUM(case when B.cmsresult = '99999' then 1 else 0 end) as CMSCOUNT2
+			FROM  (
+				select 
+					A.*
+					,(select realjikuk from tbl_users_stu where numid = A.usernumid ) as realjikuk
+				from TBL_EA_LOG_STU A
+				where
+					1=1
+					<isNotEmpty property="CMSTYPE" prepend=" AND ">
+						trim(A.CMSTYPE) = #CMSTYPE#
+					</isNotEmpty>
+					<isNotEmpty property="CMSRESULT">
+						<iterate property="CMSRESULT" prepend="AND A.CMSRESULT IN" open="(" close=")" conjunction=",">
+							#CMSRESULT[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="fromCmsdate">
+						<isNotEmpty property="toCmsdate" prepend=" AND ">
+							A.CMSDATE BETWEEN #fromCmsdate# AND #toCmsdate#
+						</isNotEmpty>
+					</isNotEmpty>
+			) B
+			GROUP BY 
+				realjikuk
+		) C
+		ORDER BY 
+			realjikuk
+	</select>
+	
+	<!-- EB22 통계 목록 - 에러 -->
+	<select id="getEB22StatisticsErrorList" resultClass="java.util.HashMap">
+		SELECT
+			C.*
+			,(select name from tm_agency where serial = C.realjikuk and rownum=1) as JIKUK_NAME
+		FROM (
+			SELECT 
+				B.realjikuk
+				,SUM(TO_NUMBER(NVL(B.cmsmoney,0))) as CMSMONEY                        
+				,COUNT(B.cmsmoney) as CMSCOUNT
+			FROM (
+				select 
+					A.*
+					,(select realjikuk from tbl_users_stu where numid = A.usernumid ) as realjikuk
+				from TBL_EA_LOG_STU A
+				where
+					1=1
+					<isNotEmpty property="CMSTYPE" prepend=" AND ">
+						trim(A.CMSTYPE) = #CMSTYPE#
+					</isNotEmpty>
+					<isNotEmpty property="CMSRESULT_NOT">
+						<iterate property="CMSRESULT_NOT" prepend="AND A.CMSRESULT NOT IN" open="(" close=")" conjunction=",">
+							#CMSRESULT_NOT[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="fromCmsdate">
+						<isNotEmpty property="toCmsdate" prepend=" AND ">
+							A.CMSDATE BETWEEN #fromCmsdate# AND #toCmsdate#
+						</isNotEmpty>
+					</isNotEmpty>
+			) B
+			GROUP BY 
+				realjikuk
+		) C
+		ORDER BY 
+			realjikuk
+	</select>
+	
+	<!-- 지국목록 -->
+	<select id="getAgencyList" resultClass="java.util.HashMap">
+		SELECT 
+			DISTINCT B.jikuk
+			,(SELECT NAME FROM TM_AGENCY WHERE SERIAL = B.jikuk and rownum=1) as JIKUK_NAME	
+		FROM (
+			select 
+				A.NUMID
+				, A.SERIALNO
+				, A.FILENAME
+				, A.CMSTYPE
+				, A.CMSDATE
+				, A.CMSMONEY
+				, A.CMSRESULT
+				, A.USERID
+				, A.USERNUMID
+				, A.CODENUM
+				, A.RDATE
+				, A.SUBSMONTH
+				, A.ORDERNO
+				, A.CHECKED
+				, A.READNO
+				,(select realjikuk from tbl_users_stu where numid = A.usernumid ) as jikuk
+			from TBL_EA_LOG_STU A
+			where
+				1=1
+				<isNotEmpty property="CMSTYPE" prepend=" AND ">
+					trim(A.CMSTYPE) = #CMSTYPE#
+				</isNotEmpty>
+				
+				<isNotEmpty property="S_CMSDATE">
+				<isNotEmpty property="E_CMSDATE" prepend=" AND ">
+					A.CMSDATE BETWEEN #S_CMSDATE# AND #E_CMSDATE#
+				</isNotEmpty>
+				</isNotEmpty>
+				
+				<isNotEmpty property="CHBX">
+					<isEqual property="CHBX" compareValue="on" prepend=" AND">
+						A.CMSRESULT = '00000'
+					</isEqual>
+					<isEqual property="CHBX" compareValue="off" prepend=" AND">
+						A.CMSRESULT &lt;&gt; '00000'
+					</isEqual>
+				</isNotEmpty>
+				
+				<isNotEmpty property="CMSDATE" prepend=" AND ">
+					A.cmsdate = #CMSDATE#
+				</isNotEmpty>
+		) B
+		ORDER BY 
+			B.jikuk
+	</select>
+	
+	<!-- 이체내역조회 결과 -->
+	<select id="getStatStuResult" resultClass="java.util.HashMap">
+		SELECT 
+			COUNT(1) AS R_COUNT
+			,SUM(CAST(( CASE WHEN CMSRESULT = '00000' THEN CMSMONEY ELSE '0' END) AS INT)) AS TOTALS
+		FROM 
+			TBL_EA_LOG_STU A
+		WHERE 
+			( A.CMSTYPE='EA21' AND A.CMSDATE BETWEEN #S_CMSDATE# AND #E_CMSDATE#
+			<isNotEqual property="CHBX" compareValue="all">
+				<isEqual property="CHBX" compareValue="on" prepend=" AND">
+					CMSRESULT = '00000'
+				</isEqual>
+				<isEqual property="CHBX" compareValue="off" prepend=" AND">
+					CMSRESULT &lt;&gt; '00000'
+				</isEqual>
+			</isNotEqual>
+			)
+			<isEqual property="JIKUK_CHECK" compareValue="Y" prepend=" AND">
+				A.usernumid in (
+					select numid from tbl_users_stu where realjikuk = #JIKUK#
+				)
+			</isEqual>
+	</select>
+	
+	<!-- 이체내역조회 리스트 -->
+	<select id="getStatStuResultList" resultClass="java.util.HashMap">
+	SELECT 
+		E.*
+	FROM
+		(
+			SELECT 
+				ROWNUM AS RNUM
+				, D.*
+  			FROM
+  				(
+  					SELECT 
+  						C.*
+						,(SELECT MAX(NAME) FROM TM_AGENCY WHERE SERIAL = C.REALJIKUK) as JIKUK_NAME
+  					FROM
+						(
+						SELECT 
+							A.NUMID
+							, A.SERIALNO
+							, A.FILENAME
+							, A.CMSTYPE
+							, A.CMSDATE
+							, A.CMSMONEY
+							, A.CMSRESULT
+							, A.USERID
+							, A.USERNUMID
+							, A.CODENUM
+							, A.RDATE
+							, A.SUBSMONTH
+							, A.ORDERNO
+							, A.CHECKED
+							, A.JIKUK
+							, B.USERNAME AS USERNAME
+							, B.LEVELS AS LEVELS
+							, B.ADDR1 AS ADDR1
+							, B.ADDR2 AS ADDR2
+							, B.HANDY AS HANDY
+							, B.PHONE AS PHONE
+							, B.INDATE
+							, B.READNO
+							, B.REALJIKUK
+						FROM 
+							TBL_EA_LOG_STU A 
+							LEFT OUTER JOIN 
+							TBL_USERS_STU B 
+							ON A.USERNUMID = B.NUMID
+						WHERE 
+							( A.CMSTYPE='EA21' AND A.CMSDATE BETWEEN #S_CMSDATE# AND #E_CMSDATE#
+							<isNotEqual property="CHBX" compareValue="all">
+								<isEqual property="CHBX" compareValue="on" prepend=" AND">
+									CMSRESULT = '00000'
+								</isEqual>
+								<isEqual property="CHBX" compareValue="off" prepend=" AND">
+									CMSRESULT &lt;&gt; '00000'
+								</isEqual>
+							</isNotEqual>
+							)
+						) C
+				WHERE 
+					1=1
+						<isEqual property="JIKUK_CHECK" compareValue="Y" prepend=" AND">
+							C.REALJIKUK = #JIKUK#
+						</isEqual>
+				ORDER BY 
+					JIKUK_NAME
+					, C.CMSDATE
+					, C.NUMID 
+				) D
+			) E
+		<dynamic prepend="WHERE">
+			<isNotEmpty property="PAGE_NO"> 
+				<isNotEmpty property="PAGE_SIZE">
+					RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+					AND
+					RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+				</isNotEmpty>
+			</isNotEmpty>
+		</dynamic>
+	</select>
+	
+	<!-- cmsdate 구하기 -->
+	<select id="getCmsDate" resultClass="string">
+		SELECT 
+			CMSDATE
+		FROM 
+			(
+				SELECT 
+					CMSDATE
+					, ROWNUM AS RNUM
+				FROM
+					(
+						SELECT 
+							*
+						FROM
+							TBL_EA_LOG_STU
+						WHERE
+							CMSTYPE = 'EA21'
+						ORDER BY 
+							CMSDATE DESC
+					) A
+			) B
+		WHERE
+			RNUM = 1
+	</select>
+	
+	<!-- 미수독자재리스트 -->
+	<select id="getErrListStu" resultClass="java.util.HashMap">
+		SELECT 
+			C.*
+			, (SELECT NAME FROM TM_AGENCY WHERE SERIAL = C.REALJIKUK AND ROWNUM=1) as NAME
+			, (SELECT JIKUK_TEL FROM TM_AGENCY WHERE SERIAL = C.REALJIKUK AND ROWNUM=1) as JIKUK_TEL
+		FROM (
+	
+			SELECT  
+				A.NUMID
+				, A.SERIALNO
+				, A.CODENUM
+				, A.USERNUMID
+				, A.CHECKED
+				, A.CMSMONEY
+				, A.JIKUK
+				, B.USERNAME
+				, B.PHONE
+				, B.ADDR1
+				, B.ADDR2
+				, B.SERIAL
+				, B.HANDY
+				, A.SUBSMONTH
+				, B.STATUS
+				, A.CMSDATE
+				, B.READNO
+				, B.REALJIKUK
+				, A.CMSRESULT		
+			FROM 
+				TBL_EA_LOG_STU A 
+				LEFT OUTER JOIN 
+				TBL_USERS_STU  B 
+				ON A.USERNUMID = B.NUMID
+			WHERE 
+				TRIM(A.CMSTYPE) = #CMSTYPE#
+				AND 
+				A.CMSRESULT &lt;&gt; #CMSRESULT1# 
+				AND 
+				A.CMSRESULT &lt;&gt; #CMSRESULT2#
+			<iterate property="CMSDATEARR" open="(" close=")" conjunction="," prepend="AND A.CMSDATE IN">
+				#CMSDATEARR[]#
+			</iterate>
+			ORDER BY 
+				B.REALJIKUK
+		) C
+	</select>
+	
+	 
+	 <!-- tbl_ea_log_stu update -->
+	 <update id="updateTblEaLogStu">
+	 	UPDATE 
+	 		TBL_EA_LOG_STU 
+	 	SET
+	 		<isNotEmpty property="CHECKED"> 
+	 			CHECKED = #CHECKED#
+	 		</isNotEmpty>
+	 		<isEmpty property="CHECKED">
+	 			CHECKED = NULL
+	 		</isEmpty>
+	 		<isNotEmpty property="CMSMONEY" prepend=", ">
+	 			CMSMONEY = #CMSMONEY#
+	 		</isNotEmpty> 
+	 	WHERE 
+	 		CMSDATE = #CMSDATE# 
+	 		AND 
+	 		TRIM(CMSTYPE) = #CMSTYPE# 
+	 		AND 
+	 		NUMID = #NUMID#
+	 </update>
+	 
+	 <!-- 학생본사 출금일이 17일 경우 마감과 같은 작업을 해준다(수금테이블에 등록,eb21프로세스) -->
+	<select id="funcMonthDeadlineEb21Stu" resultClass="String">
+	SELECT 
+		FUNC_MONTH_DEADLINE_EB21_STU(#READNO#)
+	FROM 
+		DUAL
+	</select>
+	
+</sqlMap>

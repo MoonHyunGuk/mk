@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="management.codeManage">
+
+	<!-- 구역정보 조회 -->
+	<select id="getGuyukInfo" resultClass="java.util.HashMap">
+	    SELECT BOSEQ,			<!-- 지국번호 -->
+			       GU_NO,		    <!-- 구역번호 -->
+			       GU_NM,		    <!-- 구역명 -->
+			       GU_APT,	  	    <!-- 아파트수 -->
+			       GU_BILLA,		<!-- 빌라수 -->
+			       GU_OFFICE,		<!-- 사무실수 -->
+			       GU_SANGA,		<!-- 상가수 -->
+			       GU_JUTEAK,		<!-- 주택수 -->
+			       GU_GITA		    <!-- 기타수 -->
+		  FROM TM_GUYUK
+	    WHERE 1=1
+	    <isNotEmpty property="userId" prepend="AND">
+	    	    BOSEQ = #userId#
+		</isNotEmpty>
+		ORDER BY BOSEQ, GU_NO
+	</select>
+	
+	
+	<!-- 구역정보 수정 -->
+	<update id="updateGuyukInfo"  parameterClass="java.util.HashMap">
+		 UPDATE TM_GUYUK 
+			   SET GU_NM = #guNm#,
+			         GU_APT = #guApt#,
+			         GU_BILLA = #guBilla#,
+			         GU_OFFICE = #guOffice#,
+			         GU_SANGA = #guSanga#,
+			         GU_JUTEAK = #guJuteak#,
+			         GU_GITA = #guGita#,
+			         CHGDT = SYSDATE,
+			         CHGPS = #userId#
+		  WHERE BOSEQ = #userId#
+		     AND GU_NO = #guNo#
+ 	</update>
+ 	
+ 	
+	<!-- 구역정보 삭제 -->
+	<delete id="deleteGuyukInfo"  parameterClass="java.util.HashMap">
+		 DELETE FROM TM_GUYUK 
+     	 	      WHERE BOSEQ = #userId#
+      			     AND GU_NO = #guNo#
+ 	</delete>
+ 	
+ 	<!-- 구역정보 조회 -->
+	<select id="getDupGuyuk" resultClass="java.util.HashMap">
+		SELECT GU_NO 
+		 FROM TM_GUYUK 
+		WHERE BOSEQ = #userId#
+		   AND GU_NO = #guNo#
+    </select>
+    
+    <!-- 구역정보 삭제전 해당구역 사용여부 조회 -->
+	<select id="getDupGuyukUse" resultClass="java.util.HashMap">
+		SELECT GNO 
+		 FROM TM_READER_NEWS
+	    WHERE BOSEQ = #userId#
+		   AND GNO = #guNo#
+		   AND BNO != '999'
+		   AND ROWNUM = 1
+    </select>
+   
+ 	<!-- 신규 구역 등록 -->
+	<insert id="insertGuyukInfo"  parameterClass="java.util.HashMap">
+		  INSERT INTO TM_GUYUK 
+		 				    (BOSEQ, GU_NO, GU_NM, GU_APT, GU_BILLA, GU_OFFICE, GU_SANGA, GU_JUTEAK, GU_GITA, INDT, INPS, CHGDT, CHGPS)
+	  	        VALUES(#userId#,
+				            #guNo#,
+				            #guNm#,
+				            #guApt#,
+				            #guBilla#,
+				            #guOffice#,
+				            #guSanga#,
+				            #guJuteak#,
+				            #guGita#,
+				            SYSDATE,
+				            #userId#,
+				            SYSDATE,
+				            #userId#)
+ 	</insert>
+ 	
+ 	<!-- 확장자정보 조회 -->
+	<select id="getExtdInfo" resultClass="java.util.HashMap">
+	    SELECT A.CODE,      <!-- 확장자코드 -->
+			       A.CNAME,   <!-- 확장자명 -->
+			       A.RESV2,     <!-- 지국번호 -->
+			       B.NAME,      <!-- 지국명 -->
+			       A.RESV3,     <!-- 비고 -->
+			       A.USEYN,     <!-- 사용여부 -->
+			       A.SORTFD    <!-- 정렬 -->
+		  FROM TC_COMMON A,
+			       TM_AGENCY B
+	    WHERE A.CDCLSF = '009'     <!--  공통코드 그룹(확장자) -->
+		   AND A.RESV1 = '007'        <!--  신청경로(006:본판요원, 007:지국판촉) -->
+		   AND A.RESV2 =#userId#    <!--  지국번호 -->
+		   AND A.RESV2 = B.USERID
+		   AND A.USEYN = 'Y'
+	    ORDER BY A.RESV2, A.SORTFD, A.CODE
+	</select>
+ 	
+ 	<!-- 확장자정보 수정 -->
+	<update id="updateExtdInfo"  parameterClass="java.util.HashMap">
+		 UPDATE TC_COMMON
+			   SET CNAME = TRIM(#cName#),
+			         RESV3 = #resv3#,
+			         CHGDT = SYSDATE, 
+			         CHGPS = #userId#, 
+			         SORTFD = #sortFd#
+		  WHERE CDCLSF = '009' AND CODE = #code#
+ 	</update>
+ 	
+ 	
+ 	<!-- 확장자정보 미사용처리 -->
+	<update id="updateExtdUseN"  parameterClass="java.util.HashMap">
+		 UPDATE TC_COMMON
+			   SET CHGDT = SYSDATE, 
+			         CHGPS = #userId#, 
+			         USEYN = 'N'
+		  WHERE CDCLSF = '009' AND CODE = #code#
+ 	</update>
+ 	
+ 	<!-- 확장자정보 등록 -->
+	<insert id="insertExtdInfo"  parameterClass="java.util.HashMap">
+		  INSERT INTO TC_COMMON 
+				            (CDCLSF, CODE, CNAME, YNAME, REMK, RESV1, RESV2, RESV3, USEYN, INDT, INPS, CHGDT, CHGPS, SORTFD)
+			    VALUES ('009', 
+				             (SELECT LPAD(MAX(CODE)+1, 5, '0') FROM TC_COMMON WHERE CDCLSF = '009'), 
+				             TRIM(#cName#), 
+				             '', 
+				             '', 
+				             '007', 
+				             #userId#, 
+				             #resv3#, 
+				             'Y', 
+				             SYSDATE,
+				             #userId#,
+				             SYSDATE,
+				             #userId#,
+				             #sortFd#)
+ 	</insert>
+ 	
+ 	<!-- 확장자번호 존재여부 조회 -->
+	<select id="getExtdCdChk" resultClass="java.util.HashMap">
+	    SELECT CODE
+		  FROM TC_COMMON
+	    WHERE CDCLSF = '009'
+		    AND RESV1 = '007'
+		    AND RESV2 = #userId#
+		    AND CODE = #code#
+	</select>
+	
+ 	<!-- 확장자명 중복여부 조회 -->
+	<select id="getExtdDup" resultClass="java.util.HashMap">
+	    SELECT CNAME
+		  FROM TC_COMMON
+	    WHERE CDCLSF = '009'
+		    AND RESV1 = '007'
+		    AND RESV2 = #userId#
+		    AND USEYN = 'Y'
+		    AND CNAME =  TRIM(#cName#)
+	    <isNotEmpty property="code" prepend="AND">
+    	    CODE != #code#
+		</isNotEmpty>
+	</select>
+
+ 	<!-- 관할지역(지국) 조회 -->
+	<select id="getJikukZipList" resultClass="java.util.HashMap">
+		SELECT SUBSTR(ZIP, 0, 3)||'-'||SUBSTR(ZIP, 4, 6) ZIP,           <!-- 우편번호 -->
+			       SERIAL,   														 <!-- 일련번호 -->
+			       TXT,        														 <!-- 상세주소 -->
+			       NVL2(JISERIAL,FUNC_AGENT_NM(JISERIAL)||'('||JISERIAL||')','') JIKUK     <!-- 담당지국 -->
+		  FROM TM_ZIPCODE
+		WHERE 1=1
+		    AND JISERIAL = #userId#
+		<isNotEmpty property="txt" prepend="AND">
+    	    TXT LIKE '%'||#txt#||'%'
+		</isNotEmpty>
+		 ORDER BY ZIP, SERIAL, SIDO, GUGUN, UPDONG ASC
+	</select>
+	
+	<!-- 지국정보 조회 -->
+	<select id="getAgency" resultClass="java.util.HashMap">
+		SELECT USERID,
+				   NAME
+		 FROM TM_AGENCY
+		WHERE USERID = #userId#
+    </select>
+	
+ 	<!-- 매체코드(지국등록코드 제외) 조회 -->
+	<select id="getNewsCode" resultClass="java.util.HashMap">
+		SELECT CDCLSF, 
+				   CODE,
+				   CNAME ,
+				   YNAME
+		  FROM TC_COMMON
+		WHERE  USEYN = 'Y'
+	 	    AND CDCLSF = '100'
+	 	    AND CODE NOT IN(SELECT NEWSCD FROM TM_AGENCY_NEWS WHERE SERIAL = #userId#)
+		ORDER BY SORTFD, CNAME, CODE
+	</select>
+	
+	<!-- 매체코드 조회 -->
+	<select id="getNews" resultClass="java.util.HashMap">
+		SELECT A.SERIAL,         <!-- 지국번호 -->
+			       A.NEWSCD,      <!-- 매체코드 -->
+			       B.CNAME,        <!-- 매체명 -->
+			       B.YNAME         <!-- 약자 -->
+		  FROM TM_AGENCY_NEWS A, 
+			       TC_COMMON B
+		WHERE A.NEWSCD = B.CODE
+		   AND A.SERIAL = #userId#
+		   AND B.USEYN = 'Y'
+		   AND B.CDCLSF = '100'
+		ORDER BY B.SORTFD, B.CNAME, A.NEWSCD
+	</select>
+	
+	<!-- 매체코드 중복 조회 -->
+	<select id="getDupNews" resultClass="java.util.HashMap">
+		SELECT NEWSCD 
+		 FROM TM_AGENCY_NEWS 
+	    WHERE SERIAL = #userId#
+	       AND NEWSCD = #code#
+	</select>
+	
+	<!-- 매체정보 삭제전 해당매체 사용여부 조회 -->
+	<select id="getNewsUsed" resultClass="java.util.HashMap">
+		SELECT NEWSCD 
+		 FROM TM_READER_NEWS
+	    WHERE BOSEQ = #userId#
+		   AND NEWSCD = #code#
+		   AND BNO != '999'
+		   AND ROWNUM = 1
+    </select>
+	
+	<!-- 매체정보 삭제 -->
+	<delete id="deleteNews"  parameterClass="java.util.HashMap">
+		 DELETE FROM TM_AGENCY_NEWS
+				  WHERE SERIAL = #userId#
+					  AND NEWSCD = #code#
+ 	</delete>
+ 	
+ 	<!-- 신규 매체 등록 -->
+	<insert id="insertNews"  parameterClass="java.util.HashMap">
+		  INSERT INTO TM_AGENCY_NEWS (SERIAL,NEWSCD,INDT,INPS)
+				 VALUES (#userId#, #code#, SYSDATE, #userId#)
+ 	</insert>
+ 	
+</sqlMap>

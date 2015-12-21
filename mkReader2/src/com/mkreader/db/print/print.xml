@@ -1,0 +1,1938 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="print.print">
+
+	
+	<!-- 구역리스트 -->
+	<select id="getGnoList" resultClass="java.util.HashMap">
+		SELECT 
+			GNO 
+		FROM 
+			TM_READER_NEWS 
+		WHERE 
+			GNO IS NOT NULL 
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="BNO_NOT" prepend=" AND">
+				BNO &lt;&gt; #BNO_NOT#
+			</isNotEmpty>
+		GROUP BY 
+			GNO 
+		ORDER BY 
+			LENGTH(GNO)
+			,GNO
+	</select>
+	
+	
+	<!-- 확장자명 -->
+	<select id="getHjPsNmList" remapResults="true" resultClass="java.util.HashMap">
+		SELECT 
+			CODE 
+			,CNAME
+		FROM 
+			TC_COMMON
+		WHERE 
+			CDCLSF = '009' 
+			AND RESV1 = #RESV1#
+			<isEqual property="RESV1" compareValue="007">
+				<isNotEmpty property="BOSEQ" prepend=" AND ">
+				RESV2 = #BOSEQ#
+				</isNotEmpty>
+			</isEqual>
+	</select>
+	
+	
+	<!-- 조건별명단 -->
+	<select id="getConditionList" resultClass="java.util.HashMap">
+		SELECT 
+			A.READNO
+			,A.NEWSCD
+			,a.SEQ
+			,A.READNM 
+			,A.GNO
+			,A.BNO
+			,A.HJDT
+			,A.APLCDT
+			,A.SGBGMM
+			,A.MOBILE1, A.MOBILE2, A.MOBILE3
+			,A.HOMETEL1, A.HOMETEL2, A.HOMETEL3
+			,A.HJPSNM
+			,A.READTYPECD
+			,nvl(A.QTY, 0) as QTY
+			,nvl(A.UPRICE, 0) as UPRICE
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = A.NEWSCD) AS NEWSNM
+			,(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '115' AND CODE = A.READTYPECD) AS READTYPENM
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = A.SGTYPE) AS SGTYPENM
+			,REPLACE(
+				TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))),
+				INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #GU#)+1,
+				LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#APT#,'A'
+			) AS DLVADRS1 
+			,FUNC_GET_CLAMLIST(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(SYSDATE, 'YYYY')) AS SGHIST
+		FROM 
+			TM_READER_NEWS A
+		WHERE
+			A.BNO &lt;&gt; '999'
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				A.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="FROMGNO">
+				<isNotEmpty property="TOGNO" prepend=" AND">
+					TO_NUMBER(GNO) BETWEEN #FROMGNO# AND #TOGNO#
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+			
+			<isNotEmpty property="LISTTYPE">
+				<isEqual property="LISTTYPE" prepend=" AND " compareValue="1" >		<!-- 확장일자 -->
+					A.HJDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+				</isEqual>
+				<isEqual property="LISTTYPE" prepend=" AND " compareValue="2" >		<!-- 구역독자 -->
+					A.APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+				</isEqual>
+				<isEqual property="LISTTYPE" prepend=" AND " compareValue="3" >		<!-- 구독가격 -->
+					A.APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+					AND
+					A.UPRICE BETWEEN TO_NUMBER(#HIDDEN_TEXT1#) AND TO_NUMBER(#HIDDEN_TEXT2#)
+				</isEqual>
+				<isEqual property="LISTTYPE" prepend=" AND " compareValue="4" >		<!-- 확장자별 -->
+					A.APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+					<isNotEmpty property="HIDDEN_SEL3" prepend=" AND ">
+						A.HJPATHCD = #HIDDEN_SEL3#
+					</isNotEmpty>
+					<isNotEmpty property="HIDDEN_SEL4" prepend=" AND ">
+						A.HJPSNM like '%' || #HIDDEN_SEL4# || '%'
+					</isNotEmpty>
+				</isEqual>
+				<isEqual property="LISTTYPE" prepend=" AND " compareValue="5" >		<!-- 유가월별 -->
+					A.APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+					AND
+					A.SGBGMM = #HIDDEN_TEXT1#
+				</isEqual>
+				<isEqual property="LISTTYPE" prepend=" AND " compareValue="6" >		<!-- 독자유형 -->
+					A.APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+					<isNotEmpty property="HIDDEN_SEL2" prepend=" AND ">
+						A.READTYPECD = #HIDDEN_SEL2#
+					</isNotEmpty>
+				</isEqual>
+				<isEqual property="LISTTYPE" prepend=" AND " compareValue="7" >		<!-- 수금방법 -->
+					A.APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+					<isNotEmpty property="HIDDEN_SEL1" prepend=" AND ">
+						A.SGTYPE = #HIDDEN_SEL1#
+					</isNotEmpty>
+				</isEqual>
+				<isEqual property="LISTTYPE" prepend=" AND " compareValue="11" >	<!-- 구독일자 -->
+					A.APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+				</isEqual>
+			</isNotEmpty>
+		ORDER BY
+			<isNotEmpty property="ORDER">
+				<isEqual property="ORDER" compareValue="gno" >
+					A.GNO, A.BNO, A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="readno" >
+					A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="hjdt" >
+					A.HJDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="aplcdt" >
+					A.APLCDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="uprice" >
+					A.UPRICE
+				</isEqual>
+			</isNotEmpty>
+			<isEmpty property="ORDER">
+				A.READNO
+			</isEmpty>
+	</select>
+	
+	
+	<!-- 조건별명단 - 다부수(qty가 2부 이상이거나 qty가 1부이면서 readno,newscd 조합이 2개 이상인 독자) -->
+	<select id="getConditionList2" resultClass="java.util.HashMap">
+		SELECT 
+			A.READNO
+			,A.NEWSCD
+			,a.SEQ
+			,A.READNM 
+			,A.GNO
+			,A.BNO
+			,A.HJDT
+			,A.APLCDT
+			,A.SGBGMM
+			,A.MOBILE1, A.MOBILE2, A.MOBILE3
+			,A.HOMETEL1, A.HOMETEL2, A.HOMETEL3
+			,A.HJPSNM
+			,A.READTYPECD
+			,B.QTY
+			,B.UPRICE
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = A.NEWSCD) AS NEWSNM
+			,(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '115' AND CODE = A.READTYPECD) AS READTYPENM
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = A.SGTYPE) AS SGTYPENM
+			,REPLACE(
+				TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))),
+				INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #GU#)+1,
+				LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#APT#,'A'
+			) AS DLVADRS1 
+			,FUNC_GET_CLAMLIST(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(SYSDATE, 'YYYY')) AS SGHIST
+		FROM 
+			TM_READER_NEWS A
+			, (
+				SELECT 
+					D.READNO, D.NEWSCD, SUM(D.QTY) AS QTY, SUM(D.UPRICE) AS UPRICE
+				FROM (
+						SELECT READNO, NEWSCD
+						FROM TM_READER_NEWS
+						WHERE
+							BNO &lt;&gt; '999'
+							AND
+							APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+							<isNotEmpty property="BOSEQ" prepend=" AND">
+								BOSEQ = #BOSEQ#
+							</isNotEmpty>
+							<isNotEmpty property="FROMGNO">
+								<isNotEmpty property="TOGNO" prepend=" AND">
+									TO_NUMBER(trim(GNO)) BETWEEN TO_NUMBER(#FROMGNO#) AND TO_NUMBER(#TOGNO#)
+								</isNotEmpty>
+							</isNotEmpty>
+							<isNotEmpty property="NEWSCD">
+								<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+									#NEWSCD[]#
+								</iterate>
+							</isNotEmpty>
+						GROUP BY
+							READNO, NEWSCD
+						HAVING 
+							COUNT(*) >= #HIDDEN_TEXT1#
+		
+						UNION 
+		
+						SELECT READNO, NEWSCD
+						FROM TM_READER_NEWS
+						WHERE
+							BNO &lt;&gt; '999'
+							AND 
+							APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+							<isNotEmpty property="BOSEQ" prepend=" AND">
+								BOSEQ = #BOSEQ#
+							</isNotEmpty>
+							<isNotEmpty property="FROMGNO">
+								<isNotEmpty property="TOGNO" prepend=" AND">
+									TO_NUMBER(trim(GNO)) BETWEEN TO_NUMBER(#FROMGNO#) AND TO_NUMBER(#TOGNO#)
+								</isNotEmpty>
+							</isNotEmpty>
+							<isNotEmpty property="NEWSCD">
+								<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+									#NEWSCD[]#
+								</iterate>
+							</isNotEmpty>
+							AND 
+							QTY >= #HIDDEN_TEXT1#
+					) C
+					, TM_READER_NEWS D
+				WHERE
+					C.READNO = D.READNO
+					AND
+					C.NEWSCD = D.NEWSCD
+				GROUP BY
+					D.READNO, D.NEWSCD
+			) B
+		WHERE
+			A.READNO = B.READNO
+			AND 
+			A.NEWSCD = B.NEWSCD
+			AND
+			A.BNO &lt;&gt; '999'
+			AND
+			A.APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				A.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="FROMGNO">
+				<isNotEmpty property="TOGNO" prepend=" AND">
+					TO_NUMBER(trim(A.GNO)) BETWEEN TO_NUMBER(#FROMGNO#) AND TO_NUMBER(#TOGNO#)
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+			AND 
+			A.SEQ = (
+				SELECT MIN(SEQ) 
+				FROM TM_READER_NEWS 
+				WHERE 
+					READNO = A.READNO 
+					AND NEWSCD = A.NEWSCD
+					AND BOSEQ = A.BOSEQ 
+					AND APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#					
+					<isNotEmpty property="FROMGNO">
+						<isNotEmpty property="TOGNO" prepend=" AND">
+							TO_NUMBER(trim(GNO)) BETWEEN TO_NUMBER(#FROMGNO#) AND TO_NUMBER(#TOGNO#)
+						</isNotEmpty>
+					</isNotEmpty>
+					AND BNO = (
+						SELECT MIN(BNO) 
+						FROM TM_READER_NEWS 
+						WHERE 
+							READNO = A.READNO 
+							AND NEWSCD = A.NEWSCD
+							AND BOSEQ = A.BOSEQ 
+							AND APLCDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+							<isNotEmpty property="FROMGNO">
+								<isNotEmpty property="TOGNO" prepend=" AND">
+									TO_NUMBER(trim(GNO)) BETWEEN TO_NUMBER(#FROMGNO#) AND TO_NUMBER(#TOGNO#)
+								</isNotEmpty>
+							</isNotEmpty>
+					)
+			)
+		ORDER BY
+			<isNotEmpty property="ORDER">
+				<isEqual property="ORDER" compareValue="gno" >
+					A.GNO, A.BNO, A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="readno" >
+					A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="hjdt" >
+					A.HJDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="aplcdt" >
+					A.APLCDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="uprice" >
+					A.UPRICE
+				</isEqual>
+			</isNotEmpty>
+			<isEmpty property="ORDER">
+				A.READNO
+			</isEmpty>
+	</select>
+	
+	
+	<!-- 조건별명단 - 재무,결손,휴독,미수독자(수금정보에 재무,결손,휴독,미수가 있는 독자) -->
+	<select id="getConditionList3" resultClass="java.util.HashMap">
+		SELECT 
+			A.READNO
+			,A.NEWSCD
+			,a.SEQ
+			,A.READNM 
+			,A.GNO
+			,A.BNO
+			,A.HJDT
+			,A.APLCDT
+			,A.SGBGMM
+			,A.MOBILE1, A.MOBILE2, A.MOBILE3
+			,A.HOMETEL1, A.HOMETEL2, A.HOMETEL3
+			,A.HJPSNM
+			,A.READTYPECD
+			,nvl(A.QTY, 0) as QTY
+			,nvl(A.UPRICE, 0) as UPRICE
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = A.NEWSCD) AS NEWSNM
+			,(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '115' AND CODE = A.READTYPECD) AS READTYPENM
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = A.SGTYPE) AS SGTYPENM
+			,REPLACE(
+				TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))),
+				INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #GU#)+1,
+				LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#APT#,'A'
+			) AS DLVADRS1 
+			,FUNC_GET_CLAMLIST(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(SYSDATE, 'YYYY')) AS SGHIST
+		FROM 
+			TM_READER_NEWS A
+			, (
+				SELECT READNO, NEWSCD, SEQ
+				FROM TM_READER_SUGM
+				WHERE
+					1=1
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						BOSEQ = #BOSEQ#
+					</isNotEmpty>
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					AND  
+					CLDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+					AND
+					SGBBCD = #SGBBCD#
+				GROUP BY
+					READNO, NEWSCD, SEQ
+			) B
+		WHERE
+			A.READNO = B.READNO
+		    AND 
+		    A.NEWSCD = B.NEWSCD
+		    AND 
+		    A.SEQ = B.SEQ
+		    AND
+			A.BNO &lt;&gt; '999'			
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				A.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="FROMGNO">
+				<isNotEmpty property="TOGNO" prepend=" AND">
+					TO_NUMBER(trim(A.GNO)) BETWEEN #FROMGNO# AND #TOGNO#
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+		ORDER BY
+			<isNotEmpty property="ORDER">
+				<isEqual property="ORDER" compareValue="gno" >
+					A.GNO, A.BNO, A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="readno" >
+					A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="hjdt" >
+					A.HJDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="aplcdt" >
+					A.APLCDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="uprice" >
+					A.UPRICE
+				</isEqual>
+			</isNotEmpty>
+			<isEmpty property="ORDER">
+				A.READNO
+			</isEmpty>
+	</select>
+	
+	
+	<!-- 조건별명단 - 선불독자 -->
+	<select id="getConditionList4" resultClass="java.util.HashMap">
+		SELECT 
+			A.READNO
+			,A.NEWSCD
+			,a.SEQ
+			,A.READNM 
+			,A.GNO
+			,A.BNO
+			,A.HJDT
+			,A.APLCDT
+			,A.SGBGMM
+			,A.MOBILE1, A.MOBILE2, A.MOBILE3
+			,A.HOMETEL1, A.HOMETEL2, A.HOMETEL3
+			,A.HJPSNM
+			,A.READTYPECD
+			,nvl(A.QTY, 0) as QTY
+			,nvl(A.UPRICE, 0) as UPRICE
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = A.NEWSCD) AS NEWSNM
+			,(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '115' AND CODE = A.READTYPECD) AS READTYPENM
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = A.SGTYPE) AS SGTYPENM
+			,REPLACE(
+				TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))),
+				INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #GU#)+1,
+				LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#APT#,'A'
+			) AS DLVADRS1 
+			,FUNC_GET_CLAMLIST(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(SYSDATE, 'YYYY')) AS SGHIST
+		FROM 
+			TM_READER_NEWS A
+			, (
+				SELECT READNO, NEWSCD, SEQ
+				FROM TM_READER_SUGM
+				WHERE
+					1=1
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						BOSEQ = #BOSEQ#
+					</isNotEmpty>
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					AND  
+					CLDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+					AND
+					SGBBCD &lt;&gt; '044'
+					AND 
+					YYMM &gt; SGYYMM
+			) B
+		WHERE
+			A.READNO = B.READNO
+		    AND 
+		    A.NEWSCD = B.NEWSCD
+		    AND 
+		    A.SEQ = B.SEQ
+		    AND
+			A.BNO &lt;&gt; '999'			
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				A.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="FROMGNO">
+				<isNotEmpty property="TOGNO" prepend=" AND">
+					TO_NUMBER(trim(A.GNO)) BETWEEN #FROMGNO# AND #TOGNO#
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+		ORDER BY
+			<isNotEmpty property="ORDER">
+				<isEqual property="ORDER" compareValue="gno" >
+					A.GNO, A.BNO, A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="readno" >
+					A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="hjdt" >
+					A.HJDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="aplcdt" >
+					A.APLCDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="uprice" >
+					A.UPRICE
+				</isEqual>
+			</isNotEmpty>
+			<isEmpty property="ORDER">
+				A.READNO
+			</isEmpty>
+	</select>
+	
+	
+	<!-- 조건별명단 - 수금개월 -->
+	<select id="getConditionList5" resultClass="java.util.HashMap">
+		SELECT 
+			A.READNO
+			,A.NEWSCD
+			,a.SEQ
+			,A.READNM 
+			,A.GNO
+			,A.BNO
+			,A.HJDT
+			,A.APLCDT
+			,A.SGBGMM
+			,A.MOBILE1, A.MOBILE2, A.MOBILE3
+			,A.HOMETEL1, A.HOMETEL2, A.HOMETEL3
+			,A.HJPSNM
+			,A.READTYPECD
+			,nvl(A.QTY, 0) as QTY
+			,nvl(A.UPRICE, 0) as UPRICE
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = A.NEWSCD) AS NEWSNM
+			,(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '115' AND CODE = A.READTYPECD) AS READTYPENM
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = A.SGTYPE) AS SGTYPENM
+			,REPLACE(
+				TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))),
+				INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #GU#)+1,
+				LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#APT#,'A'
+			) AS DLVADRS1 
+			,FUNC_GET_CLAMLIST(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(SYSDATE, 'YYYY')) AS SGHIST
+		FROM 
+			TM_READER_NEWS A
+			, (
+				SELECT READNO, NEWSCD, SEQ
+				FROM (
+					SELECT READNO, NEWSCD, SEQ
+					FROM TM_READER_SUGM
+					WHERE
+						1=1
+						<isNotEmpty property="BOSEQ" prepend=" AND">
+							BOSEQ = #BOSEQ#
+						</isNotEmpty>
+						<isNotEmpty property="NEWSCD">
+							<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+								#NEWSCD[]#
+							</iterate>
+						</isNotEmpty>
+						AND  
+						CLDT BETWEEN #FROMYYYYMMDD# AND #TOYYYYMMDD#
+						AND
+						SGBBCD &lt;&gt; '044'
+					GROUP BY
+						READNO, NEWSCD, SEQ, YYMM
+				)
+				GROUP BY 
+					READNO, NEWSCD, SEQ
+				HAVING 
+					COUNT(*) &gt;= TO_NUMBER(#HIDDEN_TEXT1#)
+			) B
+		WHERE
+			A.READNO = B.READNO
+		    AND 
+		    A.NEWSCD = B.NEWSCD
+		    AND 
+		    A.SEQ = B.SEQ
+		    AND
+			A.BNO &lt;&gt; '999'			
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				A.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="FROMGNO">
+				<isNotEmpty property="TOGNO" prepend=" AND">
+					TO_NUMBER(trim(A.GNO)) BETWEEN #FROMGNO# AND #TOGNO#
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+		ORDER BY
+			<isNotEmpty property="ORDER">
+				<isEqual property="ORDER" compareValue="gno" >
+					A.GNO, A.BNO, A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="readno" >
+					A.READNO
+				</isEqual>
+				<isEqual property="ORDER" compareValue="hjdt" >
+					A.HJDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="aplcdt" >
+					A.APLCDT
+				</isEqual>
+				<isEqual property="ORDER" compareValue="uprice" >
+					A.UPRICE
+				</isEqual>
+			</isNotEmpty>
+			<isEmpty property="ORDER">
+				A.READNO
+			</isEmpty>
+	</select>
+	
+	
+	<!-- 일일수금현황 -->
+	<select id="getSugmList" resultClass="java.util.HashMap">
+		SELECT 
+			C.SEARCHDATE
+			<isEqual property="GUBUN" compareValue="day">
+				, '0' AS GNO
+			</isEqual>
+			<isEqual property="GUBUN" compareValue="gno">
+				, C.GNO AS GNO
+			</isEqual>
+			, NVL(SUM(CASE WHEN C.SGBBCD = '011' THEN C.BILLQTY END),0) AS SUM_QTY_SGBBCD011  								<!-- 지로 --> 
+			, NVL(SUM(CASE WHEN C.SGBBCD = '011' THEN C.AMT END),0) AS SUM_AMT_SGBBCD011  									<!-- 지로  -->
+			, NVL(SUM(CASE WHEN C.SGBBCD = '012' THEN C.BILLQTY END),0) AS SUM_QTY_SGBBCD012  								<!-- 방문 --> 
+			, NVL(SUM(CASE WHEN C.SGBBCD = '012' THEN C.AMT END),0) AS SUM_AMT_SGBBCD012  									<!-- 방문 -->
+			, NVL(SUM(CASE WHEN C.SGBBCD = '013' THEN C.BILLQTY END),0) AS SUM_QTY_SGBBCD013  								<!-- 통장입금 --> 
+			, NVL(SUM(CASE WHEN C.SGBBCD = '013' THEN C.AMT END),0) AS SUM_AMT_SGBBCD013  									<!-- 통장입금  -->
+			, NVL(SUM(CASE WHEN C.SGBBCD = '021' THEN C.BILLQTY END),0) AS SUM_QTY_SGBBCD021  								<!-- 자동이체 --> 
+			, NVL(SUM(CASE WHEN C.SGBBCD = '021' THEN C.AMT END),0) AS SUM_AMT_SGBBCD021  									<!-- 자동이체  -->
+			, NVL(SUM(CASE WHEN C.SGBBCD = '022' THEN C.BILLQTY END),0) AS SUM_QTY_SGBBCD022  								<!-- 카드  -->
+			, NVL(SUM(CASE WHEN C.SGBBCD = '022' THEN C.AMT END),0) AS SUM_AMT_SGBBCD022  									<!-- 카드  -->
+			, NVL(SUM(CASE WHEN C.SGBBCD IN ('023','024') THEN C.BILLQTY END),0) AS SUM_QTY_ETC1							<!-- 교육용,쿠폰 --> 
+			, NVL(SUM(CASE WHEN C.SGBBCD IN ('023','024') THEN C.AMT END),0) AS SUM_AMT_ETC1								<!-- 교육용,쿠폰  -->
+			, NVL(SUM(CASE WHEN C.SGBBCD IN ('014','031','032','033','044') THEN C.BILLQTY END),0) AS SUM_QTY_ETC2				<!-- 결손,재무,휴독,미수 -->
+			, NVL(SUM(CASE WHEN C.SGBBCD IN ('014','031','032','033','044') THEN C.AMT END),0) + NVL(SUM(C.LOSSAMT),0) AS SUM_AMT_ETC2					<!-- 결손,재무,휴독,미수 -->
+			, NVL(SUM(CASE WHEN C.SGBBCD = '088' THEN C.BILLQTY END),0) AS SUM_QTY_ETC3										<!-- 기타 -->
+			, NVL(SUM(CASE WHEN C.SGBBCD = '088' THEN C.AMT END),0) AS SUM_AMT_ETC3											<!-- 기타 -->
+		FROM 
+			(
+				SELECT 
+					A.GNO
+					, B.SGBBCD
+					, B.BILLQTY
+					, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101' THEN 0 WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') THEN 4500 WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023' THEN 4500*B.BILLQTY ELSE B.AMT END) AS AMT
+					, B.LOSSAMT
+				<isEqual property="DATEGUBUN" compareValue="cldt">
+					, B.CLDT AS SEARCHDATE
+				</isEqual>
+				<isEqual property="DATEGUBUN" compareValue="icdt">
+					, B.ICDT AS SEARCHDATE
+				</isEqual>
+				FROM
+					TM_READER_NEWS A
+					, TM_READER_SUGM B 
+				WHERE
+					A.NEWSCD = B.NEWSCD
+					AND
+					A.SEQ = B.SEQ
+					AND
+					A.READNO = B.READNO
+					AND 
+					A.BOSEQ = B.BOSEQ
+					AND 
+					A.SEQ &gt; 0
+					AND 
+					B.SEQ &gt; 0
+					AND 
+					A.READNO &gt; 0
+					AND 
+					B.READNO &gt; 0
+					AND 
+					B.YYMM &gt; 0
+					<isNotEmpty property="FROMGNO">
+						<isNotEmpty property="TOGNO" prepend=" AND">
+							TO_NUMBER(A.GNO) BETWEEN #FROMGNO# AND #TOGNO#		
+						</isNotEmpty>
+					</isNotEmpty>
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND B.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						A.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						B.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+					<isNotEmpty property="FROMYYMMDD">
+						<isNotEmpty property="TOYYMMDD">
+							<isEqual property="DATEGUBUN" compareValue="cldt" prepend=" AND">
+								B.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD#
+							</isEqual>
+							<isEqual property="DATEGUBUN" compareValue="icdt" prepend=" AND">
+								B.ICDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD#
+							</isEqual>
+						</isNotEmpty>
+					</isNotEmpty>
+			) C
+		GROUP BY
+			<isEqual property="GUBUN" compareValue="day">
+				C.SEARCHDATE
+			</isEqual>
+			<isEqual property="GUBUN" compareValue="gno">
+				C.GNO
+				, C.SEARCHDATE
+			</isEqual>
+			
+		ORDER BY
+			<isEqual property="GUBUN" compareValue="day">
+				C.SEARCHDATE
+			</isEqual>
+			<isEqual property="GUBUN" compareValue="gno">
+				LENGTH(C.GNO),C.GNO
+				, C.SEARCHDATE
+			</isEqual>
+	</select>
+	
+	<!-- 입금내역현황 -->
+	<select id="getDetailList" resultClass="java.util.HashMap">
+		SELECT 
+			A.GNO
+			, A.READNO
+			, A.BNO
+			, A.READNM
+			, REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), 
+            	INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #GU#)+1, 
+            	LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#APT#,'A') AS ADDR
+			, (SELECT YNAME FROM TC_COMMON WHERE CDCLSF='100' AND USEYN='Y' AND CODE = A.NEWSCD) AS NEWSCD_YNAME
+			, SUBSTR(B.YYMM,3,2) || '/' || SUBSTR(B.YYMM,5,2) AS YYMMSTR
+			, (SELECT YNAME FROM TC_COMMON WHERE CDCLSF='119' AND USEYN='Y' AND CODE = B.SGBBCD) AS SGBBCD_YNAME
+			, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101'
+			       THEN 0
+			       WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') AND B.SGBBCD != '031'
+			       THEN 4500
+			       WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023'
+			       THEN 4500*B.BILLQTY
+			       ELSE B.AMT END) AS AMT
+			<isEqual property="DATEGUBUN" compareValue="cldt">
+				, SUBSTR(B.CLDT,3,2) || '/' || SUBSTR(B.CLDT,5,2) || '/' || SUBSTR(B.CLDT,7,2) AS SEARCHDATE
+			</isEqual>
+			<isEqual property="DATEGUBUN" compareValue="icdt">
+				, SUBSTR(B.ICDT,3,2) || '/' || SUBSTR(B.ICDT,5,2) || '/' || SUBSTR(B.ICDT,7,2) AS SEARCHDATE
+			</isEqual>
+			, B.BILLQTY
+			, B.YYMM
+			, B.NEWSCD
+			, B.SEQ
+		FROM
+			TM_READER_NEWS A
+			, TM_READER_SUGM B 
+		WHERE
+			A.NEWSCD = B.NEWSCD
+			AND
+			A.SEQ = B.SEQ
+			AND
+			A.READNO = B.READNO
+			AND 
+			A.BOSEQ = B.BOSEQ
+			AND 
+			A.SEQ &gt; 0
+			AND 
+			B.SEQ &gt; 0
+			AND 
+			A.READNO &gt; 0
+			AND 
+			B.READNO &gt; 0
+			AND 
+			B.YYMM &gt; 0
+			<isNotEmpty property="FROMGNO">
+				<isNotEmpty property="TOGNO" prepend=" AND">
+					TO_NUMBER(A.GNO) BETWEEN #FROMGNO# AND #TOGNO#		
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND B.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				A.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				B.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="FROMYYMMDD">
+				<isNotEmpty property="TOYYMMDD">
+					<isEqual property="DATEGUBUN" compareValue="cldt" prepend=" AND">
+						B.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD#
+					</isEqual>					
+					<isEqual property="DATEGUBUN" compareValue="icdt" prepend=" AND">
+						B.ICDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD#
+					</isEqual>
+					
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="GUBUN">
+				<iterate property="GUBUN" open="(" close=")" conjunction="," prepend="AND B.SGBBCD IN">
+					#GUBUN[]#
+				</iterate>
+			</isNotEmpty>
+		ORDER BY 
+			LENGTH(A.GNO),A.GNO
+			<isEqual property="DATEGUBUN" compareValue="cldt">
+				, B.CLDT
+			</isEqual>			
+			<isEqual property="DATEGUBUN" compareValue="icdt">
+				, B.ICDT
+			</isEqual>			
+			, B.YYMM
+			, A.BNO
+	</select>
+	
+	
+	<!-- 입금내역현황(abc용) -->
+	<select id="getDetailListForABC" resultClass="java.util.HashMap">
+		SELECT 
+			A.GNO
+			, A.READNO
+			, A.BNO
+			, A.READNM
+			, REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), 
+            	INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #GU#)+1, 
+            	LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#APT#,'A') AS ADDR
+			, (SELECT YNAME FROM TC_COMMON WHERE CDCLSF='100' AND USEYN='Y' AND CODE = A.NEWSCD) AS NEWSCD_YNAME
+			, SUBSTR(B.YYMM,3,2) || '/' || SUBSTR(B.YYMM,5,2) AS YYMMSTR
+			, (SELECT YNAME FROM TC_COMMON WHERE CDCLSF='119' AND USEYN='Y' AND CODE = B.SGBBCD) AS SGBBCD_YNAME
+			, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101'
+			       THEN 0
+			       WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') AND B.SGBBCD != '031'
+			       THEN 4500
+			       WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023'
+			       THEN 4500* A.QTY
+			       ELSE B.AMT END) AS AMT
+			<isEqual property="DATEGUBUN" compareValue="cldt">
+				, SUBSTR(B.CLDT,3,2) || '/' || SUBSTR(B.CLDT,5,2) || '/' || SUBSTR(B.CLDT,7,2) AS SEARCHDATE
+			</isEqual>
+			<isEqual property="DATEGUBUN" compareValue="icdt">
+				, SUBSTR(B.ICDT,3,2) || '/' || SUBSTR(B.ICDT,5,2) || '/' || SUBSTR(B.ICDT,7,2) AS SEARCHDATE
+			</isEqual>
+			, A.QTY AS BILLQTY
+			, B.YYMM
+			, B.NEWSCD
+			, B.SEQ
+		FROM
+			TM_READER_NEWS A
+			, TM_READER_SUGM B 
+		WHERE
+			A.NEWSCD = B.NEWSCD
+			AND
+			A.SEQ = B.SEQ
+			AND
+			A.READNO = B.READNO
+			AND 
+			A.BOSEQ = B.BOSEQ
+			AND 
+			A.SEQ &gt; 0
+			AND 
+			B.SEQ &gt; 0
+			AND 
+			A.READNO &gt; 0
+			AND 
+			B.READNO &gt; 0
+			AND 
+			B.YYMM &gt; 0
+			<isNotEmpty property="FROMGNO">
+				<isNotEmpty property="TOGNO" prepend=" AND">
+					TO_NUMBER(A.GNO) BETWEEN #FROMGNO# AND #TOGNO#		
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND B.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				A.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				B.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="FROMYYMMDD">
+				<isNotEmpty property="TOYYMMDD">
+					<isEqual property="DATEGUBUN" compareValue="cldt" prepend=" AND">
+						B.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD#
+					</isEqual>					
+					<isEqual property="DATEGUBUN" compareValue="icdt" prepend=" AND">
+						B.ICDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD#
+					</isEqual>
+					
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="GUBUN">
+				<iterate property="GUBUN" open="(" close=")" conjunction="," prepend="AND B.SGBBCD IN">
+					#GUBUN[]#
+				</iterate>
+			</isNotEmpty>
+		ORDER BY 
+			LENGTH(A.GNO),A.GNO
+			<isEqual property="DATEGUBUN" compareValue="cldt">
+				, B.CLDT
+			</isEqual>			
+			<isEqual property="DATEGUBUN" compareValue="icdt">
+				, B.ICDT
+			</isEqual>			
+			, B.YYMM
+			, A.BNO
+	</select>
+	
+	
+	<!-- 해지독자명단 -->
+	<select id="stReaderList" resultClass="java.util.HashMap">
+	SELECT
+		GNO||'-'||READNO||'-'||BNO AS READNO, <!-- 독자번호 -->	
+		TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), '구 ')+1, LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2)  ADDR, <!-- 간략화면 주소 -->
+		READNM, <!-- 독자명 -->
+		(SELECT CNAME FROM TC_COMMON WHERE CDCLSF = '115' AND USEYN = 'Y' AND CODE = READTYPECD) GUBUN , <!-- 독자구분 -->
+		(SELECT YNAME FROM TC_COMMON WHERE CDCLSF = '119' AND USEYN = 'Y' AND CODE = SGTYPE) SGTYPE , <!-- 수금방법 -->
+		SUBSTR(HJDT, 0,4) || '-' || SUBSTR(HJDT, 5,2) || '-' || SUBSTR(HJDT, 7,2) AS HJDT, <!-- 확장일자 -->
+		SUBSTR(SGBGMM,3,4)||'/'||QTY AS SGBGMM, <!-- 수금시작월 -->
+		MOBILE1||'-'||MOBILE2||'-'||MOBILE3 AS MOBILE, <!-- 휴대폰1 --> 
+		HOMETEL1||'-'||HOMETEL2||'-'||HOMETEL3 AS HOMETEL, <!-- 전화번호3 -->
+		(SELECT	YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = NEWSCD) AS NEWSNM, <!-- 신문명 -->
+		UPRICE AS UPRICE , <!-- 단가 -->
+		QTY , <!-- 부수 -->
+		HJPSNM, <!-- 확장자명 -->
+		FUNC_GET_CLAMLIST(READNO, NEWSCD, SEQ, TO_CHAR(SYSDATE, 'YYYY')) CLAMLIST, <!-- 수금약어 -->
+		SUBSTR(STDT, 0,4) || '-' || SUBSTR(STDT, 5,2) || '-' || SUBSTR(STDT, 7,2) AS STDT, <!-- 중지일자 -->
+		STSAYOU, <!-- 중지사유 코드 -->
+		(SELECT	CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '118' AND CODE = STSAYOU) SAYOU, <!-- 중지 사유명 -->
+		REMK, <!-- 비고 -->
+		(SELECT COUNT(*) FROM TM_READER_SUGM B WHERE B.BOSEQ = A.BOSEQ AND B.READNO=A.READNO AND B.SEQ = A.SEQ AND B.NEWSCD = A.NEWSCD AND B.SGBBCD = '044' ) MISU <!-- 미수 존재 여부 -->
+	FROM
+		TM_READER_NEWS A
+	WHERE
+		BOSEQ = #BOSEQ#
+		AND BNO = '999'
+		AND STDT BETWEEN #fromDate# AND #toDate#
+		AND GNO BETWEEN LPAD(#fromGno#, 3, 0) AND LPAD(#toGno# , 3, 0)
+        <isNotEmpty property="newsCd">
+			<iterate property="newsCd" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+				#newsCd[]#
+			</iterate>
+		</isNotEmpty>
+		<isEqual property="check" compareValue="2">
+			AND STSAYOU = #stSayou#
+		</isEqual>
+		<isEqual property="check" compareValue="3">
+			AND HJPSNM LIKE '%'||#searchText#||'%'
+		</isEqual>
+		<isEqual property="sort" compareValue="gno">
+			ORDER BY GNO , READNO , NEWSCD 
+		</isEqual>
+		<isEqual property="sort" compareValue="date">
+			ORDER BY HJDT , READNO , NEWSCD
+		</isEqual>
+	</select>
+	
+	<!-- 구독 년월별 통계 -->
+	<select id="yearStatic" resultClass="java.util.HashMap">
+	SELECT 
+		GNO,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 0 AND 12
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM1,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 13 AND 24
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM2,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 25 AND 36
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM3,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 37 AND 48
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM4,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 49 AND 60
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM5,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 61 AND 72
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM6,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 73 AND 84
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM7,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 85 AND 96
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM8,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 97 AND 108
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM9,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) BETWEEN 109 AND 120
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM10,
+		(SELECT COUNT(GNO) FROM TM_READER_NEWS B WHERE TRUNC(MONTHS_BETWEEN(TO_DATE(STDT, 'YYYYMMDD'),TO_DATE(HJDT,'YYYYMMDD')),0) > 120
+		AND BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND A.GNO = B.GNO GROUP BY GNO) TERM11
+	FROM TM_READER_NEWS A
+		WHERE BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# GROUP BY GNO
+	</select>
+	
+	<!-- 해지 사유별 통계 -->
+	<select id="sayouStatic" resultClass="java.util.HashMap">
+	SELECT
+		GNO,
+		(SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='001' AND A.GNO=B.GNO ) SAYOU1,
+		(SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='002' AND A.GNO=B.GNO) SAYOU2,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='003'AND A.GNO=B.GNO) SAYOU3,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='004'AND A.GNO=B.GNO) SAYOU4,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='005' AND A.GNO=B.GNO) SAYOU5,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='006' AND A.GNO=B.GNO) SAYOU6,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='007' AND A.GNO=B.GNO) SAYOU7,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='008' AND A.GNO=B.GNO) SAYOU8,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='009' AND A.GNO=B.GNO ) SAYOU9,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='010' AND A.GNO=B.GNO) SAYOU10,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='011' AND A.GNO=B.GNO) SAYOU11,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='012' AND A.GNO=B.GNO) SAYOU12,
+		(SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='013' AND A.GNO=B.GNO) SAYOU13,
+		(SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='014' AND A.GNO=B.GNO) SAYOU14,
+        (SELECT COUNT(STSAYOU) FROM TM_READER_NEWS B WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# AND B.STSAYOU='099' AND A.GNO=B.GNO) SAYOU99
+	FROM 
+		TM_READER_NEWS A
+	WHERE 
+		BOSEQ = #BOSEQ# AND BNO = '999' AND STDT BETWEEN #fromDate# AND #toDate# GROUP BY GNO
+	</select>
+	
+	<!-- 미수명단 -->
+	<select id="getMisuList" resultClass="java.util.HashMap">
+		SELECT 
+			 A.READNO
+			,A.NEWSCD
+			,a.SEQ
+			,A.READNM 
+			,A.GNO
+			,A.BNO
+			,A.HJDT
+			,A.APLCDT
+			,A.SGBGMM
+			,A.HOMETEL1||'-'||A.HOMETEL2||'-'||A.HOMETEL3 HOMETEL
+			,A.MOBILE1||'-'||A.MOBILE2||'-'||A.MOBILE3 MOBILE
+			,A.HJPSNM
+			,A.READTYPECD
+			,nvl(A.QTY, 0) as QTY
+			,nvl(A.UPRICE, 0) as UPRICE
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = A.NEWSCD) AS NEWSNM
+			,(SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '115' AND CODE = A.READTYPECD) AS READTYPENM
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = A.SGTYPE) AS SGTYPENM
+			,REPLACE(
+				TRIM(SUBSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))),
+				INSTR(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))), #GU#)+1,
+				LENGTH(TRIM(SUBSTR(A.DLVADRS1, INSTR(A.DLVADRS1, ' ', 1, 2), LENGTH(A.DLVADRS1))))))||' '||TRIM(A.DLVADRS2),#APT#,'A'
+			) AS DLVADRS1 
+            , B.MISUAMT
+            , B.CNT
+			,FUNC_GET_CLAMLIST(A.READNO, A.NEWSCD, A.SEQ, TO_CHAR(SYSDATE, 'YYYY')) AS SGHIST
+		FROM 
+			TM_READER_NEWS A
+			, (
+				SELECT READNO, NEWSCD, SEQ, SUM(BILLAMT) MISUAMT, COUNT(BILLAMT) CNT
+				FROM TM_READER_SUGM
+				WHERE
+					1=1
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						BOSEQ = #BOSEQ#
+					</isNotEmpty>
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					AND  
+					YYMM BETWEEN #FROMYYMM# AND #TOYYMM#
+					AND
+					SGBBCD = '044'
+				GROUP BY
+					READNO, NEWSCD, SEQ
+                HAVING COUNT(BILLAMT) >= #GUBUN#
+			) B
+		WHERE
+			A.READNO = B.READNO
+		    AND 
+		    A.NEWSCD = B.NEWSCD
+		    AND 
+		    A.SEQ = B.SEQ
+            <isEmpty property="STREADER" prepend=" AND">
+						A.BNO &lt;&gt; '999'			
+			</isEmpty>
+			<isNotEmpty property="BOSEQ" prepend=" AND">
+				A.BOSEQ = #BOSEQ#
+			</isNotEmpty>
+			<isNotEmpty property="FROMGNO">
+				<isNotEmpty property="TOGNO" prepend=" AND">
+					TO_NUMBER(trim(A.GNO)) BETWEEN #FROMGNO# AND #TOGNO#
+				</isNotEmpty>
+			</isNotEmpty>
+			<isNotEmpty property="NEWSCD">
+				<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+					#NEWSCD[]#
+				</iterate>
+			</isNotEmpty>
+		ORDER BY
+					A.GNO, A.BNO, A.READNO
+	</select>
+	
+	<!-- 독자통계현황 - 주거구분 -->
+	<select id="getReaderList1" resultClass="java.util.HashMap">
+	SELECT BOSEQ,  FUNC_AGENT_NM(BOSEQ) NAME, GNO, NVL2(SUM(APT),SUM(APT),0) APT, NVL2(SUM(BILLA),SUM(BILLA),0) BILLA,NVL2(SUM(DANDOK),SUM(DANDOK),0) DANDOK,
+  		       NVL2(SUM(OFFICE),SUM(OFFICE),0) OFFICE,NVL2(SUM(SANGGA),SUM(SANGGA),0) SANGGA,NVL2(SUM(ETC),SUM(ETC),0) ETC,NVL2(SUM(EMPTY),SUM(EMPTY),0) EMPTY,
+       		   SUM(TOTAL) TOTAL
+	FROM (SELECT BOSEQ, GNO,
+    	         		 CASE WHEN RSDTYPECD = '001' THEN SUM(QTY) END APT,  
+             			 CASE WHEN RSDTYPECD = '002' THEN SUM(QTY) END BILLA,
+             			 CASE WHEN RSDTYPECD = '003' THEN SUM(QTY) END DANDOK,
+             			 CASE WHEN RSDTYPECD = '004' THEN SUM(QTY) END OFFICE,
+             			 CASE WHEN RSDTYPECD = '005' THEN SUM(QTY) END SANGGA,
+              			 CASE WHEN RSDTYPECD = '099' THEN SUM(QTY) END ETC,
+              			 CASE WHEN RSDTYPECD IS NULL THEN SUM(QTY) END EMPTY,
+             			 SUM(QTY) TOTAL
+         	 FROM TM_READER_NEWS
+       		WHERE 1=1
+     <isNotEmpty property="BOSEQ" prepend=" AND">
+				BOSEQ = #BOSEQ#
+	 </isNotEmpty>
+     <isNotEmpty property="NEWSCD">
+			<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+					#NEWSCD[]#
+			</iterate>
+	 </isNotEmpty>
+     AND BNO != '999'
+     AND READTYPECD in('011','021','022','012','013','015','016','014','017')
+     AND GNO IS NOT NULL
+     GROUP BY BOSEQ, GNO, RSDTYPECD
+      )
+	GROUP BY BOSEQ, GNO
+	ORDER BY BOSEQ, GNO
+		
+	</select>
+	
+	<!-- 독자통계현황 - 직종구분 -->
+	<select id="getReaderList2" resultClass="java.util.HashMap">
+		SELECT BOSEQ,  FUNC_AGENT_NM(BOSEQ) NAME, GNO, NVL2(SUM(A),SUM(A),0) A, NVL2(SUM(B),SUM(B),0) B,NVL2(SUM(C),SUM(C),0) C,
+      			   NVL2(SUM(D),SUM(D),0) D,NVL2(SUM(E),SUM(E),0) E,NVL2(SUM(F),SUM(F),0) F,NVL2(SUM(EMPTY),SUM(EMPTY),0) EMPTY,
+       			   SUM(TOTAL) TOTAL
+		  FROM (SELECT A.BOSEQ, A.GNO,
+             				   CASE WHEN B.TASKCD = '001' THEN SUM(QTY) END A,  
+             				   CASE WHEN B.TASKCD = '002' THEN SUM(QTY) END B,
+             				   CASE WHEN B.TASKCD = '003' THEN SUM(QTY) END C,
+             				   CASE WHEN B.TASKCD = '004' THEN SUM(QTY) END D,
+             				   CASE WHEN B.TASKCD = '005' THEN SUM(QTY) END E,
+             				   CASE WHEN B.TASKCD = '099' THEN SUM(QTY) END F,
+             				   CASE WHEN B.TASKCD IS NULL THEN SUM(QTY) END EMPTY,
+             				   SUM(QTY) TOTAL
+        			 FROM TM_READER_NEWS A, TM_READER B
+       			   WHERE A.READNO = B.READNO
+     		<isNotEmpty property="BOSEQ" prepend=" AND">
+						BOSEQ = #BOSEQ#
+	 		</isNotEmpty>
+     		<isNotEmpty property="NEWSCD">
+					<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+							#NEWSCD[]#
+					</iterate>
+	 		</isNotEmpty>
+         	AND A.BNO != '999'
+         	AND READTYPECD in('011','021','022','012','013','015','016','014','017')
+         	AND A.GNO IS NOT NULL
+       	GROUP BY A.BOSEQ, A.GNO, B.TASKCD
+     	)
+	GROUP BY BOSEQ, GNO
+	ORDER BY BOSEQ, GNO
+	</select>
+	
+	
+	<!-- 독자통계현황 - 관심분야 -->
+	<select id="getReaderList3" resultClass="java.util.HashMap">
+		SELECT BOSEQ,  FUNC_AGENT_NM(BOSEQ) NAME, GNO, NVL2(SUM(A),SUM(A),0) A, NVL2(SUM(B),SUM(B),0) B,NVL2(SUM(C),SUM(C),0) C,
+			       NVL2(SUM(D),SUM(D),0) D,NVL2(SUM(E),SUM(E),0) E,NVL2(SUM(F),SUM(F),0) F,NVL2(SUM(G),SUM(G),0) G,NVL2(SUM(H),SUM(H),0) H,
+       			   NVL2(SUM(I),SUM(I),0) I,NVL2(SUM(J),SUM(J),0) J,NVL2(SUM(EMPTY),SUM(EMPTY),0) EMPTY,
+       			   SUM(TOTAL) TOTAL
+		  FROM (SELECT A.BOSEQ, A.GNO,
+             				   CASE WHEN B.INTFLDCD = '001' THEN SUM(QTY) END A,  
+             				   CASE WHEN B.INTFLDCD = '002' THEN SUM(QTY) END B,
+             				   CASE WHEN B.INTFLDCD = '003' THEN SUM(QTY) END C,
+             				   CASE WHEN B.INTFLDCD = '004' THEN SUM(QTY) END D,
+             				   CASE WHEN B.INTFLDCD = '005' THEN SUM(QTY) END E,
+             				   CASE WHEN B.INTFLDCD = '006' THEN SUM(QTY) END F,
+             				   CASE WHEN B.INTFLDCD = '007' THEN SUM(QTY) END G,
+             				   CASE WHEN B.INTFLDCD = '008' THEN SUM(QTY) END H,
+             				   CASE WHEN B.INTFLDCD = '009' THEN SUM(QTY) END I,
+             				   CASE WHEN B.INTFLDCD = '099' THEN SUM(QTY) END J,
+             				   CASE WHEN B.INTFLDCD IS NULL THEN SUM(QTY) END EMPTY,
+             				   SUM(QTY) TOTAL
+        			 FROM TM_READER_NEWS A, TM_READER B
+       			   WHERE A.READNO = B.READNO
+     		<isNotEmpty property="BOSEQ" prepend=" AND">
+						BOSEQ = #BOSEQ#
+	 		</isNotEmpty>
+     		<isNotEmpty property="NEWSCD">
+					<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+							#NEWSCD[]#
+					</iterate>
+	 		</isNotEmpty>
+         	AND A.BNO != '999'
+         	AND READTYPECD in('011','021','022','012','013','015','016','014','017')
+         	AND A.GNO IS NOT NULL
+       	GROUP BY A.BOSEQ, A.GNO, B.INTFLDCD
+     	)
+	GROUP BY BOSEQ, GNO
+	ORDER BY BOSEQ, GNO
+	</select>
+	
+	
+	<!-- 독자통계현황 - 구독기간 -->
+	<select id="getReaderList4" resultClass="java.util.HashMap">
+	SELECT BOSEQ,  FUNC_AGENT_NM(BOSEQ) NAME, GNO, NVL2(SUM(A),SUM(A),0) A, NVL2(SUM(B),SUM(B),0) B,NVL2(SUM(C),SUM(C),0) C,
+       		   NVL2(SUM(D),SUM(D),0) D,NVL2(SUM(E),SUM(E),0) E,NVL2(SUM(F),SUM(F),0) F,NVL2(SUM(G),SUM(G),0) G,NVL2(SUM(H),SUM(H),0) H,
+       		   NVL2(SUM(I),SUM(I),0) I,NVL2(SUM(J),SUM(J),0) J,NVL2(SUM(K),SUM(K),0) K,
+       		   SUM(TOTAL) TOTAL
+	FROM (SELECT BOSEQ, GNO,
+    	         		 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) &lt;= 6 THEN SUM(QTY) END A,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 7 AND 11 THEN SUM(QTY) END B,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 12 AND 23 THEN SUM(QTY) END C,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 24 AND 35 THEN SUM(QTY) END D,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 36 AND 59 THEN SUM(QTY) END E,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 60 AND 119 THEN SUM(QTY) END F,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 120 AND 179 THEN SUM(QTY) END G,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 180 AND 239 THEN SUM(QTY) END H,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 240 AND 299 THEN SUM(QTY) END I,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) BETWEEN 300 AND 359 THEN SUM(QTY) END J,  
+             			 CASE WHEN FUNC_GET_GUDOK_MONTH(READNO, NEWSCD) &gt;= 360 THEN SUM(QTY) END K, 
+             			 SUM(QTY) TOTAL
+         	 FROM TM_READER_NEWS
+       		WHERE 1=1
+     <isNotEmpty property="BOSEQ" prepend=" AND">
+				BOSEQ = #BOSEQ#
+	 </isNotEmpty>
+     <isNotEmpty property="NEWSCD">
+			<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+					#NEWSCD[]#
+			</iterate>
+	 </isNotEmpty>
+     AND BNO != '999'
+     AND READTYPECD in('011','021','022','012','013','015','016','014','017')
+     AND GNO IS NOT NULL
+     GROUP BY BOSEQ, GNO, FUNC_GET_GUDOK_MONTH(READNO, NEWSCD)
+      )
+	GROUP BY BOSEQ, GNO
+	ORDER BY BOSEQ, GNO
+		
+	</select>
+	
+	
+	<!-- 독자통계현황 - 독자유형 -->
+	<select id="getReaderList5" resultClass="java.util.HashMap">
+			SELECT BOSEQ,  FUNC_AGENT_NM(BOSEQ) NAME, GNO, NVL2(SUM(A),SUM(A),0) A, NVL2(SUM(B),SUM(B),0) B,NVL2(SUM(C),SUM(C),0) C,
+				       NVL2(SUM(D),SUM(D),0) D,NVL2(SUM(E),SUM(E),0) E,NVL2(SUM(F),SUM(F),0) F,NVL2(SUM(G),SUM(G),0) G,NVL2(SUM(H),SUM(H),0) H,
+				       NVL2(SUM(I),SUM(I),0) I,
+				       SUM(TOTAL) TOTAL
+		 	FROM (SELECT BOSEQ, GNO,
+			    	        	 CASE WHEN READTYPECD = '011' THEN SUM(QTY) END A,  
+			             		 CASE WHEN READTYPECD = '012' THEN SUM(QTY) END B,  
+			             		 CASE WHEN READTYPECD = '013' THEN SUM(QTY) END C,  
+			             		 CASE WHEN READTYPECD = '014' THEN SUM(QTY) END D,  
+			             		 CASE WHEN READTYPECD = '015' THEN SUM(QTY) END E,  
+			             		 CASE WHEN READTYPECD = '016' THEN SUM(QTY) END F,  
+			             		 CASE WHEN READTYPECD = '017' THEN SUM(QTY) END G,  
+			             		 CASE WHEN READTYPECD = '021' THEN SUM(QTY) END H,  
+	 			             	 CASE WHEN READTYPECD = '022' THEN SUM(QTY) END I,  
+			             		 SUM(QTY) TOTAL
+				        FROM TM_READER_NEWS
+				       WHERE 1=1
+				     <isNotEmpty property="BOSEQ" prepend=" AND">
+								BOSEQ = #BOSEQ#
+					 </isNotEmpty>
+				     <isNotEmpty property="NEWSCD">
+							<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND NEWSCD IN">
+									#NEWSCD[]#
+							</iterate>
+					 </isNotEmpty>
+				         AND BNO != '999'
+				         AND READTYPECD in('011','021','022','012','013','015','016','014','017')
+				         AND GNO IS NOT NULL
+				       GROUP BY BOSEQ, GNO, READTYPECD
+				     )
+				GROUP BY BOSEQ, GNO
+				ORDER BY BOSEQ, GNO
+	</select>
+	
+	<!-- 월분 -->
+	<select id="misuYYMM" resultClass="java.util.HashMap">
+		SELECT MAX(SGYYMM) YYMM, 
+		       SUBSTR(MAX(SGYYMM),1,4) || '-' || SUBSTR(MAX(SGYYMM),5,2) YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -1), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -1), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -2), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -2), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		 UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -3), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -3), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -4), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -4), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -5), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -5), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -6), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -6), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -7), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -7), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -8), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -8), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -9), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -9), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -10), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -10), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -11), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -11), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -12), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -12), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -13), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -13), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -14), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -14), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -15), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -15), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -16), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -16), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -17), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -17), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -18), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -18), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -19), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -19), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -20), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -20), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -21), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -21), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -22), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -22), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -23), 'YYYYMM') YYMM,
+		       TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -23), 'YYYY-MM') YYMM2
+		  FROM TM_MONTHCLOSE_HIST 
+		  UNION ALL
+		SELECT TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -24), 'YYYYMM') YYMM,
+		   TO_CHAR(ADD_MONTHS(TO_DATE(MAX(SGYYMM),'YYYYMM'), -24), 'YYYY-MM') YYMM2
+		FROM TM_MONTHCLOSE_HIST 
+	</select>
+
+	
+	<!-- 지국별 부서코드 -->	
+	<select id="getArea1Cd" resultClass="string">
+		SELECT AREA1 
+		 FROM TM_AGENCY
+		WHERE USERID = #BOSEQ#
+	</select>
+
+
+	<!-- 지대입금월분조회 -->
+	<select id="getJidaeYYMM" resultClass="java.util.HashMap">
+		SELECT DISTINCT YYMM 
+		 FROM TM_JIDAE_NOTICE
+		 <isNotEmpty property="BOSEQ" prepend=" WHERE">
+				BOSEQ = #BOSEQ#
+	 	  </isNotEmpty>
+		ORDER BY YYMM DESC
+	</select>
+	
+	<!-- 수도권 1팀 여부 확인 -->
+	<select id="getJidaeArea" resultClass="int">
+		SELECT count(*) FROM TM_AGENCY
+ 	    WHERE AREA1 = '001'
+  		   AND USERID = #BOSEQ#
+	</select>
+	
+	<!-- 지대입금현황조회 -->
+	<select id="getJidaeList" resultClass="java.util.HashMap">
+		SELECT TYPE, BOSEQ, FUNC_AGENT_NM(BOSEQ) NAME
+			     , YYMM, MISU, CUSTOM
+			     , EDU, CARD, AUTOBILL, STU, TMP1 AS NEGLECT, TMP2 AS POST, TMP3 AS OFFICE, TMP4 AS ETC
+			     , BANK, GIRO, J_REALAMT AS JIDAE, D_BALANCE AS DEPOSIT, J_OKGRANT1 AS CMPL, ECONOMY, CITY, '' AS CHK
+			     , BUSUGRANT ,STUGRANT ,ETCGRANT ,TMP6, J_PAYAMT, SUBTOTAL
+		  FROM TM_JIDAE_NOTICE
+		 WHERE 1=1
+			AND YYMM BETWEEN #FROMYYMM# AND #TOYYMM#
+		  <isNotEmpty property="BOSEQ" prepend=" AND">
+				BOSEQ = #BOSEQ#
+	 	  </isNotEmpty>
+	 	  <isNotEmpty property="txt" prepend=" AND">
+				BOSEQ IN ($txt$)
+	 	  </isNotEmpty>
+		  <isNotEmpty property="TYPE" prepend=" AND">
+				TYPE LIKE  '%'||#TYPE#||'%'
+		  </isNotEmpty>
+	 	  <isNotEmpty property="manager" prepend="AND">
+           		<isEqual property = "manager" compareValue='0'>
+           			BOSEQ IN (SELECT USERID FROM TM_AGENCY WHERE MANAGER IS NULL)              		
+           		</isEqual>
+           		<isNotEqual property = "manager" compareValue='0'>
+               		BOSEQ IN (SELECT USERID FROM TM_AGENCY WHERE MANAGER = #manager#)
+           		</isNotEqual>							    	       
+		  </isNotEmpty>
+			  
+		  ORDER BY BOSEQ, YYMM
+	</select>
+	
+	<!-- 본사신청구독통계조회 -->
+	<select id="getOfficeReaderState" resultClass="java.util.HashMap">
+		SELECT
+            Q.JIKUK,
+            FUNC_AGENT_NM(Q.JIKUK) AS JIKUKNM,
+            SUM(NVL(Q.USERCNT1,0))+ SUM(NVL(Q.USERCNT2,0))+ SUM(NVL(Q.USERCNT3,0)) AS USERCNT,
+            SUM(NVL(Q.STOPUSERCNT1,0)+ NVL(Q.STOPUSERCNT2,0)+ NVL(Q.STOPUSERCNT3,0) + NVL(Q.STOPUSERCNT4,0)) AS STOPUSERCNT,
+            SUM(NVL(Q.EDUCNT,0)) AS EDUCNT,
+            SUM(NVL(Q.APLCCNT,0)) AS APLCCNT,
+            SUM(NVL(Q.STOPAPLCCNT1,0)+NVL(Q.STOPAPLCCNT2,0)) AS STOPAPLCCNT,
+            SUM(NVL(Q.USERCNT1,0)) + SUM(NVL(Q.USERCNT2,0)) + SUM(NVL(Q.USERCNT3,0)) + SUM(NVL(Q.EDUCNT,0)) + SUM(NVL(Q.APLCCNT,0)) AS TOTALAPLCCNT,
+            SUM(NVL(Q.STOPUSERCNT1,0)) + SUM(NVL(Q.STOPUSERCNT2,0)) + SUM(NVL(Q.STOPUSERCNT3,0)) + SUM(NVL(Q.STOPAPLCCNT1,0)) + SUM(NVL(Q.STOPAPLCCNT2,0))AS TOTALSTOPCNT,
+            (SUM(NVL(Q.USERCNT1,0)) + SUM(NVL(Q.USERCNT2,0)) + SUM(NVL(Q.USERCNT3,0)) + SUM(NVL(Q.EDUCNT,0)) + SUM(NVL(Q.APLCCNT,0))) - 
+            (SUM(NVL(Q.STOPUSERCNT1,0)) + SUM(NVL(Q.STOPUSERCNT2,0)) + SUM(NVL(Q.STOPUSERCNT3,0)) + SUM(NVL(Q.STOPAPLCCNT1,0)) + SUM(NVL(Q.STOPAPLCCNT2,0))) AS TOTALCNT
+        FROM
+            (SELECT A.REALJIKUK AS JIKUK,
+                	NVL(SUM(CASE WHEN A.BUSU IS NULL THEN '1' ELSE A.BUSU END), 0) AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+               FROM TBL_USERS A
+              WHERE A.REALJIKUK IS NOT NULL
+            	AND A.RDATE IS NOT NULL
+                AND A.NEWYN = 'Y'
+                AND TO_CHAR(A.RDATE,'YYYYMMDD') BETWEEN #fromDate# AND #toDate#
+
+              GROUP BY A.REALJIKUK
+
+			  UNION
+			
+			 SELECT A.BOSEQ AS JIKUK,
+                    NULL AS USERCNT1,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN 1 ELSE A.QTY END), 0) AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+               FROM TM_READER_APLC A
+              WHERE A.BOSEQ IS NOT NULL
+                AND A.HJDT BETWEEN #fromDate# AND #toDate#
+	 		    AND A.HJPATHCD != '005'
+              GROUP BY A.BOSEQ
+
+              UNION
+              
+             SELECT A.BOSEQ AS JIKUK,
+             		NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN '1' ELSE A.QTY END), '0') AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+			   FROM TBL_CARD_READER A,
+			        TM_READER_NEWS B
+			  WHERE 1=1
+			    AND A.READNO = B.READNO
+			    AND A.BOSEQ IS NOT NULL
+                AND NEWYN IS NOT NULL
+			    AND NEWYN = 'Y'
+			    AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+			  GROUP BY A.BOSEQ
+			    
+			  UNION
+              
+            
+             SELECT A.REALJIKUK AS JIKUK,
+                	NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NVL(SUM(CASE WHEN A.BUSU IS NULL THEN '1' ELSE A.BUSU END), 0) AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+               FROM TBL_USERS A,
+               	    TM_READER_NEWS B
+              WHERE A.REALJIKUK IS NOT NULL
+            	AND A.RDATE IS NOT NULL
+                AND A.NEWYN = 'Y'
+                AND A.READNO = B.READNO
+                AND B.STDT BETWEEN #fromDate# AND TO_CHAR(TO_DATE(#toDate#, 'YYYYMMDD') +15, 'YYYYMMDD')
+                AND B.BNO = '999' 
+                AND TO_CHAR(A.RDATE,'YYYYMMDD') BETWEEN #fromDate# AND #toDate#
+
+              GROUP BY A.REALJIKUK  
+
+			  UNION
+			
+			 SELECT A.BOSEQ AS JIKUK,
+                    NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN 1 ELSE A.QTY END), 0) AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+               FROM TM_READER_APLC A
+              WHERE A.BOSEQ IS NOT NULL
+                AND A.HJDT BETWEEN #fromDate# AND #toDate#
+                AND A.DELYN = 'Y'
+	 		    AND A.HJPATHCD != '005'
+              GROUP BY A.BOSEQ
+
+			UNION
+
+			 SELECT A.BOSEQ AS JIKUK,
+                    NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN 1 ELSE A.QTY END), 0) AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+               FROM TM_READER_APLC A,
+               	    TM_READER_NEWS B
+              WHERE 1=1
+                AND A.HJDT BETWEEN #fromDate# AND #toDate#
+                AND A.DELYN = 'N'
+	 		    AND A.HJPATHCD != '005'
+                AND A.READNM = B.READNM
+                AND A.BOSEQ = B.BOSEQ
+                AND B.STDT BETWEEN #fromDate# AND TO_CHAR(TO_DATE(#toDate#, 'YYYYMMDD') +15, 'YYYYMMDD')
+                AND B.BNO = '999'
+              GROUP BY A.BOSEQ
+
+              UNION 
+
+             SELECT A.BOSEQ AS JIKUK,
+                    NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,                   
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN 1 ELSE A.QTY END), 0) AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+               FROM TM_READER_NEWS A,
+                    TM_READER_EDUCATION B 
+              WHERE A.READNO = B.READNO
+                AND A.BOSEQ IS NOT NULL
+                AND A.READTYPECD = '015'
+                AND B.MVYN IS NULL
+                AND B.HJDT BETWEEN #fromDate# AND #toDate#
+
+              GROUP BY A.BOSEQ
+            
+              UNION
+            
+             SELECT A.BOSEQ AS JIKUK,
+                    NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN 1 ELSE A.QTY END), 0) AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+               FROM TM_READER_APLC A
+              WHERE A.BOSEQ IS NOT NULL
+                AND A.HJPATHCD = '005'
+                AND A.HJDT BETWEEN #fromDate# AND #toDate#
+            
+              GROUP BY A.BOSEQ
+              
+              UNION
+              
+			 SELECT A.BOSEQ AS JIKUK,
+                    NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN 1 ELSE A.QTY END), 0) AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+               FROM TM_READER_APLC A
+              WHERE A.BOSEQ IS NOT NULL
+                AND A.HJDT BETWEEN #fromDate# AND #toDate#
+                AND A.DELYN = 'Y'
+	 		    AND A.HJPATHCD = '005'
+              GROUP BY A.BOSEQ 
+              
+              UNION
+              
+			 SELECT A.BOSEQ AS JIKUK,
+                    NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN 1 ELSE A.QTY END), 0) AS STOPAPLCCNT2
+               FROM TM_READER_APLC A,
+               	    TM_READER_NEWS B
+              WHERE 1=1
+                AND A.HJDT BETWEEN #fromDate# AND #toDate#
+                AND A.DELYN = 'N'
+	 		    AND A.HJPATHCD = '005'
+                AND A.READNM = B.READNM
+                AND A.BOSEQ = B.BOSEQ
+                AND B.STDT BETWEEN #fromDate# AND TO_CHAR(TO_DATE(#toDate#, 'YYYYMMDD') +15, 'YYYYMMDD')
+                AND B.BNO = '999'
+              GROUP BY A.BOSEQ
+              
+              UNION
+
+			 SELECT A.BOSEQ AS JIKUK,
+			 	    NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NULL AS STOPUSERCNT3,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN '1' ELSE A.QTY END), '0') AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+			  FROM TBL_CARD_READER A,
+			       TM_READER_NEWS B
+			 WHERE 1=1
+			    AND A.READNO = B.READNO
+			    AND A.BOSEQ IS NOT NULL
+                AND NEWYN IS NOT NULL
+			    AND NEWYN = 'Y'
+			    AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+			    AND B.STDT BETWEEN #fromDate# AND TO_CHAR(TO_DATE(#toDate#, 'YYYYMMDD') +15, 'YYYYMMDD')
+			    AND B.BNO = '999'
+              GROUP BY A.BOSEQ
+              
+              UNION
+              
+              SELECT A.BOSEQ AS JIKUK,
+             		NULL AS USERCNT1,
+                    NULL AS USERCNT2,
+                    NULL AS USERCNT3,
+                    NULL AS STOPUSERCNT1,
+                    NULL AS STOPUSERCNT2,
+                    NVL(SUM(CASE WHEN A.QTY IS NULL THEN '1' ELSE A.QTY END), '0') AS STOPUSERCNT3,
+                    NULL AS STOPUSERCNT4,
+                    NULL AS EDUCNT,
+                    NULL AS APLCCNT,
+                    NULL AS STOPAPLCCNT1,
+                    NULL AS STOPAPLCCNT2
+			   FROM TBL_CARD_READER A,
+			        TM_READER_NEWS B
+			  WHERE 1=1
+			    AND A.READNO = B.READNO
+			    AND A.BOSEQ IS NOT NULL
+                AND NEWYN IS NOT NULL
+			    AND NEWYN = 'Y'
+			    AND B.BNO = '999'
+			    AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+			  GROUP BY A.BOSEQ
+            ) Q
+        GROUP BY Q.JIKUK 
+        ORDER BY Q.JIKUK
+	</select>
+
+	<!-- 본사신청중지현황 -->
+	<select id="getStopOfficeReaderList" resultClass="java.util.HashMap">
+		SELECT S.BOSEQ,
+			   S.JIKUKNM,
+			   S.READNM,
+			   S.ADDR,
+			   S.TEL,
+			   S.HJPATHCD,
+			   S.QTY,
+			   S.APLCDT,
+			   S.STDT
+		  FROM (SELECT READNM,
+				       BOSEQ,
+					   FUNC_AGENT_NM(BOSEQ) JIKUKNM,
+				       DLVADRS1||' '||DLVADRS2 ADDR,
+				       MOBILE1||'-'||MOBILE2||'-'||MOBILE3 TEL,
+				       APLCDT,
+				       TO_CHAR(CHGDT, 'YYYYMMDD') STDT,
+				       (SELECT C.CNAME FROM TC_COMMON C WHERE C.USEYN = 'Y' AND C.CDCLSF = '013' AND C.CODE= HJPATHCD) HJPATHCD,
+				       QTY
+				  FROM TM_READER_APLC
+				 WHERE DELYN = 'Y'
+				   AND HJDT BETWEEN #fromDate# AND #toDate#
+				   AND BOSEQ IS NOT NULL
+				
+				UNION
+				
+				SELECT DISTINCT(A.READNM) READNM,
+					   A.BOSEQ,
+				       FUNC_AGENT_NM(A.BOSEQ) JIKUKNM,
+				       A.DLVADRS1||' '||A.DLVADRS2 ADDR,
+				       A.MOBILE1||'-'||A.MOBILE2||'-'||A.MOBILE3 TEL,
+				       A.APLCDT,
+				       B.STDT,
+				       (SELECT C.CNAME FROM TC_COMMON C WHERE C.USEYN = 'Y' AND C.CDCLSF = '013' AND C.CODE= A.HJPATHCD) HJPATHCD,
+				       B.QTY
+				  FROM TM_READER_APLC A,
+				       TM_READER_NEWS B
+				 WHERE 1=1
+				   AND A.BOSEQ = B.BOSEQ
+				   AND A.DELYN = 'N'
+				   AND TRIM(A.MOBILE1||A.MOBILE2||A.MOBILE3) = TRIM(B.MOBILE1||B.MOBILE2||B.MOBILE3)
+				   AND A.READNM = B.READNM
+				   AND A.HJDT BETWEEN #fromDate# AND #toDate#
+				   AND B.STDT BETWEEN #fromDate# AND #toDate#
+				   AND B.BNO = '999'
+				
+				UNION
+				
+				SELECT B.READNM,
+				       A.REALJIKUK BOSEQ,
+				       FUNC_AGENT_NM(A.REALJIKUK) JIKUKNM,
+				       DLVADRS1||' '||DLVADRS2 ADDR,
+				       MOBILE1||'-'||MOBILE2||'-'||MOBILE3 TEL,
+				       TO_CHAR(A.RDATE, 'YYYYMMDD') APLCDT,
+				       B.STDT,
+				       'AUTO' HJPATHCD,
+				       B.QTY
+				  FROM TBL_USERS A,
+				       TM_READER_NEWS B
+				 WHERE 1=1
+				   AND A.READNO = B.READNO
+				   AND REALJIKUK IS NOT NULL
+				   AND RDATE IS NOT NULL
+				   AND NEWYN IS NOT NULL
+				   AND NEWYN = 'Y'
+				   AND TO_CHAR(RDATE,'YYYYMMDD') BETWEEN #fromDate# AND #toDate#
+				   AND B.STDT BETWEEN #fromDate# AND #toDate#
+				   AND B.BNO = '999'
+				   
+				 UNION
+
+                SELECT A.USERNAME AS READNM,
+                       A.BOSEQ,
+                       FUNC_AGENT_NM(A.BOSEQ) JIKUKNM,
+					   B.DLVADRS1||B.DLVADRS2 AS ADDR,
+					   A.HANDY1||'-'||A.HANDY2||'-'||A.HANDY3 AS TEL,
+					   A.APLCDT,
+                       B.STDT,
+        			   (SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '013' AND CODE = '003') HJPATHCD,
+		               B.QTY
+				  FROM tbl_card_reader A,
+				       TM_READER_NEWS B
+				 WHERE 1=1
+				   AND A.READNO = B.READNO
+				   AND A.boseq IS NOT null
+                   AND NEWYN IS NOT NULL
+				   AND NEWYN = 'Y'
+				   AND A.APLCDT BETWEEN #fromDate# AND #toDate#
+				   AND B.STDT BETWEEN #fromDate# AND #toDate#
+				   AND B.BNO = '999'
+				    ) S
+	     	<isEqual property="searchTyp" compareValue="readNm">
+				<isNotEmpty property="searchVal" prepend=" WHERE ">
+				   S.READNM LIKE '%' || #searchVal# || '%'
+				</isNotEmpty>
+			</isEqual>
+		 ORDER BY S.BOSEQ
+	</select>
+
+	<!-- 월별수금현황 -->
+	<select id="yearSugmStats" resultClass="java.util.HashMap">
+		SELECT BOSEQ,
+		       YYMM,
+		       NVL(SUM(GIRO),0) GIRO,
+		       NVL(SUM(VISIT),0) VISIT,
+		       NVL(SUM(ACNT),0) ACNT,
+		       NVL(SUM(AUTO),0) AUTO,
+		       NVL(SUM(CARD),0) CARD,
+		       NVL(SUM(OFFICE),0) OFFICE,
+		       NVL(SUM(COUPON),0) COUPON,
+		       NVL(SUM(LOSS),0) LOSS,
+		       NVL(SUM(FINANCE), 0) FINANCE,
+		       NVL(SUM(STOP),0) STOP,
+		       NVL(SUM(ETC),0) ETC,
+		       NVL(SUM(DEL),0) DEL,
+		       NVL(SUM(TOTAL),0) TOTAL
+		FROM (SELECT BOSEQ,
+		             SGYYMM YYMM,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '011') GIRO,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '012') VISIT,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '013') ACNT,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '021') AUTO,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '022') CARD,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '023') OFFICE,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '024') COUPON,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '031') LOSS,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '032') FINANCE,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '033') STOP,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '088') ETC,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD AND SGBBCD = X.SGBBCD AND X.SGBBCD = '099') DEL,
+		             (SELECT SUM(AMT) FROM TM_READER_SUGM WHERE READNO = X.READNO AND SEQ=X.SEQ AND YYMM= X.YYMM AND NEWSCD = X.NEWSCD) TOTAL
+		        FROM (SELECT BOSEQ,
+		                     READNO,
+		                     NEWSCD,
+		                     SEQ,
+		                     SGBBCD,
+		                     YYMM,
+		                     CASE WHEN SUBSTR(CLDT, 7, 2) > 20 THEN SUBSTR(CLDT, 0, 6) ELSE TO_CHAR(ADD_MONTHS(TO_DATE(SUBSTR(CLDT, 0, 6),'YYYYMM'), -1), 'YYYYMM') END SGYYMM,
+		                     AMT
+		                FROM TM_READER_SUGM
+		               WHERE 1=1
+		                 AND BOSEQ = #boseq#
+		                 AND NEWSCD = '100'
+		                 AND CLDT BETWEEN #years#||'0121' AND (#years#+1)||'0120'
+		        	   ) X
+		       ) K
+		  GROUP BY K.BOSEQ, K.YYMM
+		  ORDER BY K.BOSEQ, K.YYMM	
+	</select>
+	
+	<!-- 월별수금현황 조회년도 -->
+	<select id="yearsList" resultClass="java.util.HashMap">
+	    SELECT K.YYYY,
+	           ROWNUM RM
+	      FROM (SELECT DISTINCT(SUBSTR(SGYYMM, 0, 4)) YYYY
+	              FROM TM_MONTHCLOSE_HIST
+	             ORDER BY SUBSTR(SGYYMM, 0, 4) DESC) K
+	</select>
+	
+	<insert id="insertJikukSilsaStats" parameterClass="java.util.HashMap">
+		INSERT INTO TMP_READER_SILSA(boseq,qty,readtypecd,yyyymm)
+				VALUES (#boseq#, #qty#, #readtypecd#,#yyyymm#)
+	</insert>
+	
+	<select id="getJikukSilsaStats" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		SELECT 	readtypecd,
+				SUBSTR(yyyymm,5,6) as yyyymm,
+				SUM(qty) as qty
+		FROM TMP_READER_SILSA
+		WHERE 1=1
+		AND boseq=#boseq#
+		AND SUBSTR(yyyymm,1,4)=#yyyy#
+		GROUP BY readtypecd, yyyymm ORDER BY yyyymm
+	</select>
+</sqlMap>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="management.readerRestore">
+
+	<!-- 독자데이터 조회-->
+	<select id="getReaderDataList" resultClass="java.util.HashMap">
+		 SELECT NEWSCD
+			     , SEQ
+			     , BOSEQ
+			     , (SELECT name FROM tm_agency WHERE userid=BOSEQ) AS BOSEQNM
+			     , GNO
+			     , BNO
+			     , QTY
+			     , READTYPECD
+			     , READNM
+			     , DLVZIP
+			     , CASE WHEN LENGTH(BDMNGNO) > 1 then NEWADDR || ' ' || DLVADRS1
+			       ELSE DLVADRS1
+			        END AS NEWADDR
+			     , DLVADRS2
+			     , HJDT
+			     , STDT
+			  FROM tm_reader_news 
+			 WHERE READNO =  #opReaderNo#
+			   AND (STDT IS NOT NULL
+			   AND BNO = '999')
+	</select>
+	
+	<!-- 독자데이터 조회-->
+	<select id="getReaderData" resultClass="java.util.HashMap">
+		 SELECT NEWSCD
+		         , READNO
+			     , SEQ
+			     , BOSEQ
+			     , (SELECT name FROM tm_agency WHERE userid=BOSEQ) AS BOSEQNM
+			     , GNO
+			     , BNO
+			     , QTY
+			     , SGTYPE
+			     , READTYPECD
+			     , DLVADRS2
+			     , READNM
+			     , DLVZIP
+			     , CASE WHEN LENGTH(BDMNGNO) > 1 then NEWADDR || ' ' || DLVADRS1
+			       ELSE DLVADRS1
+			        END AS NEWADDR
+			     , DLVADRS2
+			     , HJDT
+			     , STDT
+			     , STSAYOU
+			  FROM tm_reader_news 
+			 WHERE READNO =  #readNo#
+			    AND SEQ = #seq#
+	</select>
+	
+	
+	<!-- 독자수금데이터 조회-->
+	<select id="getReaderSugmList" resultClass="java.util.HashMap">
+		 SELECT YYMM
+			     , BILLAMT
+			     , BILLQTY
+			     , SGYYMM
+			     , AMT
+			     , SNDT
+			     , ICDT
+			     , CLDT 
+			     , CHGPS
+			 FROM  tm_reader_sugm
+			WHERE READNO =  #readNo#
+		 	   AND SEQ = #seq#
+		    ORDER BY indt DESC 
+	</select> 
+	
+	<!-- 독자히스토리데이터 조회-->
+	<select id="getReaderHistoryList" resultClass="java.util.HashMap">
+		 SELECT GNO
+			     , BNO
+			     , DLVZIP
+			     , CASE WHEN LENGTH(BDMNGNO) > 1 then NEWADDR || ' ' || DLVADRS1
+			       ELSE DLVADRS1
+			       END AS NEWADDR
+			     , DLVADRS2
+			     , SGTYPE
+			     , UPRICE
+			     , QTY
+				 , CHGDT
+			     , CHGPS
+			     , HINDT
+			     , HINPS
+		  FROM TH_READER_NEWS
+		 WHERE READNO =  #readNo#
+			AND SEQ = #seq#
+		 ORDER BY CHGDT DESC 
+	</select>
+	
+	<!-- TM_READER_NEWS 업데이트 -->
+	<update id="updateReaderNewsTable">
+		   UPDATE TM_READER_NEWS SET
+		       BNO = #bno#
+		     , STDT = ''
+		     , STSAYOU = ''
+		 WHERE READNO = #readNo#
+		   AND SEQ = #seq#
+		   AND NEWSCD = #newsCd#
+	</update>
+	
+	<!-- 구독정보 히스토리 업데이트 -->
+	<insert id="insertreaderHist">
+		INSERT INTO TH_READER_NEWS
+			(READNO, NEWSCD, CHGSEQ, SEQ, BOSEQ, BOREADNO, GNO, BNO, SNO, READTYPECD, READNM, OFFINM, HOMETEL1, HOMETEL2, HOMETEL3, MOBILE1, MOBILE2,
+			MOBILE3, DLVZIP, DLVADRS1, DLVADRS2, DLVSTRNM, DLVSTRNO, APTCD, APTDONG, APTHO, SGTYPE, SGINFO, SGTEL1, SGTEL2, SGTEL3, UPRICE, QTY,
+			RSDTYPECD, DLVTYPECD, DLVPOSICD, HJPATHCD, HJTYPECD, HJPSREGCD, HJPSNM, HJDT, SGBGMM, SGEDMM, SGCYCLE, STDT, STSAYOU, APLCDT, APLCNO,
+			REMK, INDT, INPS, CHGDT, CHGPS, SPGCD, BNSBOOKCD, HINDT, HINPS , RECEIPT, NEWADDR, BDMNGNO)
+		SELECT
+			READNO, NEWSCD, (SELECT lpad(NVL(MAX(TO_NUMBER(CHGSEQ)),0)+1, 5, 0) FROM TH_READER_NEWS WHERE READNO = #readNo# AND NEWSCD = #newsCd# AND SEQ = #seq#), SEQ, BOSEQ, 
+			BOREADNO, GNO, BNO, SNO, READTYPECD, READNM, OFFINM, HOMETEL1, HOMETEL2, HOMETEL3, MOBILE1, MOBILE2, MOBILE3, DLVZIP, DLVADRS1, DLVADRS2, 
+			DLVSTRNM, DLVSTRNO, APTCD, APTDONG, APTHO, SGTYPE, SGINFO, SGTEL1, SGTEL2, SGTEL3, UPRICE, QTY, RSDTYPECD,DLVTYPECD, DLVPOSICD, HJPATHCD,
+			HJTYPECD, HJPSREGCD, HJPSNM, HJDT, SGBGMM, SGEDMM, SGCYCLE, STDT, STSAYOU, APLCDT, APLCNO, REMK || '독자복구', INDT, INPS, CHGDT, CHGPS, SPGCD, BNSBOOKCD, SYSDATE, 'SYSTEM' , RECEIPT, NEWADDR, BDMNGNO
+		FROM
+			TM_READER_NEWS WHERE READNO = #readNo# AND NEWSCD = #newsCd# AND SEQ = #seq#
+	</insert>
+	
+	<!-- TBL_CARD_READER 업데이트 -->
+	<update id="updateCardReaderTable">
+		 UPDATE TBL_CARD_READER SET
+					STATUS = '1'
+		  WHERE READNO = #readNo#
+	</update>
+	
+	<!-- TBL_UESRS 업데이트 -->
+	<update id="updateTblUsersTable">
+		 UPDATE TBL_USERS SET 
+		 			r_out_date = ''
+		 		  , status = 'EA21'
+		  WHERE READNO = #readNo#
+	</update>
+	
+	<!-- TBL_UESRS_STU 업데이트 -->
+	<update id="updateTblUsersStuTable">
+		 UPDATE TBL_USERS_STU SET 
+		 			r_out_date = ''
+		 		  , status = 'EA21'
+		  WHERE READNO = #readNo#
+	</update>
+</sqlMap>

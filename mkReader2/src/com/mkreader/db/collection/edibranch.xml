@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="collection.edibranch">
+
+	<!-- 수납대행 지국 지로번호 확인 -->
+	<select id="getAgencyJiro" resultClass="java.util.HashMap" >
+		SELECT A.GIRO_NO, A.NAME
+		  FROM TM_AGENCY_JIRO A,
+		      	    TM_AGENCY B
+		 WHERE A.SERIAL = B.SERIAL
+		    AND A.SERIAL = #JIKUK_CODE#
+		 UNION ALL
+		 SELECT GIRO_NO, NAME 
+		  FROM TM_AGENCY_JIRO 
+		 WHERE NUMID = 1
+	</select>
+	
+	
+	<!-- GR15 에러 목록 -->
+	<select id="getGR15ErrList" resultClass="java.util.HashMap" >
+	    SELECT 
+	    	A.*
+	    FROM 
+	    	(
+	    		SELECT * 
+	    		FROM edi 
+	    		WHERE e_error != '0' and e_edate BETWEEN #sdate# AND #edate# 
+	    	) A 
+	    where 
+	    	1=1
+	    	 AND A.E_JCODE = #JIKUK_CODE#
+	    	<isNotEmpty property="jiroNum">
+   					AND A.e_jiro = #jiroNum#
+	    	</isNotEmpty>
+	</select>
+	
+	<!-- 이체일자별 EDI 입금 정상 처리 목록 -->
+	<select id="getEdiList" resultClass="java.util.HashMap" >
+		SELECT *
+		FROM (
+				SELECT 
+					C.E_JCODE
+				    ,C.E_MONEY AS DEBIT_AMT
+				    ,C.E_NUMBER
+				    ,C.E_CHECK
+				    ,C.NEWSCD
+				    ,FUNC_COMMON_CDYNM('100',C.NEWSCD) NEWSYNM
+				    ,C.READNO
+					,D.GNO
+				    ,D.BNO
+				    ,D.READNM
+				    ,(SELECT NAME FROM TM_AGENCY WHERE SERIAL = C.E_JCODE ) AS JIKUK_NAME
+				    ,REPLACE(
+				    	TRIM(SUBSTR(TRIM(SUBSTR(D.DLVADRS1, INSTR(D.DLVADRS1, ' ', 1, 2), LENGTH(D.DLVADRS1))),
+						INSTR(TRIM(SUBSTR(D.DLVADRS1, INSTR(D.DLVADRS1, ' ', 1, 2), LENGTH(D.DLVADRS1))), #GU#)+1,
+						LENGTH(TRIM(SUBSTR(D.DLVADRS1, INSTR(D.DLVADRS1, ' ', 1, 2), LENGTH(D.DLVADRS1))))))||' '||TRIM(D.DLVADRS2),#APT#,'A'
+					) AS DLVADRS1 
+				    ,D.HJDT
+				FROM (
+					    SELECT
+					        B.E_JCODE
+					        ,B.E_MONEY
+					        ,B.E_NUMBER
+					        ,B.E_CHECK
+					        ,DECODE(B.NEWSCD, '', (SELECT NEWSCD FROM TM_READER_NEWS WHERE BOSEQ = B.E_JCODE AND BOREADNO = B.BOREADNO AND ROWNUM=1), B.NEWSCD) as NEWSCD					        
+					        ,DECODE(B.READNO, '', (SELECT READNO FROM TM_READER_NEWS WHERE BOSEQ = B.E_JCODE AND BOREADNO = B.BOREADNO AND ROWNUM=1), B.READNO) as READNO
+					    FROM (
+					            SELECT 
+					                A.E_JCODE 
+					                ,decode(substr(A.E_RCODE,0,2), '99', '1'||substr(A.E_RCODE,3,2), '98', '1'||substr(A.E_RCODE,3,2), '') AS NEWSCD
+					                ,decode(substr(A.E_RCODE,0,2), '99', substr(A.E_RCODE,5,9), '98', substr(A.E_RCODE,5,9), '') AS READNO 
+					                ,decode(substr(A.E_RCODE,0,2), '99', '', '98', '', '1'||substr(A.E_RCODE, 7, 2)) AS GNO 
+					                ,decode(substr(A.E_RCODE,0,2), '99', '', '98', '', substr(A.E_RCODE, 9, 5)) AS BOREADNO
+					                ,A.E_MONEY
+					                ,A.E_NUMBER
+					                ,A.E_CHECK
+					            FROM EDI A 
+					            WHERE 
+					                A.E_ERROR = '0' 
+					                AND A.E_EDATE = #EDATE#
+					                <isNotEmpty property="JIKUK_CODE" prepend=" AND">
+					                	A.E_JCODE = #JIKUK_CODE#
+				                	</isNotEmpty>
+				                	<isNotEmpty property="jiroNum"  prepend=" AND">
+						   				A.E_JIRO = #jiroNum#
+							    	</isNotEmpty>
+							    	<isNotEmpty property="snType">
+							    		<isEqual property="snType" compareValue="1" prepend=" AND ">
+						   					A.E_INDEXINFO != 'DUZON'
+						   				</isEqual>
+						   				<isEqual property="snType" compareValue="2" prepend=" AND ">
+						   					A.E_INDEXINFO = 'DUZON'
+						   				</isEqual>
+							    	</isNotEmpty>
+							    	<isNotEmpty property="type">
+	    								<isEqual property="type" compareValue="1" prepend=" AND ">
+   											A.e_jiro = #MK_JIRO_NUMBER#
+   											AND A.E_INDEXINFO != 'DUZON'
+   										</isEqual>
+   										<isEqual property="type" compareValue="2" prepend=" AND ">
+   											A.e_jiro != #MK_JIRO_NUMBER#
+   											AND A.E_INDEXINFO != 'DUZON'
+   										</isEqual>
+   										<isEqual property="type" compareValue="3" prepend=" AND ">
+   											A.E_INDEXINFO = 'DUZON'
+   										</isEqual>
+	    							</isNotEmpty>
+					    ) B
+					) C
+					, TM_READER_NEWS D
+				WHERE
+					C.NEWSCD = D.NEWSCD(+)
+					AND C.READNO = D.READNO(+)
+					AND C.E_JCODE = D.BOSEQ(+)
+					AND D.SEQ = (
+						SELECT MIN(SEQ) FROM TM_READER_NEWS WHERE READNO = D.READNO AND NEWSCD = D.NEWSCD AND BOSEQ = C.E_JCODE
+						AND BNO = (SELECT MIN(BNO) FROM TM_READER_NEWS WHERE READNO = D.READNO AND NEWSCD = D.NEWSCD AND BOSEQ = C.E_JCODE)
+					)
+		)
+		ORDER BY
+			GNO, BNO, READNO, E_CHECK, E_NUMBER
+	</select>
+	
+	
+	<!-- 내역서인쇄 쿼리(과입금포함) -->
+	<select id="getEdiPrintList" resultClass="java.util.HashMap" >		
+		SELECT 
+			G.*
+			,H.BOREADNO
+			,H.GNO
+			,H.BNO
+			,H.READNM
+			<!-- ,H.DLVADRS1 -->
+			<!-- ,H.DLVADRS2 -->
+			,REPLACE(
+		    	TRIM(SUBSTR(TRIM(SUBSTR(H.DLVADRS1, INSTR(H.DLVADRS1, ' ', 1, 2), LENGTH(H.DLVADRS1))),
+				INSTR(TRIM(SUBSTR(H.DLVADRS1, INSTR(H.DLVADRS1, ' ', 1, 2), LENGTH(H.DLVADRS1))), #GU#)+1,
+				LENGTH(TRIM(SUBSTR(H.DLVADRS1, INSTR(H.DLVADRS1, ' ', 1, 2), LENGTH(H.DLVADRS1))))))||' '||TRIM(H.DLVADRS2),#APT#,'A'
+			) AS DLVADRS1 
+			,H.QTY
+			,H.UPRICE
+			,H.HJDT
+		FROM (
+				SELECT 
+					DEBIT_TYPE
+					,READNO, NEWSCD, BOSEQ, YYMM, SEQ
+					,SUM(BILLAMT) AS DEBIT_BILLAMT
+					,SUM(AMT) AS DEBIT_AMT
+					,SUM(NVL(LOSSAMT,0)) AS DEBIT_LOSSAMT
+				FROM (
+						SELECT
+							'0' AS DEBIT_TYPE  		<!-- 0: 정상입금(수금 or 결손) --> 
+							,READNO,NEWSCD,BOSEQ,YYMM,SEQ,BILLAMT,AMT,LOSSAMT
+							,SGBBCD,SGGBCD,SGYYMM,SNDT,ICDT,CLDT
+						FROM (
+								SELECT
+									F.*
+								FROM (
+										SELECT 
+											D.READNO, D.NEWSCD, D.BOSEQ, D.YYMM, D.SEQ
+										FROM (
+												SELECT 
+													B.E_NUMID,DECODE(B.NEWSCD, '', (SELECT NEWSCD FROM TM_READER_NEWS WHERE BOSEQ = B.E_JCODE AND BOREADNO = B.BOREADNO AND ROWNUM=1), B.NEWSCD) as NEWSCD,B.E_JCODE,B.E_MONEY,B.E_NUMBER
+													,DECODE(B.READNO, '', (SELECT READNO FROM TM_READER_NEWS WHERE BOSEQ = B.E_JCODE AND BOREADNO = B.BOREADNO AND ROWNUM=1), B.READNO) as READNO
+												FROM (
+														SELECT
+															A.E_NUMID
+															, A.E_JCODE 
+															,decode(substr(A.E_RCODE,0,2), '99', '1'||substr(A.E_RCODE,3,2), '98', '1'||substr(A.E_RCODE,3,2), '') AS NEWSCD
+											                ,decode(substr(A.E_RCODE,0,2), '99', substr(A.E_RCODE,5,9), '98', substr(A.E_RCODE,5,9), '') AS READNO 
+											                ,decode(substr(A.E_RCODE,0,2), '99', '', '98', '', '1'||substr(A.E_RCODE, 7, 2)) AS GNO 
+											                ,decode(substr(A.E_RCODE,0,2), '99', '', '98', '', substr(A.E_RCODE, 9, 5)) AS BOREADNO
+															, A.E_MONEY
+															, A.E_NUMBER
+														FROM 
+															EDI A
+															WHERE 
+																A.E_ERROR = '0'
+																AND A.E_EDATE = #EDATE#
+																AND A.E_JCODE = #JIKUK_CODE#
+																<isNotEmpty property="jiroNum"  prepend=" AND">
+														   			A.E_JIRO = #jiroNum#
+															    </isNotEmpty>
+															    <isNotEmpty property="snType">
+														    		<isEqual property="snType" compareValue="1" prepend=" AND ">
+													   					A.E_INDEXINFO != 'DUZON'
+													   				</isEqual>
+													   				<isEqual property="snType" compareValue="2" prepend=" AND ">
+													   					A.E_INDEXINFO = 'DUZON'
+													   				</isEqual>
+														    	</isNotEmpty>
+													) B
+											) C
+											left outer JOIN (
+												SELECT * 
+												FROM TM_READER_SUGM 
+												WHERE 
+													SGBBCD = #SGBBCD#
+													AND ICDT = #EDATE#
+													AND BOSEQ = #JIKUK_CODE#
+											) D
+											<isEmpty property="CHANGE">
+												ON C.READNO = D.READNO AND C.NEWSCD = D.NEWSCD AND C.E_JCODE = D.BOSEQ
+											</isEmpty>
+											<isNotEmpty property="CHANGE">
+												<isEqual property="CHANGE" compareValue="TRUE">		<!-- 20120106 이후 -->
+													ON C.E_NUMID = D.EDIPROCNO
+												</isEqual>
+												<isNotEqual property="CHANGE" compareValue="TRUE">	<!-- 20120106 이전 -->
+													ON C.READNO = D.READNO AND C.NEWSCD = D.NEWSCD AND C.E_JCODE = D.BOSEQ
+												</isNotEqual>
+											</isNotEmpty>
+										GROUP BY
+											D.READNO, D.NEWSCD, D.BOSEQ, D.SEQ, D.YYMM
+									) E
+									, TM_READER_SUGM F
+								WHERE
+									E.READNO = F.READNO
+									AND
+									E.NEWSCD = F.NEWSCD
+									AND
+									E.BOSEQ = F.BOSEQ
+									AND
+									E.SEQ = F.SEQ
+									AND
+									E.YYMM = F.YYMM
+							)
+								                            
+						UNION ALL
+								                            
+						SELECT
+							'2' AS DEBIT_TYPE		<!-- 과입금 --> 
+							,READNO,NEWSCD,BOSEQ,'' as YYMM,SEQ
+							,0 AS BILLAMT
+							,E_MONEY AS AMT
+							,0 AS LOSSAMT
+							,'' as SGBBCD, '' as SGGBCD, '' as SGYYMM, '' as SNDT, '' as ICDT, '' as CLDT
+						FROM (
+								SELECT
+									E.*
+								FROM (
+										SELECT 
+											D.READNO, D.NEWSCD, D.BOSEQ, D.SEQ, C.E_MONEY
+										FROM (
+												SELECT 
+													DECODE(B.NEWSCD, '', (SELECT NEWSCD FROM TM_READER_NEWS WHERE BOSEQ = B.E_JCODE AND BOREADNO = B.BOREADNO AND ROWNUM=1), B.NEWSCD) as NEWSCD,B.E_JCODE,B.E_MONEY,B.E_NUMBER
+													,DECODE(B.READNO, '', (SELECT READNO FROM TM_READER_NEWS WHERE BOSEQ = B.E_JCODE AND BOREADNO = B.BOREADNO AND ROWNUM=1), B.READNO) as READNO
+												FROM (
+														SELECT
+															A.E_NUMID
+															, A.E_JCODE 
+															, EO.OVERMONEY AS E_MONEY
+															, A.E_NUMBER
+															,decode(substr(A.E_RCODE,0,2), '99', '1'||substr(A.E_RCODE,3,2), '98', '1'||substr(A.E_RCODE,3,2), '') AS NEWSCD
+											                ,decode(substr(A.E_RCODE,0,2), '99', substr(A.E_RCODE,5,9), '98', substr(A.E_RCODE,5,9), '') AS READNO 
+											                ,decode(substr(A.E_RCODE,0,2), '99', '', '98', '', '1'||substr(A.E_RCODE, 7, 2)) AS GNO 
+											                ,decode(substr(A.E_RCODE,0,2), '99', '', '98', '', substr(A.E_RCODE, 9, 5)) AS BOREADNO
+														FROM 
+															EDI_OVER EO
+															left outer JOIN EDI A
+															ON EO.EDINUMID = A.E_NUMID
+														WHERE 
+															A.E_ERROR = '0'
+															AND A.E_EDATE = #EDATE#
+															AND A.E_JCODE = #JIKUK_CODE#
+															<isNotEmpty property="jiroNum"  prepend=" AND">
+														   		A.E_JIRO = #jiroNum#
+														    </isNotEmpty>
+														    <isNotEmpty property="snType">
+													    		<isEqual property="snType" compareValue="1" prepend=" AND ">
+												   					A.E_INDEXINFO != 'DUZON'
+												   				</isEqual>
+												   				<isEqual property="snType" compareValue="2" prepend=" AND ">
+												   					A.E_INDEXINFO = 'DUZON'
+												   				</isEqual>
+													    	</isNotEmpty>
+													) B
+											) C
+											, (
+												SELECT * 
+												FROM TM_READER_NEWS 
+											) D
+											WHERE 
+												C.READNO = D.READNO 
+												AND C.NEWSCD = D.NEWSCD 
+												AND C.E_JCODE = D.BOSEQ
+												AND D.SEQ = (
+													SELECT MIN(SEQ) FROM TM_READER_NEWS WHERE READNO = D.READNO AND NEWSCD = D.NEWSCD AND BOSEQ = C.E_JCODE
+													AND BNO = (SELECT MIN(BNO) FROM TM_READER_NEWS WHERE READNO = D.READNO AND NEWSCD = D.NEWSCD AND BOSEQ = C.E_JCODE)
+												)
+									) E
+							) 
+					)
+				GROUP BY 
+					READNO, NEWSCD, BOSEQ, YYMM, DEBIT_TYPE, SEQ
+			) G
+			left outer JOIN TM_READER_NEWS H
+			ON G.READNO = H.READNO AND G.NEWSCD = H.NEWSCD AND G.SEQ = H.SEQ AND G.BOSEQ = H.BOSEQ
+		ORDER BY 
+			H.GNO, G.READNO, G.DEBIT_TYPE, H.BNO, G.NEWSCD, G.BOSEQ, G.YYMM
+	</select>
+	
+	
+	<!-- EDI 자료 총합 -->
+	<select id="getEdiSumInfo" resultClass="java.util.HashMap" >
+		SELECT 
+			count(*) as CNT
+			, nvl(sum(E_MONEY),0) as SUM_MONEY
+			, nvl(sum(E_CHARGE),0) as SUM_CHARGE
+			, nvl(sum(E_MONEY) - sum(E_CHARGE),0) as SUM_TOTAL
+		FROM 
+			EDI
+		WHERE 
+			E_EDATE = #EDATE#
+			<isNotEmpty property="JIKUK_CODE" prepend=" AND">
+				E_JCODE = #JIKUK_CODE#
+			</isNotEmpty>
+			<isNotEmpty property="E_ERROR">
+				<isEqual property="E_ERROR" compareValue="NORMAL" prepend=" AND ">
+					E_ERROR = '0'
+				</isEqual>
+				<isEqual property="E_ERROR" compareValue="ERROR" prepend=" AND ">
+					E_ERROR != '0'
+				</isEqual>				
+			</isNotEmpty>
+			<isNotEmpty property="jiroNum"  prepend=" AND">
+   					E_JIRO = #jiroNum#
+	    	</isNotEmpty>
+	    	<isNotEmpty property="snType">
+	    		<isEqual property="snType" compareValue="1" prepend=" AND ">
+   					E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="snType" compareValue="2" prepend=" AND ">
+   					E_INDEXINFO = 'DUZON'
+   				</isEqual>
+	    	</isNotEmpty>
+	    	<isNotEmpty property="type">
+	    		<isEqual property="type" compareValue="1" prepend=" AND ">
+   					e_jiro = #MK_JIRO_NUMBER#
+   					AND E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="2" prepend=" AND ">
+   					e_jiro != #MK_JIRO_NUMBER#
+   					AND E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="3" prepend=" AND ">
+   					E_INDEXINFO = 'DUZON'
+   				</isEqual>
+	    	</isNotEmpty>
+	</select>
+	
+	
+	<!-- EDI 에러목록 총합 -->
+	<select id="getEdiErrSum" resultClass="java.util.HashMap" >
+		SELECT 
+			count(*) as CNT
+			, nvl(sum(E_MONEY),0) as SUM_MONEY
+			, nvl(sum(E_CHARGE),0) as SUM_CHARGE
+			, nvl(sum(E_MONEY) - sum(E_CHARGE),0) as SUM_TOTAL
+		FROM 
+			EDI
+		WHERE  E_ERROR != '0' AND E_EDATE BETWEEN #sdate# AND #edate# 
+			AND	E_ERROR != '0'
+			AND	E_JCODE = #JIKUK_CODE#
+			<isNotEmpty property="jiroNum"  prepend=" AND">
+   					E_JIRO = #jiroNum#
+	    	</isNotEmpty>
+	</select>
+		
+</sqlMap>

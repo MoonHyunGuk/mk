@@ -1,0 +1,833 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="statistics.stats">
+
+	
+	<!-- 통계 -->
+	<select id="getStateList" resultClass="java.util.HashMap">
+		SELECT 
+			* 
+		FROM
+			(
+			SELECT
+				<isNotEmpty property="BOSEQ">
+					GNO AS GROUPBYTYPE
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					BOSEQ AS GROUPBYTYPE
+				</isEmpty>
+				, NVL(SUM(READTYPECD011),0) AS READTYPECD011              <!-- 일반 -->
+				, NVL(SUM(READTYPECD012),0) AS READTYPECD012              <!-- 학생(지국) -->
+				, NVL(SUM(READTYPECD013),0) AS READTYPECD013              <!-- 학생(본사) -->
+				, NVL(SUM(READTYPECD014),0) AS READTYPECD014              <!-- 병독 -->
+				, NVL(SUM(READTYPECD015),0) AS READTYPECD015              <!-- 교육 -->
+				, NVL(SUM(READTYPECD016),0) AS READTYPECD016              <!-- 본사직원 -->
+				, NVL(SUM(READTYPECD021),0) AS READTYPECD021              <!-- 기증 -->
+				, NVL(SUM(READTYPECD022),0) AS READTYPECD022              <!-- 홍보 -->
+				, NVL(SUM(SUM_QTY1),0) AS SUM_QTY1                        <!-- 준유가(1개월) -->
+				, NVL(SUM(SUM_QTY2),0) AS SUM_QTY2                        <!-- 준유가(2개월) -->
+				, NVL(SUM(SUM_QTY3),0) AS SUM_QTY3                        <!-- 준유가(3개월) -->
+				, NVL(SUM(SUM_QTY4),0) AS SUM_QTY4                        <!-- 준유가(4개월) -->
+				, NVL(SUM(SUM_QTY5),0) AS SUM_QTY5                        <!-- 준유가(5개월) -->
+				, NVL(SUM(SUM_QTY6),0) AS SUM_QTY6                        <!-- 준유가(6개월) -->
+				, NVL(SUM(SUM_QTY7),0) AS SUM_QTY7                        <!-- 준유가(기타) -->
+				, NVL(SUM(SUM_ETC_LOSS),0) AS SUM_ETC_LOSS                <!-- 결손부수 -->
+				, NVL(SUM(SUM_ETC_FINANCE),0) AS SUM_ETC_FINANCE          <!-- 재무부수 -->
+				, NVL(SUM(SUM_ETC_LEAVE),0) AS SUM_ETC_LEAVE              <!-- 휴독부수 -->
+				, NVL(SUM(SUM_LIST_PRICE),0) AS SUM_LIST_PRICE            <!-- 일반독자중 구독료가 정가인 독자 -->
+				, NVL(SUM(SUM_MISU_AMT),0) AS SUM_MISU_AMT                <!-- 전월미수 -->
+				, NVL(SUM(SUM_ALL_MISU_AMT),0) AS SUM_ALL_MISU_AMT        <!-- 총전월미수 -->
+				, NVL(SUM(MONTH_SUGUM),0) AS MONTH_SUGUM                  <!-- 당월수금예정액 -->
+				, NVL(SUM(SUM_YUGA_SINSU),0) AS SUM_YUGA_SINSU            <!-- 유가조정액신수 -->
+				, NVL(SUM(SUM_YUGA_MISU),0) AS SUM_YUGA_MISU              <!-- 유가조정액미수 -->
+				, NVL(SUM(SUM_ETC1),0) AS SUM_ETC1                        <!-- 재무,결손,휴독 금액 -->
+				, NVL(SUM(SUM_DEPOSIT),0) AS SUM_DEPOSIT                  <!-- 선입금 -->
+				, NVL(SUM(SUM_SGBBCD011),0) AS SUM_SGBBCD011              <!-- 지로 -->
+				, NVL(SUM(SUM_SGBBCD012),0) AS SUM_SGBBCD012              <!-- 방문 -->
+				, NVL(SUM(SUM_SGBBCD013),0) AS SUM_SGBBCD013              <!-- 통장입금 -->
+				, NVL(SUM(SUM_SGBBCD021),0) AS SUM_SGBBCD021              <!-- 자동이체 -->
+				, NVL(SUM(SUM_SGBBCD022),0) AS SUM_SGBBCD022              <!-- 카드 -->
+				, NVL(SUM(SUM_ETC2),0) AS SUM_ETC2                        <!-- 기타 -->
+				, NVL(SUM(SUM_MISU),0) AS SUM_MISU                        <!-- 미수총계 -->
+				, NVL(SUM(MON_SUM_ETC1),0) AS MON_SUM_ETC1                <!-- 당월 재무,결손,휴독 금액 -->
+				, NVL(SUM(MON_SUM_MISU),0) AS MON_SUM_MISU                <!-- 당월미수총계 -->
+				, NVL(SUM(MON_SUM_SGBBCD011),0) AS MON_SUM_SGBBCD011      <!-- 당월지로 -->
+				, NVL(SUM(MON_SUM_SGBBCD012),0) AS MON_SUM_SGBBCD012      <!-- 당월방문 -->
+				, NVL(SUM(MON_SUM_SGBBCD013),0) AS MON_SUM_SGBBCD013      <!-- 당월통장입금 -->
+				, NVL(SUM(MON_SUM_SGBBCD021),0) AS MON_SUM_SGBBCD021      <!-- 당월자동이체 -->
+				, NVL(SUM(MON_SUM_SGBBCD022),0) AS MON_SUM_SGBBCD022      <!-- 당월카드 -->
+				, NVL(SUM(MON_SUM_ETC2),0) AS MON_SUM_ETC2                <!-- 당월기타 -->
+				
+			FROM
+				TM_STAT_PERUSE
+			WHERE
+				YYMM = #YYMM#
+				<isNotEmpty property="NEWSCD">
+					<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">
+						#NEWSCD[]#
+					</iterate>
+				</isNotEmpty>
+				<isNotEmpty property="BOSEQ" prepend=" AND">
+					BOSEQ = #BOSEQ#
+				</isNotEmpty>
+				<isEmpty property="BOSEQ" prepend=" AND">
+					(
+                    SUBSTR(BOSEQ,1,1) = '5'
+                    AND 
+                    BOSEQ != '521050')
+				</isEmpty>
+			GROUP BY
+				<isNotEmpty property="BOSEQ">
+					GNO 
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					BOSEQ
+				</isEmpty>
+			ORDER BY
+				<isNotEmpty property="BOSEQ">
+					LENGTH(GNO),GNO 
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					BOSEQ
+				</isEmpty>  
+			) D
+		WHERE
+			1=1
+			<isEqual property="TYPE" compareValue="paymentAdjustments" prepend=" AND">
+				(D.SUM_MISU_AMT + D.SUM_YUGA_SINSU + D.MON_SUM_ETC1 + D.MON_SUM_MISU + D.SUM_YUGA_SINSU + D.MON_SUM_ETC1 + D.MON_SUM_MISU + D.MON_SUM_SGBBCD011 + D.MON_SUM_SGBBCD012 + D.MON_SUM_SGBBCD013 + D.MON_SUM_SGBBCD021 + D.MON_SUM_SGBBCD022 + D.MON_SUM_ETC2) &gt; 0
+			</isEqual> 
+			<isEqual property="TYPE" compareValue="bill" prepend=" AND">
+				(D.READTYPECD011 + D.SUM_QTY1 + D.SUM_QTY2 + D.SUM_QTY3 + D.SUM_QTY4 + D.SUM_QTY5 + D.SUM_QTY6 + D.SUM_QTY7 + D.READTYPECD013 + D.READTYPECD012 + D.READTYPECD015 + D.READTYPECD014 + D.READTYPECD016 + D.READTYPECD021 + D.READTYPECD022 + D.SUM_ETC_FINANCE + D.SUM_ETC_LOSS + D.SUM_ETC_LEAVE) &gt; 0
+			</isEqual>
+			
+	</select>
+	
+	<!-- 신문명 리스트 (지국이 아닐경우) -->
+	<select id="getNewsCodeList" resultClass="java.util.HashMap">
+		SELECT 
+			CODE, 
+			CNAME, 
+			YNAME
+		FROM 
+			TC_COMMON 
+		WHERE 
+			USEYN = #USEYN# 
+			AND 
+			CDCLSF = #CDCLSF#
+	</select>
+	
+	<!-- 신문명 리스트 (지국일 경우) -->
+	<select id="getNewsJikukCodeList" resultClass="java.util.HashMap">
+		SELECT 
+			A.SERIAL,       <!-- 지국번호 -->
+			A.NEWSCD,      	<!-- 매체코드 -->
+			B.CODE,			<!-- 매체코드 -->
+			B.CNAME,        <!-- 매체명 -->
+			B.YNAME         <!-- 약자 -->
+		FROM 
+			TM_AGENCY_NEWS A, 
+			TC_COMMON B
+		WHERE 
+			A.NEWSCD = B.CODE
+			AND 
+			A.SERIAL = #BOSEQ#
+			AND 
+			B.USEYN = #USEYN#
+			AND 
+			B.CDCLSF = #CDCLSF#
+		ORDER BY 
+			B.SORTFD
+			, B.CNAME
+			, A.NEWSCD 
+	</select>	
+	
+	
+	
+	
+	 
+	<!-- 통계일람, 당월입금, 총입금현황, 유가현황 실시간 -->
+	<select id="getPeruseList" resultClass="java.util.HashMap">
+		SELECT 
+			* 
+		FROM 
+			( 
+			SELECT 
+				<isNotEmpty property="BOSEQ">
+					C.GNO AS GROUPBYTYPE
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ AS GROUPBYTYPE
+				</isEmpty>
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD011							<!-- 일반 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '012' AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD012														<!-- 학생 (지국) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '013' AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD013														<!-- 학생 (본사) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '014' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD014														<!-- 병독 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND (READTYPECD = '015' OR READTYPECD = '017') AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD015														<!-- 교육 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '016' AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD016														<!-- 본사직원 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '021' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD021														<!-- 기증 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '022' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD022														<!-- 홍보 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = #SGYYMM1AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY1														<!-- 준유가(1개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = #SGYYMM2AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY2														<!-- 준유가(2개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = #SGYYMM3AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY3														<!-- 준유가(3개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = #SGYYMM4AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY4														<!-- 준유가(4개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = #SGYYMM5AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY5														<!-- 준유가(5개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = #SGYYMM6AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY6														<!-- 준유가(6개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM &gt;= #SGYYMM7AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY7													<!-- 기타 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND SGTYPE = '031'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_ETC_LOSS																						<!-- 결손 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND SGTYPE = '032'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_ETC_FINANCE																					<!-- 재무 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND SGTYPE = '033'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_ETC_LEAVE																						<!-- 휴독 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM &lt;= #SGYYMM# AND NVL(UPRICE/DECODE(QTY,0,NULL,QTY),0) = #CODE_SUGM_AMT#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_LIST_PRICE					<!-- 일반독자중 구독료가 정가인 독자 -->
+				, NVL(SUM(CASE WHEN C.SGBBCD = '044' AND C.YYMM = TO_CHAR(ADD_MONTHS(TO_DATE(#SGYYMM#,'YYYYMM'), -1) , 'YYYYMM') THEN C.BILLAMT END),0) AS SUM_MISU_AMT									<!-- 매출액중 미수된 금액 (전월미수)-->
+				, NVL(SUM(CASE WHEN C.SGBBCD = '044' AND C.YYMM &lt; #SGYYMM# THEN C.BILLAMT END),0) AS SUM_ALL_MISU_AMT																				<!-- 매출액중 미수된 금액 (총 전월미수)-->
+				, NVL(SUM(CASE WHEN C.YYMM &lt; #SGYYMM# AND C.SGYYMM &gt;= #SGYYMM# AND C.SGBBCD != '044' THEN C.BILLAMT END),0) AS SUM_MISU_AFTER														<!-- 현재월 이후에 입금된 미수 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND (cldt &gt;= #FROMYYMMDD# or cldt is null) THEN C.BILLAMT END),0) AS MONTH_SUGUM																												<!-- 당월수금예정액 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.YYMM = #SGYYMM# AND C.SGBBCD IN ('011','012','013','014','021','022','023','024','088') THEN C.AMT END),0) AS SUM_YUGA_SINSU					<!-- 유가조정액 중 신수 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.YYMM &lt; #SGYYMM# AND C.SGBBCD IN ('011','012','013','014','021','022','023','024','088') THEN C.AMT END),0) AS SUM_YUGA_MISU					<!-- 유가조정액 중 미수 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD IN ('031','032','033') THEN C.AMT END),0) + NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# THEN C.LOSSAMT END),0) AS SUM_ETC1				<!-- 재무,결손,휴독 금액 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND #SGYYMM# &lt; C.YYMM AND C.SGBBCD IN ('011','012','013','014','021','022','023','024','088') THEN C.AMT END),0) AS SUM_DEPOSIT					<!-- 선입금 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '011' THEN C.AMT END),0) AS SUM_SGBBCD011  																						<!-- 지로 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '012' THEN C.AMT END),0) AS SUM_SGBBCD012  																						<!-- 방문 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '013' THEN C.AMT END),0) AS SUM_SGBBCD013  																						<!-- 통장입금 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '021' THEN C.AMT END),0) AS SUM_SGBBCD021  																						<!-- 자동이체 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '022' THEN C.AMT END),0) AS SUM_SGBBCD022  																						<!-- 카드 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD IN ('014','023','024','031','032','033','088') THEN C.AMT END),0) + NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# THEN C.LOSSAMT END),0) AS SUM_ETC2 															<!-- 기타 -->
+				, NVL(SUM(CASE WHEN C.SGBBCD = '044' THEN C.BILLAMT END),0) AS SUM_MISU                                                                                                                 <!--미수총계-->
+	      		, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD IN ('031','032','033') THEN C.AMT END),0) + NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# THEN C.LOSSAMT END),0) AS MON_SUM_ETC1		 <!--당월 재무,결손,휴독-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.SGBBCD = '044' THEN C.BILLAMT END),0) AS MON_SUM_MISU  																						<!--당월 미수총계-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '011' THEN C.AMT END),0) AS MON_SUM_SGBBCD011  															<!--당월 지로-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '012' THEN C.AMT END),0) AS MON_SUM_SGBBCD012  									  					    <!--당월 방문-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '013' THEN C.AMT END),0) AS MON_SUM_SGBBCD013  															<!-- 당월 통장입금-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '021' THEN C.AMT END),0) AS MON_SUM_SGBBCD021  															<!--당월 자동이체-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '022' THEN C.AMT END),0) AS MON_SUM_SGBBCD022  															<!-- 당월 카드-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD IN ('014','023','024','031','032','033','088') THEN C.AMT END),0) AS MON_SUM_ETC2 									<!--당월 기타-->
+			FROM 
+				(
+					SELECT 
+						A.GNO
+						, A.BOSEQ
+						, A.READTYPECD
+						, A.QTY
+						, A.SGBGMM
+						, A.SGTYPE
+						, A.UPRICE
+						, B.YYMM
+						, B.SGBBCD
+	              		, B.SGYYMM
+	              		, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101' THEN 0 WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') THEN 4500 WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023' THEN 4500*B.BILLQTY ELSE B.BILLAMT END) AS BILLAMT
+	          			, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101' THEN 0 WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') THEN 4500 WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023' THEN 4500*B.BILLQTY ELSE B.AMT END) AS AMT
+	              		, B.LOSSAMT
+	              		, B.CLDT
+					FROM
+						TM_READER_NEWS A
+						, TM_READER_SUGM B 
+				WHERE
+					A.NEWSCD = B.NEWSCD
+					AND
+					A.SEQ = B.SEQ
+					AND
+					A.READNO = B.READNO
+					AND 
+					A.BOSEQ = B.BOSEQ
+					AND 
+					A.SEQ &gt; 0
+					AND 
+					B.SEQ &gt; 0
+					AND 
+					A.READNO &gt; 0
+					AND 
+					B.READNO &gt; 0
+					AND 
+					B.YYMM &gt; 0
+					<!-- 
+					AND
+					B.SGYYMM = #SGYYMM#
+					AND
+					A.BNO != '999'
+					 -->
+					AND 
+					A.GNO IS NOT NULL
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND B.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						A.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						B.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+				) C
+			GROUP BY
+				<isNotEmpty property="BOSEQ">
+					C.GNO 
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ
+				</isEmpty>
+			ORDER BY
+				<isNotEmpty property="BOSEQ">
+					LENGTH(C.GNO),C.GNO 
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ
+				</isEmpty>
+			) D
+		WHERE
+			1=1
+			<isEqual property="TYPE" compareValue="paymentAdjustments" prepend=" AND">
+				(D.SUM_MISU_AMT + D.SUM_YUGA_SINSU + D.MON_SUM_ETC1 + D.MON_SUM_MISU + D.SUM_YUGA_SINSU + D.MON_SUM_ETC1 + D.MON_SUM_MISU + D.MON_SUM_SGBBCD011 + D.MON_SUM_SGBBCD012 + D.MON_SUM_SGBBCD013 + D.MON_SUM_SGBBCD021 + D.MON_SUM_SGBBCD022 + D.MON_SUM_ETC2) &gt; 0
+			</isEqual> 
+	</select>
+	
+		 
+	<!-- 배부현황 실시간 -->
+	<select id="getDeliveryList" resultClass="java.util.HashMap">
+		SELECT 
+			* 
+		FROM 
+			( 
+			SELECT 
+				<isNotEmpty property="BOSEQ">
+					C.GNO AS GROUPBYTYPE
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ AS GROUPBYTYPE
+				</isEmpty>
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM &lt;= CASE WHEN TO_CHAR(SYSDATE,'DD') BETWEEN 1 AND 20 THEN TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM') ELSE TO_CHAR(SYSDATE, 'YYYYMM') END<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD011		<!-- 일반 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '012' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD012														<!-- 학생 (지국) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '013' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD013														<!-- 학생 (본사) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '014' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD014														<!-- 병독 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND (READTYPECD = '015' OR READTYPECD = '017') <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD015				<!-- 교육 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '016' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD016														<!-- 본사직원 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '021' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD021														<!-- 기증 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '022' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS READTYPECD022														<!-- 홍보 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = CASE WHEN TO_CHAR(SYSDATE,'DD') BETWEEN 1 AND 20 THEN TO_CHAR(SYSDATE, 'YYYYMM') ELSE TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM') END<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY1														<!-- 준유가(1개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = CASE WHEN TO_CHAR(SYSDATE,'DD') BETWEEN 1 AND 20 THEN TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM') ELSE TO_CHAR(ADD_MONTHS(SYSDATE, 2), 'YYYYMM') END<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY2														<!-- 준유가(2개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = CASE WHEN TO_CHAR(SYSDATE,'DD') BETWEEN 1 AND 20 THEN TO_CHAR(ADD_MONTHS(SYSDATE, 2), 'YYYYMM') ELSE TO_CHAR(ADD_MONTHS(SYSDATE, 3), 'YYYYMM') END<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY3														<!-- 준유가(3개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = CASE WHEN TO_CHAR(SYSDATE,'DD') BETWEEN 1 AND 20 THEN TO_CHAR(ADD_MONTHS(SYSDATE, 3), 'YYYYMM') ELSE TO_CHAR(ADD_MONTHS(SYSDATE, 4), 'YYYYMM') END<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY4														<!-- 준유가(4개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = CASE WHEN TO_CHAR(SYSDATE,'DD') BETWEEN 1 AND 20 THEN TO_CHAR(ADD_MONTHS(SYSDATE, 4), 'YYYYMM') ELSE TO_CHAR(ADD_MONTHS(SYSDATE, 5), 'YYYYMM') END<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY5														<!-- 준유가(5개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND SGBGMM = CASE WHEN TO_CHAR(SYSDATE,'DD') BETWEEN 1 AND 20 THEN TO_CHAR(ADD_MONTHS(SYSDATE, 5), 'YYYYMM') ELSE TO_CHAR(ADD_MONTHS(SYSDATE, 6), 'YYYYMM') END<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY6														<!-- 준유가(6개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND (SGBGMM &gt;= CASE WHEN TO_CHAR(SYSDATE,'DD') BETWEEN 1 AND 20 THEN TO_CHAR(ADD_MONTHS(SYSDATE, 6), 'YYYYMM') ELSE TO_CHAR(ADD_MONTHS(SYSDATE, 7), 'YYYYMM') END OR SGBGMM IS NULL)<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_QTY7				<!-- 기타 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND SGTYPE = '031'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_ETC_LOSS																						<!-- 결손 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND SGTYPE = '032'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_ETC_FINANCE																					<!-- 재무 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND SGTYPE = '033'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_ETC_LEAVE																						<!-- 휴독 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE BNO!='999' AND READTYPECD = '011' AND NVL(UPRICE/DECODE(QTY,0,NULL,QTY),0) = #CODE_SUGM_AMT#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty>) AS SUM_LIST_PRICE					<!-- 일반독자중 구독료가 정가인 독자 -->
+			FROM 
+				(
+					SELECT 
+						A.GNO
+						, A.BOSEQ
+						, A.READTYPECD
+						, A.QTY
+						, A.SGBGMM
+						, A.SGTYPE
+						, A.UPRICE
+						, B.YYMM
+						, B.SGBBCD
+	              		, B.SGYYMM
+	              		, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101' THEN 0 WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') THEN 4500 WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023' THEN 4500*B.BILLQTY ELSE B.BILLAMT END) AS BILLAMT
+	          			, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101' THEN 0 WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') THEN 4500 WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023' THEN 4500*B.BILLQTY ELSE B.AMT END) AS AMT
+	              		, B.LOSSAMT
+	              		, B.CLDT
+					FROM
+						TM_READER_NEWS A
+						, TM_READER_SUGM B 
+				WHERE
+					A.NEWSCD = B.NEWSCD(+)
+					AND
+					A.SEQ = B.SEQ(+)
+					AND
+					A.READNO = B.READNO(+)
+					AND 
+					A.BOSEQ = B.BOSEQ(+)
+					AND 
+					A.SEQ &gt; 0
+					AND 
+					A.READNO &gt; 0
+					AND 
+					A.GNO IS NOT NULL
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						A.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+				) C
+			GROUP BY
+				<isNotEmpty property="BOSEQ">
+					C.GNO 
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ
+				</isEmpty>
+			ORDER BY
+				<isNotEmpty property="BOSEQ">
+					LENGTH(C.GNO),C.GNO 
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ
+				</isEmpty>
+			) D
+		WHERE
+			1=1
+			AND	(D.READTYPECD011 + D.SUM_QTY1 + D.SUM_QTY2 + D.SUM_QTY3 + D.SUM_QTY4 + D.SUM_QTY5 + D.SUM_QTY6 + D.SUM_QTY7 + D.READTYPECD013 + D.READTYPECD012 + D.READTYPECD015 + D.READTYPECD014 + D.READTYPECD016 + D.READTYPECD021 + D.READTYPECD022 + D.SUM_ETC_FINANCE + D.SUM_ETC_LOSS + D.SUM_ETC_LEAVE) &gt; 0
+	</select>
+	
+	
+	<!-- 당월입금 -->
+	<select id="getPaymentList" resultClass="java.util.HashMap">
+		SELECT 
+			C.GNO
+		  , NVL(AVG(CASE WHEN C.GNO = SUBSTR(C.MISU_AMT,0,INSTR(C.MISU_AMT,'-::-')-1) THEN SUBSTR(C.MISU_AMT,INSTR(C.MISU_AMT,'-::-')+4,INSTR(C.MISU_AMT,'-::-',1,2)-8) END),0) AS SUM_MISU_AMT   	<!-- 전월미수 - 미수 -->
+		  , NVL(SUM(C.BILLAMT),0) AS MONTH_SUGUM																																					<!-- 당월수금예정액 -->
+		  , NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD IN ('011','012','013','014','021','022','023','024','088') THEN C.AMT END),0) AS SUM_YUGA_SINSU												<!-- 신수 -->
+		  , NVL(AVG(CASE WHEN C.GNO = SUBSTR(C.MISU_AMT,0,INSTR(C.MISU_AMT,'-::-')-1) THEN SUBSTR(C.MISU_AMT,INSTR(C.MISU_AMT,'-::-',1,2)+4,LENGTH(C.MISU_AMT)) END),0) AS SUM_YUGA_MISU  			<!-- 미수 -->
+		  , NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD IN ('031','032','033') THEN C.AMT END),0) AS MON_SUM_ETC1 		 				<!-- 재무,결손,휴독 -->
+		  , NVL(SUM(CASE WHEN C.SGBBCD = '044' THEN C.BILLAMT END),0) AS MON_SUM_MISU  														<!-- 미수총계 -->
+		  , NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '011' THEN C.AMT END),0) AS MON_SUM_SGBBCD011  								<!-- 지로 -->
+		  , NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '012' THEN C.AMT END),0) AS MON_SUM_SGBBCD012  								<!-- 방문 -->
+		  , NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '013' THEN C.AMT END),0) AS MON_SUM_SGBBCD013  								<!-- 통장입금 -->
+		  , NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '021' THEN C.AMT END),0) AS MON_SUM_SGBBCD021  								<!-- 자동이체 -->
+		  , NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '022' THEN C.AMT END),0) AS MON_SUM_SGBBCD022  								<!-- 카드 -->
+		  , NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD IN ('014','023','024','031','032','033','088') THEN C.AMT END),0) AS MON_SUM_ETC2 	<!-- 기타 -->
+		FROM 
+			(
+				SELECT 
+					A.GNO
+		      		, B.YYMM
+		      		, B.SGYYMM
+		      		, B.SGBBCD
+		      		, B.BILLAMT
+		      		, B.AMT
+					, (
+						SELECT 
+							E.GNO||'-::-'||NVL(SUM(CASE WHEN F.SGBBCD = '044' THEN F.BILLAMT END),0)||'-::-'||NVL(SUM(CASE WHEN F.SGYYMM = #YYMM# AND F.SGBBCD IN ('011','012','013','014','021','022','023','024','088','031','032','033') THEN F.AMT END),0)
+						FROM
+							TM_READER_NEWS E
+							,TM_READER_SUGM F
+						WHERE
+							E.NEWSCD = F.NEWSCD 
+							AND E.SEQ = F.SEQ 
+							AND E.READNO = F.READNO 
+							AND F.YYMM = #YYMM1BEFORE#
+							AND E.GNO = A.GNO
+							<isNotEmpty property="NEWSCD">
+								<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND E.NEWSCD IN">
+									#NEWSCD[]#
+								</iterate>
+							</isNotEmpty>
+							<isNotEmpty property="NEWSCD">
+								<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND F.NEWSCD IN">
+									#NEWSCD[]#
+								</iterate>
+							</isNotEmpty>
+							<isNotEmpty property="BOSEQ" prepend=" AND">
+								E.BOSEQ = #BOSEQ#
+							</isNotEmpty>
+							<isNotEmpty property="BOSEQ" prepend=" AND">
+								F.BOSEQ = #BOSEQ#
+							</isNotEmpty>
+						GROUP BY 
+							E.GNO
+					) AS MISU_AMT
+		
+				FROM
+					TM_READER_NEWS A
+					, TM_READER_SUGM B 
+				WHERE
+					A.NEWSCD = B.NEWSCD
+					AND
+					A.SEQ = B.SEQ
+					AND
+					A.READNO = B.READNO
+					AND 
+      				A.BOSEQ = B.BOSEQ
+					AND
+					A.BOSEQ &gt; 0
+					AND
+					B.BOSEQ &gt; 0
+					AND 
+					A.SEQ &gt; 0
+					AND 
+					B.SEQ &gt; 0
+					AND 
+					A.READNO &gt; 0
+					AND 
+					B.READNO &gt; 0
+					AND 
+					B.YYMM &gt; 0
+					AND
+					B.YYMM = #YYMM#
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND B.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						A.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						B.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+			) C
+		GROUP BY C.GNO
+		ORDER BY LENGTH(C.GNO),C.GNO
+	</select> 
+	
+
+	 
+	<!-- 통계일람, 당월입금, 총입금현황, 유가현황 (과거월분 포함 실시간 통계) -->
+	<select id="getRealtimeStat" resultClass="java.util.HashMap">
+		SELECT 
+			* 
+		FROM 
+			( 
+			SELECT 
+				<isNotEmpty property="BOSEQ">
+					C.GNO AS GROUPBYTYPE
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ AS GROUPBYTYPE
+				</isEmpty>
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT &lt;=#TOYYMMDD#) AS READTYPECD011							<!-- 일반 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '012' AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS READTYPECD012														<!-- 학생 (지국) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '013' AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS READTYPECD013														<!-- 학생 (본사) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '014' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS READTYPECD014														<!-- 병독 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND (READTYPECD = '015' OR READTYPECD = '017') AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS READTYPECD015														<!-- 교육 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '016' AND SGBGMM &lt;= #SGYYMM#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS READTYPECD016														<!-- 본사직원 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '021' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS READTYPECD021														<!-- 기증 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '022' <isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS READTYPECD022														<!-- 홍보 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM = #SGYYMM1AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_QTY1														<!-- 준유가(1개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM = #SGYYMM2AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_QTY2														<!-- 준유가(2개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM = #SGYYMM3AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_QTY3														<!-- 준유가(3개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM = #SGYYMM4AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_QTY4														<!-- 준유가(4개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM = #SGYYMM5AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_QTY5														<!-- 준유가(5개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM = #SGYYMM6AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_QTY6														<!-- 준유가(6개월) -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM &gt;= #SGYYMM7AFTER#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_QTY7													<!-- 기타 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND SGTYPE = '031'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_ETC_LOSS																						<!-- 결손 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND SGTYPE = '032'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_ETC_FINANCE																					<!-- 재무 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND SGTYPE = '033'<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_ETC_LEAVE																						<!-- 휴독 부수 -->
+				, (SELECT NVL(SUM(QTY),0) FROM TM_READER_NEWS WHERE ( bno!='999' or (bno='999' and stdt &gt; #TOYYMMDD#)) AND READTYPECD = '011' AND SGBGMM &lt;= #SGYYMM# AND NVL(UPRICE/DECODE(QTY,0,NULL,QTY),0) = #CODE_SUGM_AMT#<isNotEmpty property="BOSEQ" prepend=" AND ">GNO = C.GNO AND BOSEQ = #BOSEQ#</isNotEmpty><isEmpty property="BOSEQ" prepend=" AND ">BOSEQ = C.BOSEQ</isEmpty><isNotEmpty property="NEWSCD"><iterate property="NEWSCD" open="(" close=")" conjunction="," prepend=" AND NEWSCD IN">#NEWSCD[]#</iterate></isNotEmpty> AND APLCDT&lt;=#TOYYMMDD#) AS SUM_LIST_PRICE					<!-- 일반독자중 구독료가 정가인 독자 -->
+				, NVL(SUM(CASE WHEN (C.SGBBCD = '044' or (C.SGBBCD != '044' and c.cldt &gt;= #FROMYYMMDD#)) AND C.YYMM = TO_CHAR(ADD_MONTHS(TO_DATE(#SGYYMM#,'YYYYMM'), -1) , 'YYYYMM') THEN C.BILLAMT END),0) AS SUM_MISU_AMT									<!-- 매출액중 미수된 금액 (전월미수)-->
+				, NVL(SUM(CASE WHEN (C.SGBBCD = '044' or (C.SGBBCD != '044' and c.cldt &gt;= #FROMYYMMDD#)) AND C.YYMM &lt; #SGYYMM# THEN C.BILLAMT END),0) AS SUM_ALL_MISU_AMT																				<!-- 매출액중 미수된 금액 (총 전월미수)-->				
+				, NVL(SUM(CASE WHEN C.YYMM &lt; #SGYYMM# AND (c.cldt &gt;= #FROMYYMMDD# or c.cldt is null)  AND C.SGBBCD != '044' THEN C.BILLAMT END),0) AS SUM_MISU_AFTER														<!-- 현재월 이후에 입금된 미수 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND (cldt &gt;= #FROMYYMMDD# or c.cldt is null) THEN C.BILLAMT END),0) AS MONTH_SUGUM																												<!-- 당월수금예정액 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.YYMM = #SGYYMM# AND C.SGBBCD IN ('011','012','013','014','021','022','023','024','088') THEN C.AMT END),0) AS SUM_YUGA_SINSU					<!-- 유가조정액 중 신수 -->            
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.YYMM &lt; #SGYYMM# AND C.SGBBCD IN ('011','012','013','014','021','022','023','024','088') THEN C.AMT END),0) AS SUM_YUGA_MISU					<!-- 유가조정액 중 미수 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD IN ('031','032','033') THEN C.AMT END),0) + NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# THEN C.LOSSAMT END),0) AS SUM_ETC1				<!-- 재무,결손,휴독 금액 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND #SGYYMM# &lt; C.YYMM AND C.SGBBCD IN ('011','012','013','014','021','022','023','024','088') THEN C.AMT END),0) AS SUM_DEPOSIT					<!-- 선입금 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '011' THEN C.AMT END),0) AS SUM_SGBBCD011  																						<!-- 지로 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '012' THEN C.AMT END),0) AS SUM_SGBBCD012  																						<!-- 방문 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '013' THEN C.AMT END),0) AS SUM_SGBBCD013  																						<!-- 통장입금 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '021' THEN C.AMT END),0) AS SUM_SGBBCD021  																						<!-- 자동이체 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '022' THEN C.AMT END),0) AS SUM_SGBBCD022  																						<!-- 카드 -->
+				, NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD IN ('014','023','024','031','032','033','088') THEN C.AMT END),0) + NVL(SUM(CASE WHEN C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# THEN C.LOSSAMT END),0) AS SUM_ETC2 															<!-- 기타 -->
+				, NVL(SUM(CASE WHEN (C.SGBBCD = '044' or (C.SGBBCD != '044' and c.cldt &gt;= #FROMYYMMDD#)) THEN C.BILLAMT END),0) AS SUM_MISU                                                                                                                 <!--미수총계-->
+	      		, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD IN ('031','032','033') THEN C.AMT END),0) + NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# THEN C.LOSSAMT END),0) AS MON_SUM_ETC1		 <!--당월 재무,결손,휴독-->     		
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND  (C.SGBBCD = '044' or (C.SGBBCD != '044' and c.cldt &gt;= #FROMYYMMDD#))  THEN C.BILLAMT END),0) AS MON_SUM_MISU  																						<!--당월 미수총계-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '011' THEN C.AMT END),0) AS MON_SUM_SGBBCD011  															<!--당월 지로-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '012' THEN C.AMT END),0) AS MON_SUM_SGBBCD012  									  					    <!--당월 방문-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '013' THEN C.AMT END),0) AS MON_SUM_SGBBCD013  															<!-- 당월 통장입금-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '021' THEN C.AMT END),0) AS MON_SUM_SGBBCD021  															<!--당월 자동이체-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD = '022' THEN C.AMT END),0) AS MON_SUM_SGBBCD022  															<!-- 당월 카드-->
+				, NVL(SUM(CASE WHEN C.YYMM = #SGYYMM# AND C.CLDT BETWEEN #FROMYYMMDD# AND #TOYYMMDD# AND C.SGBBCD IN ('014','023','024','031','032','033','088') THEN C.AMT END),0) AS MON_SUM_ETC2 									<!--당월 기타-->
+			FROM 
+				(
+					SELECT 
+						A.GNO
+						, A.BOSEQ
+						, A.READTYPECD
+						, A.QTY
+						, A.SGBGMM
+						, A.SGTYPE
+						, A.UPRICE
+						, B.YYMM
+						, B.SGBBCD
+	              		, B.SGYYMM
+	              		, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101' THEN 0 WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') THEN 4500 WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023' THEN 4500*B.BILLQTY ELSE B.BILLAMT END) AS BILLAMT
+	          			, (CASE WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) = '101' THEN 0 WHEN A.SGTYPE='021' AND A.READTYPECD='013' AND B.SGGBCD='021' AND (SELECT TYPE FROM TM_AGENCY WHERE USERID=A.BOSEQ) IN ('102','201','202','203','301') THEN 4500 WHEN A.SGTYPE='023' AND A.READTYPECD='016' AND B.SGGBCD='023' THEN 4500*B.BILLQTY ELSE B.AMT END) AS AMT
+	              		, B.LOSSAMT
+	              		, B.CLDT
+					FROM
+						TM_READER_NEWS A
+						, TM_READER_SUGM B 
+				WHERE
+					A.NEWSCD = B.NEWSCD
+					AND
+					A.SEQ = B.SEQ
+					AND
+					A.READNO = B.READNO
+					AND 
+					A.BOSEQ = B.BOSEQ
+					AND 
+					A.SEQ &gt; 0
+					AND 
+					B.SEQ &gt; 0
+					AND 
+					A.READNO &gt; 0
+					AND 
+					B.READNO &gt; 0
+					AND 
+					B.YYMM &gt; 0
+					<!-- 
+					AND
+					B.SGYYMM = #SGYYMM#
+					AND
+					A.BNO != '999'
+					 -->
+					AND 
+					A.GNO IS NOT NULL
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND A.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="NEWSCD">
+						<iterate property="NEWSCD" open="(" close=")" conjunction="," prepend="AND B.NEWSCD IN">
+							#NEWSCD[]#
+						</iterate>
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						A.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+					<isNotEmpty property="BOSEQ" prepend=" AND">
+						B.BOSEQ = #BOSEQ#
+					</isNotEmpty>
+				) C
+			GROUP BY
+				<isNotEmpty property="BOSEQ">
+					C.GNO 
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ
+				</isEmpty>
+			ORDER BY
+				<isNotEmpty property="BOSEQ">
+					LENGTH(C.GNO),C.GNO 
+				</isNotEmpty>
+				<isEmpty property="BOSEQ">
+					C.BOSEQ
+				</isEmpty>
+			) D
+		WHERE
+			1=1
+			<isEqual property="TYPE" compareValue="paymentAdjustments" prepend=" AND">
+				(D.SUM_MISU_AMT + D.SUM_YUGA_SINSU + D.MON_SUM_ETC1 + D.MON_SUM_MISU + D.SUM_YUGA_SINSU + D.MON_SUM_ETC1 + D.MON_SUM_MISU + D.MON_SUM_SGBBCD011 + D.MON_SUM_SGBBCD012 + D.MON_SUM_SGBBCD013 + D.MON_SUM_SGBBCD021 + D.MON_SUM_SGBBCD022 + D.MON_SUM_ETC2) &gt; 0
+			</isEqual> 
+	</select>
+	
+	
+	
+	
+	<insert id="insertStat">
+		INSERT INTO TM_STAT_PERUSE 
+			SELECT 
+			    $YYMM$ AS YYMM
+			    , C.BOSEQ
+			    , C.NEWSCD
+			    , C.GNO
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM &lt;= #YYMM# AND C.YYMM = #YYMM# THEN C.QTY END),0) AS READTYPECD011							<!-- 일반 -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '012' THEN C.QTY END),0) AS READTYPECD012																		<!-- 학생 (지국) --> 
+				, NVL(SUM(CASE WHEN C.READTYPECD = '013' THEN C.QTY END),0) AS READTYPECD013																		<!-- 학생 (본사) -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '014' THEN C.QTY END),0) AS READTYPECD014																		<!-- 병독 -->
+				, NVL(SUM(CASE WHEN (C.READTYPECD = '015' OR C.READTYPECD = '017') THEN C.QTY END),0) AS READTYPECD015																		<!-- 교육 --> 
+				, NVL(SUM(CASE WHEN C.READTYPECD = '021' THEN C.QTY END),0) AS READTYPECD021																		<!-- 기증 --> 
+				, NVL(SUM(CASE WHEN C.READTYPECD = '022' THEN C.QTY END),0) AS READTYPECD022																		<!-- 홍보 -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM = #SGYYMM1AFTER# AND C.YYMM = #SGYYMM1AFTER# THEN C.QTY END),0) AS SUM_QTY1														<!-- 준유가(1개월) -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM = #SGYYMM2AFTER# AND C.YYMM = #SGYYMM2AFTER# THEN C.QTY END),0) AS SUM_QTY2														<!-- 준유가(2개월) -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM = #SGYYMM3AFTER# AND C.YYMM = #SGYYMM3AFTER# THEN C.QTY END),0) AS SUM_QTY3														<!-- 준유가(3개월) -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM = #SGYYMM4AFTER# AND C.YYMM = #SGYYMM4AFTER# THEN C.QTY END),0) AS SUM_QTY4														<!-- 준유가(4개월) -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM = #SGYYMM5AFTER# AND C.YYMM = #SGYYMM5AFTER# THEN C.QTY END),0) AS SUM_QTY5														<!-- 준유가(5개월) -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM = #SGYYMM6AFTER# AND C.YYMM = #SGYYMM6AFTER# THEN C.QTY END),0) AS SUM_QTY6														<!-- 준유가(6개월) -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM &gt;= #SGYYMM7AFTER# AND C.YYMM = #SGYYMM7AFTER# THEN C.QTY END),0) AS SUM_QTY7													<!-- 기타 --> 
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '031' THEN C.QTY END),0) AS SUM_ETC_LOSS																							<!-- 결손 부수 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '032' THEN C.QTY END),0) AS SUM_ETC_FINANCE																						<!-- 재무 부수 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '033' THEN C.QTY END),0) AS SUM_ETC_LEAVE																							<!-- 휴독 부수 -->
+				, NVL(SUM(CASE WHEN C.READTYPECD = '011' AND C.SGBGMM &lt;= #YYMM# AND C.YYMM = #YYMM# AND C.UPRICE/C.QTY = #CODE_SUGM_AMT# THEN C.QTY END),0) AS SUM_LIST_PRICE						<!--일반독자중 구독료가 정가인 독자 -->
+				, NVL(SUM(CASE WHEN C.SGBBCD = '044' AND C.YYMM = #SGYYMM1BEFORE# THEN C.BILLAMT END),0) AS SUM_MISU_AMT																				<!-- 매출액중 미수된 금액 (전월미수) -->
+			    , NVL(SUM(CASE WHEN C.SGBBCD = '044' AND C.YYMM &lt; #YYMM# THEN C.BILLAMT END),0) AS SUM_ALL_MISU_AMT																					<!-- 매출액중 미수된 금액 (총전월미수) -->
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# THEN C.BILLAMT END),0) AS MONTH_SUGUM																												<!-- 당월수금예정액 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.YYMM = #YYMM# AND C.SGBBCD IN ('011','012','013','014','021','022','023','024') THEN C.AMT END),0) AS SUM_YUGA_SINSU						<!-- 유가조정액 중 신수 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.YYMM &lt; #YYMM# AND C.SGBBCD IN ('011','012','013','014','021','022','023','024') THEN C.AMT END),0) AS SUM_YUGA_MISU						<!-- 유가조정액 중 미수 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD IN ('031','032','033') THEN C.AMT END),0) AS SUM_ETC																					<!-- 재무,결손,휴독 금액 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND #YYMM# &lt; C.YYMM AND C.SGBBCD IN ('011','012','013','014','021','022','023','024') THEN C.AMT END),0) AS SUM_DEPOSIT						<!-- 선입금 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '011' THEN C.AMT END),0) AS SUM_SGBBCD011  																						<!-- 지로 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '012' THEN C.AMT END),0) AS SUM_SGBBCD012  																						<!-- 방문 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '013' THEN C.AMT END),0) AS SUM_SGBBCD013  																						<!-- 통장입금 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '021' THEN C.AMT END),0) AS SUM_SGBBCD021  																						<!-- 자동이체 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD = '022' THEN C.AMT END),0) AS SUM_SGBBCD022  																						<!-- 카드 -->
+				, NVL(SUM(CASE WHEN C.SGYYMM = #YYMM# AND C.SGBBCD IN ('014','023','024','031','032','033') THEN C.AMT END),0) AS SUM_ETC2 																<!-- 기타 -->
+				, NVL(SUM(CASE WHEN C.SGBBCD = '044' THEN C.BILLAMT END),0) AS SUM_MISU  																												<!-- 미수총계 -->
+				
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# AND C.SGYYMM = #YYMM# AND C.SGBBCD IN ('031','032','033') THEN C.AMT END),0) AS MON_SUM_ETC1 		 												<!-- 당월 재무,결손,휴독 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# AND C.SGBBCD = '044' THEN C.BILLAMT END),0) AS MON_SUM_MISU  																						<!-- 당월 미수총계 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# AND C.SGYYMM = #YYMM# AND C.SGBBCD = '011' THEN C.AMT END),0) AS MON_SUM_SGBBCD011  																<!-- 당월 지로 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# AND C.SGYYMM = #YYMM# AND C.SGBBCD = '012' THEN C.AMT END),0) AS MON_SUM_SGBBCD012  																<!-- 당월 방문 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# AND C.SGYYMM = #YYMM# AND C.SGBBCD = '013' THEN C.AMT END),0) AS MON_SUM_SGBBCD013  																<!-- 당월 통장입금 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# AND C.SGYYMM = #YYMM# AND C.SGBBCD = '021' THEN C.AMT END),0) AS MON_SUM_SGBBCD021  																<!-- 당월 자동이체 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# AND C.SGYYMM = #YYMM# AND C.SGBBCD = '022' THEN C.AMT END),0) AS MON_SUM_SGBBCD022  																<!-- 당월 카드 -->
+				, NVL(SUM(CASE WHEN C.YYMM = #YYMM# AND C.SGYYMM = #YYMM# AND C.SGBBCD IN ('014','023','024','031','032','033') THEN C.AMT END),0) AS MON_SUM_ETC2 										<!--당월 기타 -->
+			FROM 
+				(
+					SELECT 
+						B.YYMM
+				        , A.BOSEQ
+				        , A.NEWSCD
+				        , A.GNO
+						, A.READTYPECD
+						, A.QTY
+						, A.SGBGMM
+						, A.SGTYPE
+						, A.UPRICE
+						, B.SGBBCD
+				        , B.SGYYMM
+				        , B.BILLAMT
+				        , B.AMT
+					FROM
+						TM_READER_NEWS A
+						, TM_READER_SUGM B 
+				WHERE
+					A.NEWSCD = B.NEWSCD
+					AND
+					A.SEQ = B.SEQ
+					AND
+					A.READNO = B.READNO
+					AND
+					A.BOSEQ = #BOSEQ#
+					AND
+					B.BOSEQ = #BOSEQ#
+					AND 
+					A.BOSEQ = B.BOSEQ
+					AND
+					A.BOSEQ &gt; 0
+					AND
+					B.BOSEQ &gt; 0
+					AND 
+					A.SEQ &gt; 0
+					AND 
+					B.SEQ &gt; 0
+					AND 
+					A.READNO &gt; 0
+					AND 
+					B.READNO &gt; 0
+					AND 
+					B.YYMM &gt; 0
+					AND
+					A.BNO != '999'
+				) C
+			GROUP BY C.BOSEQ, C.NEWSCD, C.GNO
+			ORDER BY  C.BOSEQ, C.NEWSCD, LENGTH(C.GNO),C.GNO
+	</insert>
+	
+	<!-- 정가독자조회 -->
+	<select id="getReaderTypeListOfCorrectPrice" resultClass="java.util.HashMap">
+		 SELECT K.uprice AS UPRICE
+		        , SUM(K.QTY) AS QTY
+		  FROM (
+					SELECT uprice
+					        , qty
+					 FROM TM_READER_NEWS
+					WHERE newscd = '100'
+					   AND bno != '999'
+					   AND readtypecd = '011'
+					   AND BOSEQ = #boseq#
+					   AND NVL(UPRICE/DECODE(QTY,0,NULL,QTY),0) = '15000'
+			  UNION ALL
+				    SELECT uprice
+					        , qty
+					 FROM TM_READER_NEWS
+					WHERE newscd = '100'
+					   AND bno != '999'
+					   AND readtypecd IN ('012', '013', '015', '016', '017')
+					   AND BOSEQ = #boseq#
+					)K
+		  GROUP BY K.uprice
+	</select>
+	
+	<!-- 비정가독자조회 -->
+	<select id="getReaderTypeListOfIncorrectPrice" resultClass="java.util.HashMap">
+		 	 SELECT K.uprice AS UPRICE
+		 	         , SUM(K.QTY) AS QTY
+			  FROM (
+						SELECT uprice
+						        , qty
+						 FROM TM_READER_NEWS
+						WHERE newscd = '100'
+						   AND bno != '999'
+						   AND readtypecd = '011'
+						   AND BOSEQ = #boseq#
+						   AND NVL(UPRICE/DECODE(QTY,0,NULL,QTY),0) != '15000'
+				  UNION ALL
+						SELECT uprice
+						        , qty
+						 FROM TM_READER_NEWS
+						WHERE newscd = '100'
+						   AND bno != '999'
+						   AND readtypecd not in ('011', '012', '013', '015', '016', '017')
+						   AND BOSEQ = #boseq#
+						)K
+			 GROUP BY K.uprice
+	</select>
+	
+	<!-- 독자현황 조회 -->
+	<select id="getReaderTypeListOLD"  resultClass="java.util.HashMap">
+		 SELECT S.UPRICE
+			     , SUM(S.QTY) AS QTY
+		  FROM (
+			      SELECT NVL(UPRICE/DECODE(QTY,0,NULL,QTY),0) AS UPRICE
+			              , QTY
+			        FROM tm_Reader_news 
+			       WHERE BOSEQ = #boseq#
+			          AND BNO != '999'
+			   		  AND QTY > 0
+			   		  AND NEWSCD = '100'
+					<isNotEmpty property="opStartDate" prepend=" AND">
+					 	HJDT BETWEEN #opStartDate# AND #opEndDate#
+					 </isNotEmpty>
+		  )S 
+		 GROUP BY S.UPRICE
+		 ORDER BY S.UPRICE
+	</select>
+	
+	<!-- 독자현황 조회 -->
+	<select id="getReaderTypeList"  resultClass="java.util.HashMap">
+		 SELECT S2.UPRICE
+			     , SUM(S2.QTY) AS QTY
+			  FROM (
+			      SELECT CASE WHEN MOD(ROUND(UPRICE, 0),500) &lt; 500 THEN (ROUND(UPRICE/500))*500
+			                  WHEN MOD(ROUND(UPRICE, 0),500) &lt; 500 THEN (ROUND(UPRICE/500)+1)*500
+			             ELSE 0
+			             END AS UPRICE
+			             , QTY
+			        FROM (
+			        SELECT NVL(UPRICE/DECODE(QTY,0,NULL,QTY),0) AS UPRICE
+			             , QTY
+			          FROM tm_Reader_news 
+			         WHERE BOSEQ = #boseq#
+			            AND BNO != '999'
+			            AND QTY > 0
+			            AND NEWSCD = '100'
+						<isNotEmpty property="opStartDate" prepend=" AND">
+					 		HJDT BETWEEN #opStartDate# AND #opEndDate#
+						</isNotEmpty>
+			         )S
+			  )S2
+			GROUP BY S2.UPRICE
+			ORDER BY S2.UPRICE 
+	</select>
+
+</sqlMap>

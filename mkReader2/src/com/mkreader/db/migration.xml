@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="migration">
+	
+	<select id="getTmReaderNewsList" resultClass="java.util.HashMap">
+		SELECT READNO FROM tm_reader_news_tmp where sgtype = '021'
+	</select>
+	
+	<update id="updateTmRederNews">
+		update tm_reader_news_tmp 
+		set STDT = to_char(sysdate,'YYYYMMDD'), STSAYOU = '099' 
+		where sgtype = '021' and readno = #READNO#
+	</update>
+	
+	<update id="updateTmRederSugm">
+		update tm_reader_sugm_tmp set sgbbcd = '031' 
+		where sgbbcd = '044' and readno = #READNO#
+	</update>
+	
+	<select id="getTblUsersList" resultClass="java.util.HashMap">
+		SELECT A.*, to_char(A.birthd,'YYYYMMDD') as BIRTHDSTR, to_char(A.SDATE,'YYYYMMDD') as SDATESTR FROM tbl_users_tmp A order by A.rdate
+	</select>
+	
+	<select id="getTblUsersStuList" resultClass="java.util.HashMap">
+		SELECT A.*, to_char(A.birthd,'YYYYMMDD') as BIRTHDSTR, to_char(A.SDATE,'YYYYMMDD') as SDATESTR FROM tbl_users_stu_tmp A order by A.rdate
+	</select>
+	
+	<select id="getTmReaderMaxReadno" resultClass="int">
+		select nvl(max(readno),0)+1 from tm_reader_tmp
+	</select>
+	
+	<insert id="insertTmReader">
+		insert into tm_reader_tmp (
+			READNO,PRN,ERNNO,BIDT,INDT
+		) values(
+			#MAXREADNO#, #JUMINNUM#, #SAUPJA#, #BIRTHDSTR#, #RDATE#
+		);
+	</insert>
+	
+	<insert id="insertTmReaderNews_ilban">
+		insert into tm_reader_news_tmp (
+			READNO,NEWSCD,SEQ,BOSEQ,BOREADNO,GNO,BNO,READTYPECD,
+			READNM,HOMETEL1,HOMETEL2,HOMETEL3,MOBILE1,MOBILE2,MOBILE3,
+			DLVZIP,DLVADRS1,DLVADRS2,SGTYPE,
+			UPRICE,QTY,
+			SGBGMM,SGCYCLE,APLCDT,INDT
+		) values (
+			#MAXREADNO#, '100', '0001', #JIKUK#, #READNO#, '200', '000', '011', 
+			#USERNAME#,#HOMETEL1#,#HOMETEL2#,#HOMETEL3#,#MOBILE1#,#MOBILE2#,#MOBILE3#,
+			#ZIP#, #ADDR1#, #ADDR2#, '021', 
+			#BANK_MONEY#, #BUSU#, 
+			#SDATESTR6#, 1, #SDATESTR8#, #RDATE#
+		);
+	</insert>
+	
+	<insert id="insertTmReaderNews_haksaeng">
+		insert into tm_reader_news_tmp (
+			READNO,NEWSCD,SEQ,BOSEQ,BOREADNO,GNO,BNO,READTYPECD,
+			READNM,HOMETEL1,HOMETEL2,HOMETEL3,MOBILE1,MOBILE2,MOBILE3,
+			DLVZIP,DLVADRS1,DLVADRS2,SGTYPE,
+			UPRICE,QTY,
+			SGBGMM,SGCYCLE,APLCDT,INDT
+		) values (
+			#MAXREADNO#, '100', '0001', #JIKUK#, #READNO#, '200', '000', '013', 
+			#USERNAME#,#HOMETEL1#,#HOMETEL2#,#HOMETEL3#,#MOBILE1#,#MOBILE2#,#MOBILE3#,
+			#ZIP#, #ADDR1#, #ADDR2#, '021', 
+			#BANK_MONEY#, #BUSU#, 
+			#SDATESTR6#, 1, #SDATESTR8#, #RDATE#
+		);
+	</insert>
+	
+	<update id="updateTblUsers">
+		update tbl_users_tmp set readno = #READNO# where numid = #NUMID#
+	</update>
+	
+	<update id="updateTblUsersStu">
+		update tbl_users_stu_tmp set readno = #READNO# where numid = #NUMID#
+	</update>
+	
+</sqlMap>

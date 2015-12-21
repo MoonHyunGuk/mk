@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<project name="project" default="deploy">
+
+	<target name="init">
+		<echo message="init..." />
+	</target>
+
+	<target name="compile" depends="init">
+		<echo message="Compiling.........." />
+	</target>
+	
+	<target name="deploy" depends="compile">
+		<echo message="Deploying..." />
+		
+		<copy todir="D:\Distribute\mk_reader" >
+			<fileset dir="wwwroot">
+			
+				<include name="**/*.class" />
+				<include name="**/*.properties" />
+				<include name="**/*.xml" />
+				<include name="**/*.jsp" />
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.jpg" />
+				<include name="**/*.png" />
+				<include name="**/*.gif" />
+				<include name="**/*.swf" />
+				<include name="**/*.flv" />
+				<include name="**/*.tld" />
+				<include name="**/*.vm" />
+				<include name="**/*.pdf" />
+				<include name="**/*.jar" />
+			</fileset>
+		</copy>
+		
+		<!--
+		<ftp server="218.144.58.3" port="22" remotedir="/home/tmax/mkreadernew" 
+			userid="root" password="mk11260306" binary="yes" verbose="yes" depends="true" newer="true">
+			<fileset dir="wwwroot">
+				<include name="**/*.xml" />
+				<include name="**/*.jsp" />
+				<include name="**/*.class" />
+				<include name="**/*.properties" />
+
+				<include name="**/*.css" />
+				<include name="**/*.js" />
+				<include name="**/*.jpg" />
+				<include name="**/*.png" />
+				<include name="**/*.gif" />
+
+				<exclude name="**/applicationContext.xml" />
+				<exclude name="**/swf/**" />
+				<exclude name="**/*.jar" />
+				<exclude name="**/upload/**" />
+				<exclude name="**/fckeditor/**" />
+				<exclude name="**/html/**" />
+				
+			</fileset>
+		</ftp>
+		-->
+		
+	</target>
+	
+</project>

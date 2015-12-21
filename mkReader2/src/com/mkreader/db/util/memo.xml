@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="util.memo">
+	
+	<!-- 독자별 메모 리스트(최근 4건) -->
+	<select id="getMemoList" resultClass="java.util.HashMap">
+		SELECT MEMO
+		       , CREATE_DATE
+		       , CREATE_ID
+		 FROM (
+					 SELECT MEMO
+						     , TO_CHAR(CREATE_DATE, 'YYYY-MM-DD hh24:mi:ss') AS CREATE_DATE
+						     , CREATE_ID 
+						  FROM tm_readers_memo
+						 WHERE USE_YN = 'Y'
+						    AND READNO = (SELECT READNO FROM tbl_users WHERE NUMID = #numId#)
+						 ORDER BY CREATE_DATE DESC 
+					)
+		WHERE ROWNUM &lt; 5 
+	</select>
+	
+	<!-- 독자별 메모 리스트-학생독자(최근 4건) -->
+	<select id="getMemoListForStu" resultClass="java.util.HashMap">
+		SELECT MEMO
+		       , CREATE_DATE
+		       , CREATE_ID
+		 FROM (	
+				 SELECT MEMO
+					     , TO_CHAR(CREATE_DATE, 'YYYY-MM-DD hh24:mi:ss') AS CREATE_DATE
+					     , CREATE_ID 
+					  FROM tm_readers_memo
+					 WHERE USE_YN = 'Y'
+					    AND READNO = (SELECT READNO FROM tbl_users_stu WHERE NUMID = #numId#)
+					 ORDER BY CREATE_DATE DESC 
+					)
+		WHERE ROWNUM &lt; 5 
+	</select>
+	
+	<!-- 독자별 메모 리스트 -->
+	<select id="getMemoListByReadno" resultClass="java.util.HashMap">
+		 SELECT MEMO
+			     , TO_CHAR(CREATE_DATE, 'YYYY-MM-DD hh24:mi:ss') AS CREATE_DATE
+			     , CREATE_ID 
+			  FROM tm_readers_memo
+			 WHERE USE_YN = 'Y'
+			    AND READNO = #READNO#
+			 ORDER BY CREATE_DATE DESC 
+	</select>
+	
+	<!-- 독자별 메모 리스트(최근 4건) -->
+	<select id="getMemoRecently" resultClass="java.util.HashMap">
+		 SELECT MEMO
+		       , CREATE_DATE
+		       , CREATE_ID
+		 FROM (	
+				 SELECT MEMO
+					     , TO_CHAR(CREATE_DATE, 'YYYY-MM-DD hh24:mi:ss') AS CREATE_DATE
+					     , CREATE_ID 
+					  FROM tm_readers_memo
+					 WHERE USE_YN = 'Y'
+					    AND READNO = #READNO#
+					 ORDER BY CREATE_DATE DESC 
+					)
+		WHERE ROWNUM &lt; 5 
+	</select>
+	
+	<!-- 독자별 메모 리스트(최근 4건) -->
+	<select id="getAllMemoList" resultClass="java.util.HashMap">
+		 SELECT MEMO
+		       , CREATE_DATE
+		       , CREATE_ID
+		 FROM (	
+				 SELECT MEMO
+					     , TO_CHAR(CREATE_DATE, 'YYYY-MM-DD hh24:mi:ss') AS CREATE_DATE
+					     , CREATE_ID 
+					  FROM tm_readers_memo
+					 WHERE USE_YN = 'Y'
+					    AND READNO = #READNO#
+					 ORDER BY CREATE_DATE DESC 
+					)
+	</select>
+	
+	<!-- 메모등록 -->
+	<insert id="insertMemo">
+		<selectKey keyProperty="SEQ" resultClass="int" type="pre">
+			SELECT NVL(MAX(SEQ), 0)+1 FROM tm_readers_memo WHERE READNO = #READNO#
+		</selectKey>
+		 INSERT INTO tm_readers_memo 
+		 	(READNO, SEQ, MEMO, CREATE_DATE, CREATE_ID, USE_YN)
+		VALUES 
+			(#READNO#, #SEQ#, #MEMO#, SYSDATE, #CREATEID#, 'Y')  
+	 </insert>
+	 
+</sqlMap>

@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="reader.common">
+	<!-- 신문 코드 조회 -->	
+	<select id="retrieveNewsList" resultClass="java.util.HashMap">
+	SELECT 
+		A.SERIAL SERIAL,
+		A.NEWSCD CODE,
+		B.CNAME CNAME,
+		B.YNAME YNAME
+	FROM 
+		TM_AGENCY_NEWS A, TC_COMMON B
+	WHERE 
+		A.NEWSCD = B.CODE
+		AND A.SERIAL = #agency_serial#
+		AND B.USEYN = 'Y'
+		AND B.CDCLSF = '100'
+		ORDER BY B.SORTFD, B.CNAME
+	</select>
+	
+	<!-- 신문 코드 조회 -->	
+	<select id="retrieveNewsListForAdmin" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME
+	FROM 
+		TC_COMMON 
+	WHERE USEYN = 'Y'
+	   AND CDCLSF = '100'
+    ORDER BY SORTFD, CNAME
+	</select>
+	
+	<!-- 독자 유형 조회 -->	
+	<select id="retrieveReaderType" resultClass="java.util.HashMap">
+	SELECT 
+		CNAME, CODE, YNAME 
+	FROM 
+		TC_COMMON 
+	WHERE 
+		CDCLSF = '115'
+		AND USEYN = 'Y'
+		ORDER BY CODE 
+	</select>
+	
+	<!-- 주거 유형 조회 -->	
+	<select id="retrieveRsdTypeCd" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '114'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 직종 유형 조회 -->	
+	<select id="retrieveTaskCd" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '117'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 관심 유형 조회 -->	
+	<select id="retrieveIntFldCd" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '116'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 배달 유형 조회 -->	
+	<select id="retrieveDlvTypeCd" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '121'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 신청 경로 조회 -->	
+	<select id="retrieveHjPathCd" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '013'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 배달 장소 조회 -->	
+	<select id="retrieveDlvPosiCd" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '120'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 수금 방법 조회 -->	
+	<select id="retrieveSgType" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '119'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 자매지 조회 -->	
+	<select id="retrieveBnsBookCd" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '101'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 판촉물 조회 -->	
+	<select id="retrieveSpgCd" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '130'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 해지사유 조회 -->	
+	<select id="retrieveStSayou" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '118'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 신문 명 조회 -->	
+	<select id="retrieveNewsName" resultClass="String">
+	SELECT 
+		CNAME
+	FROM 
+		TC_COMMON 
+	WHERE 
+		CDCLSF = '100'
+		AND CODE = #newsCd#
+	</select>
+
+	<!-- 관리자 담당 지국 목록 조회 -->
+	<select id="agencyList" resultClass="java.util.HashMap">
+	SELECT 
+		SERIAL , 
+		A.NAME , 
+		A.MANAGER 
+	FROM 
+		TM_AGENCY A , TMP_USER B 
+	WHERE 
+		A.MANAGER = B.NAME
+		AND B.ID = #adminId#
+		ORDER BY A.NAME
+	</select>
+	
+	<!-- 관리자 슈퍼 권한 -->
+	<select id="adminAgencyList" resultClass="java.util.HashMap">
+	SELECT 
+		SERIAL , 
+		NAME , 
+		MANAGER 
+	FROM 
+		TM_AGENCY 
+		ORDER BY NAME
+	</select>
+	
+	<!-- 전체 지국 조회 -->
+	<select id="agencyAllList" resultClass="java.util.HashMap">
+	SELECT 
+		* 
+	FROM 
+		TM_AGENCY 
+	WHERE 
+		SERIAL IS NOT NULL 
+		ORDER BY NAME
+	</select>
+	
+	<!-- 전체 지국 조회(살아있는 지국만) -->
+	<select id="agencyListByAlive" resultClass="java.util.HashMap">
+	SELECT 
+		* 
+	FROM 
+		TM_AGENCY 
+	WHERE 
+		SERIAL IS NOT NULL 
+	   AND
+	    USEAGP='Y'
+	   AND
+	    MANAGER IS NOT NULL
+		ORDER BY NAME
+	</select>
+	
+	
+	<!-- 전체 지국 조회(살아있는 지국만) -->
+	<select id="agencyListByLocalCode" resultClass="java.util.HashMap">
+	SELECT 
+		* 
+	FROM 
+		TM_AGENCY 
+	WHERE 
+	    SUBSTR(LOCALCODE, 5, 2) IN ( $localCode$ )
+	   AND
+		SERIAL IS NOT NULL 
+	   AND
+	    USEAGP='Y'
+	   AND
+	    MANAGER IS NOT NULL
+		ORDER BY NAME
+	</select>
+	
+	<!-- 전체 지국 조회(살아있는 지국만) -->
+	<select id="getAgencyCodeByAlive" resultClass="String">
+	SELECT 
+		USERID
+	FROM 
+		TM_AGENCY 
+	WHERE 
+		SERIAL IS NOT NULL 
+	   AND
+	    USEAGP='Y'
+	   AND 
+	    NAME = #boSeqNm#
+	   AND
+	    MANAGER IS NOT NULL
+		ORDER BY NAME
+	</select>
+	
+	
+	<!-- 전체 지국 조회(살아있는 지국만) -->
+	<select id="getAgencyCodeByLocalCode" resultClass="String">
+	SELECT 
+		USERID 
+	FROM 
+		TM_AGENCY 
+	WHERE 
+	    SUBSTR(LOCALCODE, 5, 2) IN ( $localCode$ )
+	   AND 
+	    NAME = #boSeqNm#
+	   AND
+		SERIAL IS NOT NULL 
+	   AND
+	    USEAGP='Y'
+	   AND
+	    MANAGER IS NOT NULL
+		ORDER BY NAME
+	</select>
+	
+		<!-- 전체 지국 조회(살아있는 지국만) -->
+	<select id="agencyListByLocalCodeForSelectBox" resultClass="java.util.HashMap">
+	SELECT * FROM(
+	SELECT USERID AGENCYID,NAME AGENCYNM,'' AS SUBSEQ
+	FROM 
+		TM_AGENCY 
+	WHERE SERIAL IS NOT NULL 
+	   AND USEAGP='Y'
+	   AND MANAGER IS NOT NULL
+	   AND USERID != '52150'
+	UNION ALL
+     SELECT A.USERID AGENCYID,A.NAME||'('||B.SUBNAME||')' AGENCYNM,B.SUBSEQ AS SUBSEQ
+	FROM 
+		TM_AGENCY A,TM_AGENCY_SUB B
+	WHERE
+    	A.SERIAL=B.BOSEQ
+       AND A.SERIAL IS NOT NULL 
+	   AND A.USEAGP='Y'
+	   AND A.MANAGER IS NOT NULL
+	   AND A.USERID != '52150') ORDER BY AGENCYNM
+	</select>
+	
+	<!-- 지역번호 조회 -->	
+	<select id="retrieveAreaCode" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '015'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 핸도픈 앞번호 조회 -->	
+	<select id="retrieveMobileCode" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '016'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 은행 코드 조회 -->
+	<select id="bankInfo" resultClass="java.util.HashMap">
+		SELECT
+			BANKNUM,
+			BANKNAME
+		FROM
+			TBL_BANK
+		WHERE BANKNAME IS NOT NULL
+	</select>
+	
+	<!-- 은행 코드 조회(독자용)-->
+	<select id="bankInfoForCustomer" resultClass="java.util.HashMap">
+		SELECT
+			BANKNUM,
+			BANKNAME
+		FROM
+			TBL_BANK
+		WHERE BANKNAME IS NOT NULL
+		   AND USEYN = 'Y'
+		ORDER BY  BANKNAME
+	</select>
+	
+	<!-- 회사명 조회 -->	
+	<select id="retrieveCompany" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '9000'
+		ORDER BY CODE
+	</select>
+	
+	<!-- 부서명 조회 -->	
+	<select id="retrieveOffice" resultClass="java.util.HashMap">
+	SELECT 
+		CODE,
+		CNAME,
+		YNAME
+	FROM 
+		TC_COMMON
+	WHERE 
+		USEYN = 'Y'
+		AND CDCLSF = '9001'
+		AND RESV1 = #resv1#
+		ORDER BY CNAME
+	</select>
+	
+	<!-- 담당자조회 -->
+	<select id="selectManagerList" resultClass="java.util.HashMap">
+		 SELECT *
+          FROM tmp_user
+         WHERE COMPCD IN ('82104', '82105', '82106')
+            AND USEYN='Y'
+	</select>	
+</sqlMap>

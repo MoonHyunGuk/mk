@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="management.abcManage">
+	<!-- 신문코드 조회 -->
+	<select id="selectNewsCode" resultClass="String">
+		 SELECT CODE 
+		  FROM tc_common 
+		 WHERE CDCLSF='100'
+		   AND USEYN = 'Y'
+		   AND YNAME LIKE '%'||#newsNm#||'%'
+	</select>
+	
+	<!-- 수금코드 조회 -->
+	<select id="selectSugmCode" resultClass="String">
+		 SELECT CODE 
+		  FROM tc_common 
+		 WHERE CDCLSF='119'
+		   AND USEYN = 'Y'
+		   AND CNAME LIKE '%'||#sgtypeNm#||'%'
+	</select>
+	
+	<!-- 구독정보  생성 -->
+	<insert id="inserTmreaderNews">
+		INSERT INTO TM_READER_NEWS
+			(readNo, newsCd, seq, boSeq, boReadNo, gno, bno, sno, readTypeCd, readNm, offiNm, homeTel1, homeTel2, homeTel3, mobile1, mobile2, mobile3,
+			dlvZip, dlvAdrs1, dlvAdrs2, dlvStrNm, dlvStrNo, aptCd, aptDong, aptHo, sgType, sgInfo, sgTel1, sgTel2, sgTel3, uPrice, qty, rsdTypeCd, dlvTypeCd,
+			dlvPosiCd, hjPathCd, hjTypeCd, hjPsregCd, hjPsnm, hjDt, sgBgmm, sgEdmm, sgCycle, stdt, stsayou, aplcDt, aplcNo, remk, indt, inps, chgDt, chgPs,
+			spgCd, bnsBookCd, RECEIPT, NEWADDR, BDMNGNO)
+		values
+			((SELECT LPAD(MAX(readno)+1, 9, 0) FROM TM_READER_NEWS WHERE SUBSTR(#hjdt#, 3, 2) =  SUBSTR(readno, 0, 2) ), #newsCd#, '0001', #boseq#, '', #gno#, DECODE(#stdt#, '', #bno#, '999'), '', '011', #readNm#, '', #tel1#, #tel2#, #tel3#,
+			#mp1#, #mp2#, #mp3#, #zipcode#, #addr1#, #addr2#, '', '', '', '', '', #sgtype#, '', 
+			'', '', '', #uPrice#, #qty#, '', '', '', '', 'ABC', '', '', #hjdt#,
+			SUBSTR(#hjdt#,0, 6), '', '1', #stdt#, DECODE(#stdt#, '', '', '099'), #hjdt#, '', #remk#, sysdate, 'SYSTEM', sysdate, 'SYSTEM', '', '', '', '', '')
+	</insert>
+	
+	<!-- 수금가져올 독자 조회 -->
+	<select id="selectGetSugmReaderList" resultClass="java.util.HashMap">
+		 SELECT READNO
+			     , READNM
+			     , SGTYPENM
+			     , INDT
+			     , TOTAMT
+			     , UPRICE
+			     , QTY
+		 FROM (
+				  SELECT READNO
+				         , READNM
+				         , UPRICE
+				         , QTY
+				         , (SELECT CNAME FROM TC_COMMON WHERE CDCLSF='119' AND CODE = T.SGTYPE) AS SGTYPENM
+				         , (SELECT TO_CHAR(INDT, 'YYYY-MM-DD') FROM TM_READER_NEWS WHERE READNO = T.READNO AND NEWSCD='100' AND BOSEQ=#stopBoseq# AND SEQ='0001') AS INDT
+				         , (SELECT SUM(NVL(AMT,0)) FROM TM_READER_SUGM WHERE READNO = T.READNO AND NEWSCD='100' AND BOSEQ=#stopBoseq# AND YYMM BETWEEN 201312 AND 201412) AS TOTAMT
+				      FROM (    
+				     SELECT READNO
+				         , READNM
+				         , SGTYPE
+				         , SUM(UPRICE) AS UPRICE
+				         , SUM(QTY) AS QTY
+				      FROM TM_READER_NEWS A
+				     WHERE BOSEQ = #stopBoseq#
+				       AND NEWSCD = '100' 
+				       AND SGTYPE IN ($sgTypeList$)
+				     GROUP BY READNO, READNM, SGTYPE
+				     )T
+				     ORDER BY TOTAMT desc, READNO
+				)T2
+			WHERE T2.TOTAMT > 0
+	</select>
+	
+	<!-- abc지국 중지독자 조회 -->
+	<select id="selectStopReaderListFromAbcJikuk" resultClass="java.util.HashMap">
+		 SELECT RNUM
+		         , READNO
+			     , SEQ
+			     , READTYPECD
+			     , READNM
+			     , UPRICE
+			     , QTY
+			     , TO_CHAR(TO_DATE(HJDT, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS HJDT
+     			 , TO_CHAR(TO_DATE(STDT, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS STDT
+			     , DAYCAB
+			  FROM (
+			         SELECT ROWNUM AS RNUM
+			                 , READNO
+				             , SEQ
+				             , READTYPECD
+				             , READNM
+				             , UPRICE
+				             , QTY
+				             , HJDT
+				             , STDT
+				             , TO_DATE(TO_CHAR(SYSDATE, 'YYYY-MM-DD')) - TO_DATE(STDT, 'YYYY-MM-DD') AS DAYCAB
+				          FROM TM_READER_NEWS
+				         WHERE BNO = '999'
+				           AND BOSEQ = #abcBoseq#
+				           AND NEWSCD = '100'
+			        ) T
+			 WHERE T.DAYCAB > (365+90)
+			    AND RNUM &lt;= #maxRow#
+	</select>
+	
+	
+	<!-- abc지국 중지독자 조회 -->
+	<select id="selectABCReaderListFromAbcJikuk" resultClass="java.util.HashMap">
+         SELECT ROWNUM AS RNUM
+                 , READNO
+	             , SEQ
+	             , READTYPECD
+	             , READNM
+	             , UPRICE
+	             , QTY
+	             , HJDT
+	             , STDT
+	      FROM TM_READER_NEWS
+	     WHERE BOSEQ = #abcBoseq#
+	       AND BNSBOOKCD = 'ABC'
+	</select>
+	
+		
+	<!-- 독자정보 조회 -->
+	<select id="selectReaderData" resultClass="java.util.HashMap">
+		 SELECT READNO
+			     , BOSEQ
+			     , READNM
+			     , UPRICE
+			     , QTY
+			     , HJDT
+			     , SGBGMM
+			     , APLCDT
+			  FROM TM_READER_NEWS
+			 WHERE READNO = #sugmReaderNo#
+			   AND BOSEQ = #stopBoseq#
+			   AND SEQ = '0001'
+	</select>
+	
+	<!-- 수금독자정보 abc독자로 업데이트 -->
+	<update id="updateAbcReaderDataFromSugmReader" parameterClass="java.util.HashMap">
+		  UPDATE TM_READER_NEWS SET
+			         BOSEQ = #abcBoseq#
+			        , BNSBOOKCD = 'ABC'
+			    WHERE READNO = #sugmReaderNo# 
+			   AND BOSEQ = #stopBoseq#
+	</update>
+	
+	<!-- abc독자 수금 삭제 -->
+	<delete id="deleteAbcReaderSugms">
+		DELETE FROM TM_READER_SUGM
+		WHERE READNO = #abcReaderNo# 
+		   AND BOSEQ = #abcBoseq#
+	</delete>
+	
+	<!-- 수금독자 수금정보 abc독자로 업데이트 -->
+	<update id="updateAbcReaderSugmFromSugmReader" parameterClass="java.util.HashMap">
+			UPDATE TM_READER_SUGM SET
+				     BOSEQ = #abcBoseq#
+				 WHERE READNO = #sugmReaderNo# 
+				   AND BOSEQ = #stopBoseq#
+	</update>
+	
+	<select id="restorationReaderList" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		SELECT      READNO,
+		            SEQ,
+		            SGTYPE,
+		            READTYPECD,
+		            QTY,
+		            READNM,
+		            BOSEQ,
+		            NEWSCD,
+		            (SELECT SUM(amt) FROM TM_READER_SUGM WHERE boseq=A.boseq AND readno=A.readno AND SEQ=A.seq AND YYMM BETWEEN #startYYMM# AND #endYYMM#) AS TOTALSUGM
+		          FROM TM_READER_NEWS A
+		         WHERE 
+					1=1
+		         	<isNotEmpty property="boseq" prepend="AND">
+						A.BOSEQ=#boseq#
+					</isNotEmpty>
+					<isNotEmpty property="readnm" prepend="AND">
+						A.READNM LIKE #readnm#||'%'
+					</isNotEmpty>
+					<isNotEmpty property="sgtype" prepend="AND">
+						A.SGTYPE = #sgtype#
+					</isNotEmpty>
+					<isEqual property="readertype" compareValue="1" prepend="AND">
+						 (A.BNSBOOKCD != 'ABC' OR A.BNSBOOKCD IS NULL)
+					</isEqual>
+					<isEqual property="readertype" compareValue="2" prepend="AND">
+						A.BNSBOOKCD = 'ABC'
+					</isEqual>
+					<isNotEmpty property="minqty">
+						<isNotEmpty property="maxqty" prepend="AND">
+							A.QTY BETWEEN #minqty# AND #maxqty#
+						</isNotEmpty>
+					</isNotEmpty>
+	</select>
+	<select id="getReaderInfo" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		SELECT
+			READNO,
+			NEWSCD,
+			SEQ,
+			BOSEQ,
+			BOREADNO,
+			GNO,
+			BNO,
+			SNO,
+			READTYPECD,
+			READNM,
+			OFFINM,
+			HOMETEL1,
+			HOMETEL2,
+			HOMETEL3,
+			MOBILE1,
+			MOBILE2,
+			MOBILE3,
+			DLVZIP,
+			DLVADRS1,
+			DLVADRS2,
+			DLVSTRNM,
+			DLVSTRNO,
+			APTCD,
+			APTDONG,
+			APTHO,
+			SGTYPE,
+			SGINFO,
+			SGTEL1,
+			SGTEL2,
+			SGTEL3,
+			UPRICE,
+			QTY,
+			RSDTYPECD,
+			DLVTYPECD,
+			DLVPOSICD,
+			HJPATHCD,
+			HJTYPECD,
+			HJPSREGCD,
+			HJPSNM,
+			HJDT,
+			SGBGMM,
+			SGEDMM,
+			SGCYCLE,
+			STDT,
+			STSAYOU,
+			SPGCD,
+			BNSBOOKCD,
+			SABUN,
+			COMPANY,
+			RECEIPT,
+			NEWADDR,
+			BDMNGNO
+		FROM TM_READER_NEWS WHERE READNO=#readno# AND SEQ=#seq# AND BOSEQ=#boseq# AND NEWSCD=#newscd#
+	</select>
+	<select id="getReaderSugmList" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		SELECT
+			 READNO,
+			NEWSCD,
+			YYMM,
+			SEQ,
+			BOSEQ,
+			SGBBCD,
+			SGGBCD,
+			BILLAMT,
+			BILLQTY,
+			SGYYMM,
+			AMT,
+			LOSSAMT,
+			FEE1,
+			FEE2,
+			FEE3,
+			SNDT,
+			ICDT,
+			CLDT,
+			WRKNO,
+			EDIPROCNO,
+			AUTOPROCNO,
+			BILLTYPECD
+		FROM TM_READER_SUGM WHERE READNO=#readno# AND SEQ=#seq# AND BOSEQ=#boseq# AND NEWSCD=#newscd# AND YYMM BETWEEN #startYYMM# AND #endYYMM#
+		ORDER BY YYMM ASC
+	</select>
+	
+	<update id="updateReaderInfo" parameterClass="java.util.HashMap">
+		UPDATE TM_READER_NEWS
+		SET
+			readnm = #readnm#,
+			hjdt = #hjdt#,
+			sgbgmm = #sgbgmm#,
+			qty = #qty#,
+			uprice = #uprice#,
+			stdt = #stdt#,
+			stsayou = #stsayou#,
+			newaddr = #newaddr#,
+			dlvzip = #dlvzip#,
+			dlvadrs1 = #dlvadrs1#,
+			dlvadrs2 = #dlvadrs2#,
+			readtypecd = #readtypecd#,
+			sgtype = #sgtype#,
+			hometel1 = #hometel1#,
+			hometel2 = #hometel2#,
+			hometel3 = #hometel3#,
+			mobile1 = #mobile1#,
+			mobile2 = #mobile2#,
+			mobile3 = #mobile3#,
+			gno=#gno#,
+			bno=#bno#,
+			sno=#sno#
+		WHERE 
+			readno=#readno#
+			AND seq=#seq#
+			AND newscd=#newscd#
+			AND boseq=#boseq#
+	</update>
+	
+	<update id="updateSugmInfo" parameterClass="java.util.HashMap">
+		UPDATE TM_READER_SUGM
+		SET
+			SGBBCD=#sgbbcd#,
+			BILLAMT=#billamt#,
+			BILLQTY=#billqty#,
+			SGYYMM=#sgyymm#,
+			AMT=#amt#,
+			SNDT=#cldt#,
+			ICDT=#cldt#,
+			CLDT=#cldt#
+		WHERE
+			READNO=#readno#
+			AND NEWSCD=#newscd#
+			AND YYMM=#yymm#
+			AND SEQ=#seq#
+			AND BOSEQ=#boseq#
+	</update>
+	<select id="getSugmInfo" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		SELECT * FROM TM_READER_SUGM WHERE READNO=#readno# AND NEWSCD=#newscd# AND YYMM=#yymm# AND SEQ=#seq# AND BOSEQ=#boseq#
+	</select>
+	
+	<insert id="insertSugmInfo" parameterClass="java.util.HashMap">
+		INSERT INTO TM_READER_SUGM(readno,newscd,yymm,seq,boseq,sgbbcd,sggbcd,billamt,billqty,sgyymm,amt,sndt,icdt,cldt,indt,inps,chgdt,chgps)
+		VALUES(
+			#readno#,#newscd#,#yymm#,#seq#,#boseq#,#sgbbcd#,#sgtype#,#billamt#,#billqty#,#sgyymm#,#amt#,#cldt#,#cldt#,#cldt#,SYSDATE,'SYSTEM',SYSDATE,'SYSTEM'
+		)
+	</insert>
+	
+	<!-- DB TABLE 리스트 조회 -->
+	<select id="selectDBTableList" resultClass="java.util.HashMap">
+		SELECT TNAME
+		       , TABTYPE
+		    FROM TAB
+		   WHERE TABTYPE='TABLE'
+		     AND (SUBSTR(TNAME, 0,3) = 'TM_' AND (TNAME LIKE '%READER%' AND (TNAME LIKE '%NEWS%' OR TNAME LIKE '%SUGM%')))
+		   ORDER BY TNAME
+	</select>
+	
+	<delete id="deleteStatistics" parameterClass="java.util.HashMap">
+		DELETE FROM TM_STAT_PERUSE WHERE BOSEQ = #boseq# AND YYMM=#yymm#
+	</delete>
+	
+	<select id="insertStatistics" parameterClass="java.util.HashMap" resultClass="string">
+		SELECT FUNC_STATISTICS_INSERT2(#boseq#,#yymm#) FROM DUAL
+	</select>
+	
+	<delete id="deleteReaderSugm">
+		DELETE FROM TM_READER_SUGM WHERE boseq=#boseq# AND readno=#readno# AND seq=#seq#
+	</delete>
+	
+	<delete id="deleteReaderInfo">
+		DELETE FROM TM_READER_NEWS WHERE boseq=#boseq# AND readno=#readno# AND seq=#seq#
+	</delete>
+	
+		<!-- news 테이블 생성 -->
+	<statement id="createReaderNewsTable" parameterClass="java.util.HashMap">
+		CREATE TABLE $backupTableNm$ AS
+			SELECT * 
+			 FROM TM_READER_NEWS 
+	</statement>
+	
+	<!-- sugm 테이블 생성 -->
+	<statement id="createReaderSugmTable" parameterClass="java.util.HashMap">
+		CREATE TABLE $backupSugmTableNm$ AS
+			SELECT * 
+			 FROM TM_READER_SUGM 
+	</statement>
+	
+	<!-- news 테이블 데이터 삭제 -->
+	<delete id="deleteNewsTableData">
+		DELETE 
+		 FROM TM_READER_NEWS
+		WHERE BOSEQ = #abcBoseq# 
+	</delete>
+	
+	<!-- sugm 테이블 데이터 삭제 -->
+	<delete id="deleteSugmTableData">
+		DELETE 
+		 FROM TM_READER_SUGM
+		WHERE BOSEQ = #abcBoseq# 
+	</delete>
+	
+	<!-- 독자수 카운트 -->
+	<select id="selectReaderTotCnt" resultClass="int">
+		SELECT COUNT(*) AS TOTCNT 
+         FROM TM_READER_NEWS
+        WHERE BOSEQ = #abcBoseq#
+	</select>
+	
+	<!-- 독자수금수 카운트 -->
+	<select id="selectReaderSugmTotCnt" resultClass="int">
+		SELECT COUNT(*) AS TOTCNT 
+         FROM TM_READER_SUGM
+        WHERE BOSEQ = #abcBoseq#
+	</select>
+	
+	<!-- 독자정보 싱크 -->
+	<insert id="syncNewsTableData">
+		INSERT INTO TM_READER_NEWS
+			SELECT * 
+			 FROM TM_READER_NEWS@MKDEV3_TO_MKCRM
+			WHERE BOSEQ = #abcBoseq#
+	</insert>
+	
+	<!-- 독자수금정보 싱크 -->
+	<insert id="syncSugmTableData">
+		INSERT INTO TM_READER_SUGM
+			SELECT * 
+			 FROM TM_READER_SUGM@MKDEV3_TO_MKCRM
+			WHERE BOSEQ = #abcBoseq#
+	</insert>
+</sqlMap>

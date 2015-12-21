@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="billing.branch.cmsrequest">
+
+	<!-- EA log 갯수 -->
+	<select id="getEALogCount" resultClass="int">
+		SELECT 
+			count(*)
+		FROM 
+			tbl_EA_log
+		WHERE
+			1=1
+			<isNotEmpty property="filename" prepend=" AND ">
+				filename = #filename#
+			</isNotEmpty>
+			<isNotEmpty property="cmsresult" prepend=" AND ">
+				cmsresult = #cmsresult#
+			</isNotEmpty>
+			<isNotEmpty property="cmsresult_not" prepend=" AND ">
+				cmsresult &lt;&gt; #cmsresult_not#
+			</isNotEmpty>
+			<isNotEmpty property="cmstype" prepend=" AND ">
+				trim(cmstype) = #cmstype#
+			</isNotEmpty>
+			<isNotEmpty property="cmsdate" prepend=" AND ">
+				cmsdate = #cmsdate#
+			</isNotEmpty>
+			<isNotEmpty property="agencyId" prepend=" AND ">
+				usernumid in (
+					select numid from tbl_users where realjikuk = #agencyId#
+				)
+			</isNotEmpty>
+	</select>
+	
+	<!-- EA log 목록 -->
+	<select id="getEALogList" resultClass="java.util.HashMap">
+		SELECT 
+			C.*
+			, (SELECT NAME FROM TM_AGENCY WHERE SERIAL = C.realjikuk and rownum=1) as JIKUK_NAME
+		FROM (
+			SELECT
+				B.*	
+				,(select realjikuk from tbl_users where numid = B.usernumid) as realjikuk
+			FROM
+				(
+					SELECT
+						A.*
+						, (SELECT READNO FROM TBL_USERS WHERE NUMID = A.USERNUMID ) as READNO
+			    		, (SELECT BANK_NAME FROM TBL_USERS WHERE NUMID = A.USERNUMID ) as BANK_NAME
+			    	FROM (
+						SELECT 
+							numid,serialno,filename,cmstype,cmsdate,cmsmoney,cmsresult,userid,usernumid,codenum,rdate,subsmonth,orderno,checked
+						FROM 
+							TBL_EA_LOG
+						WHERE
+							1=1
+							<isNotEmpty property="filename" prepend=" AND ">
+								filename = #filename#
+							</isNotEmpty>
+							<isNotEmpty property="cmsdate" prepend=" AND ">
+								cmsdate = #cmsdate#
+							</isNotEmpty>
+						ORDER BY
+							SERIALNO
+					) A
+				) B
+			) C
+			WHERE
+				1=1
+				<isNotEmpty property="agencyId" prepend=" AND ">
+					C.realjikuk = #agencyId#
+				</isNotEmpty>
+	</select>
+	
+	
+</sqlMap>

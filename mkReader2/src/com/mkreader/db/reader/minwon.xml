@@ -1,0 +1,935 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<!-- 독자 민원(민원테이블) 조회  -->
+<sqlMap namespace="reader.minwon">
+	<select id="minwonList" resultClass="java.util.HashMap">
+	SELECT 
+		APLCDT,	<!-- 신청일자 -->
+		APLCNO,	<!-- 신청번호 -->
+		APLCTYPECD,	<!-- 신청유형 001 불배, 002 이전,  003 휴독, 004 해지, 999 기타-->
+		APLCPATHCD,	<!-- 신청경로 -->
+		TITL, <!-- 제목 -->
+		CONT, <!-- 내용 -->
+		BO_REMK, <!-- 지국비고 -->
+		RECP_REMK, <!-- 접수자비고 -->
+		HOMETEL1, <!-- 집전화1 -->
+		HOMETEL2, <!-- 집전화2 -->
+		HOMETEL3, <!-- 집전화3 -->
+		MOBILE1, <!-- 휴대폰1 -->
+		MOBILE2, <!-- 휴대폰2 -->
+		MOBILE3, <!-- 휴대폰3 -->
+		DLVZIP,	<!-- 배달지우편번호 --> 
+		DLVADRS1, <!-- 배달지주소 -->
+		DLVADRS2, <!-- 상세주소 -->
+		BOCD, <!-- 지국코드 -->
+		READNO,	<!-- 독자번호 -->
+		BO_CNFDT, <!-- 	지국확인일자 -->
+		BO_CNFMYN, <!-- 지국확인여부 -->
+		DELYN, <!-- 삭제여부 -->
+		INCMGPERS, <!-- 입력자 -->
+		INCMGDT, <!-- 	입력일자 -->
+		CHGPERS, <!-- 변경자 -->
+		CHGDT, <!-- 변경일자 -->
+		READNM, <!-- 독자명 -->
+		STDT, <!-- 해지,불배,시작일자 -->
+		ETDT, <!-- 일자/종료일자 -->
+		STMM, <!-- 시작월분 -->
+		ETMM, <!-- 종료월분 -->
+		STOPSY <!-- 민원 코드 -->
+	FROM
+		TM_CVAPLC
+	WHERE 1=1
+	<isNotEmpty property="agency_serial" prepend="AND">
+		BOCD = #agency_serial#
+	</isNotEmpty>
+	<isNotEmpty property="minGb" >
+		<isNotEqual property="minGb" compareValue="" prepend="AND">
+			APLCTYPECD = #minGb#
+		</isNotEqual>
+	</isNotEmpty>
+	<!-- 지국 확인 여부 -->
+	<isEqual prepend="AND" property="isCheck" compareValue="1"> 
+		BO_CNFMYN = #isCheck#
+	</isEqual>
+	<isEqual prepend="AND" property="isCheck" compareValue="2"> 
+		( BO_CNFMYN = #isCheck# or BO_CNFMYN is null )
+	</isEqual>
+	<isNotEmpty property="sdate">
+		<isNotEmpty property="edate">
+			AND APLCDT BETWEEN #sdate# AND #edate#
+		</isNotEmpty>
+	</isNotEmpty>
+	ORDER BY APLCDT desc
+	</select>
+
+
+	<!-- 독자 이전(이전테이블) 조회 -->
+	<select id="rerocationList" resultClass="java.util.HashMap">
+	SELECT 
+		REGDT, <!-- 등록일자 -->
+		REGNO, <!-- 등록번호 -->
+		MOVEDT, <!-- 이사일자 -->
+		DLVHPDT, <!-- 배달희망일 -->
+		STBGMM, <!-- 수금시작월 -->
+		READNO, <!-- 독자번호 -->
+		NEWSCD, <!-- 매체코드 -->
+		READNM, <!-- 독자명 -->
+		BO_BOSEQ, <!-- 이사전지국일련번호 -->
+		(SELECT NAME FROM TM_AGENCY  WHERE BO_BOSEQ=SERIAL) BO_BONAME, <!-- 이사전지국명 -->
+		(SELECT JIKUK_TEL FROM TM_AGENCY  WHERE BO_BOSEQ=SERIAL) BOTEL, <!-- 이사전지국전화번호 -->
+		AO_BOSEQ, <!-- 이사후지국일련번호 -->
+		(SELECT NAME FROM TM_AGENCY  WHERE AO_BOSEQ=SERIAL) AO_BONAME, <!-- 이사후지국명 -->
+		(SELECT JIKUK_TEL FROM TM_AGENCY  WHERE AO_BOSEQ=SERIAL) AOTEL, <!-- 이사후지국전화번호 -->
+		BO_ZIP, <!-- 이사전우편번호 -->
+		BO_ADRS1, <!-- 이사전주소1 -->
+		BO_ADRS2, <!-- 이사전주소2 -->
+		BO_OFFNM, <!-- 이사전사무실명 -->
+		BO_HOMETEL1, <!-- 이사전전화번호1 -->
+		BO_HOMETEL2, <!-- 이사전전화번호2 -->
+		BO_HOMETEL3, <!-- 이사전전화번호3 -->
+		BO_MOBILE1, <!-- 이사전휴대폰1 -->
+		BO_MOBILE2, <!-- 이사전휴대폰2 -->
+		BO_MOBILE3, <!-- 이사전휴대폰3 -->
+		AO_ZIP, <!-- 이사후우편번호 -->
+		AO_ADRS1, <!-- 이사후주소1 -->
+		AO_ADRS2, <!-- 이사후주소2 -->
+		AO_OFFNM, <!-- 이사후사무실명 -->
+		AO_HOMETEL1, <!-- 이사후전화번호1 -->
+		AO_HOMETEL2, <!-- 이사후전화번호2 -->
+		AO_HOMETEL3, <!-- 이사후전화번호3 -->
+		AO_MOBILE1, <!-- 이사후휴대폰1 -->
+		AO_MOBILE2, <!-- 이사후휴대폰2 -->
+		AO_MOBILE3, <!-- 이사후휴대폰3 -->
+		BO_CNFM_STAT, <!-- 이사전지국확인상태 -->
+		BO_CNFM_DT, <!-- 이사전지국확인일자 -->
+		BO_MSG, <!-- 이사전지국전달사항 -->
+		AO_CNFM_STAT, <!-- 이사후지국확인상태 -->
+		AO_CNFM_DT, <!-- 이사후지국확인일자 -->
+		AO_MSG, <!-- 이사후지국전달사항 -->
+		REMK, <!-- 비고 -->
+		DELYN, <!-- 삭제여부 -->
+		INDT, <!-- 입력일자 -->
+		INPS, <!-- 입력자 -->
+		CHGDT, <!-- 변경일자 -->
+		CHGPS, <!-- 변경자 -->
+		BO_QTY, <!-- 이전 부수 -->
+		AO_QTY <!-- 인수 부수 -->
+	FROM
+		TM_READER_MOVE
+	WHERE 1=1
+	<!-- 지국 확인 여부 -->
+	<isEqual property="boCnfmStat" compareValue="40">
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="10"> 
+			(BO_BOSEQ = #agency_serial#)
+			OR (AO_BOSEQ = #agency_serial# AND (AO_CNFM_STAT = #aoCnfmStat# OR AO_CNFM_STAT is null))
+		</isEqual>
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="20"> 
+			(BO_BOSEQ = #agency_serial#)
+			OR (AO_CNFM_STAT = #aoCnfmStat# AND AO_BOSEQ = #agency_serial#)
+		</isEqual>
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="30"> 
+			(BO_BOSEQ = #agency_serial#)
+			OR (AO_CNFM_STAT = #aoCnfmStat# AND AO_BOSEQ = #agency_serial#)
+		</isEqual>
+		<isEqual  property="aoCnfmStat" compareValue="40" prepend="AND">
+			(BO_BOSEQ = #agency_serial#)
+			OR (AO_BOSEQ = #agency_serial#)
+		</isEqual>
+	</isEqual>
+	<isEqual property="boCnfmStat" compareValue="30">
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="10"> 
+			(BO_CNFM_STAT = #boCnfmStat# AND BO_BOSEQ = #agency_serial#)
+			OR (AO_BOSEQ = #agency_serial# AND (AO_CNFM_STAT = #aoCnfmStat# OR AO_CNFM_STAT is null))
+		</isEqual>
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="20"> 
+			(BO_CNFM_STAT = #boCnfmStat# AND BO_BOSEQ = #agency_serial#)
+			OR (AO_CNFM_STAT = #aoCnfmStat# AND AO_BOSEQ = #agency_serial#)
+		</isEqual>
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="30"> 
+			(BO_CNFM_STAT = #boCnfmStat# AND BO_BOSEQ = #agency_serial#)
+			OR (AO_CNFM_STAT = #aoCnfmStat# AND AO_BOSEQ = #agency_serial#)
+		</isEqual>
+		<isEqual  property="aoCnfmStat" compareValue="40" prepend="AND">
+			(BO_CNFM_STAT = #boCnfmStat# AND BO_BOSEQ = #agency_serial#)
+			OR (AO_BOSEQ = #agency_serial#)
+		</isEqual>
+	</isEqual>
+	<isEqual property="boCnfmStat" compareValue="20">
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="10"> 
+			(BO_CNFM_STAT = #boCnfmStat# AND BO_BOSEQ = #agency_serial#)
+			OR (AO_BOSEQ = #agency_serial# AND (AO_CNFM_STAT = #aoCnfmStat# OR AO_CNFM_STAT is null))
+		</isEqual>
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="20"> 
+			(BO_CNFM_STAT = #boCnfmStat# AND BO_BOSEQ = #agency_serial#)
+			OR (AO_CNFM_STAT = #aoCnfmStat# AND AO_BOSEQ = #agency_serial#)
+		</isEqual>
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="30"> 
+			(BO_CNFM_STAT = #boCnfmStat# AND BO_BOSEQ = #agency_serial#)
+			OR (AO_CNFM_STAT = #aoCnfmStat# AND AO_BOSEQ = #agency_serial#)
+		</isEqual>
+		<isEqual  property="aoCnfmStat" compareValue="40" prepend="AND">
+			(BO_CNFM_STAT = #boCnfmStat# AND BO_BOSEQ = #agency_serial#)
+			OR (AO_BOSEQ = #agency_serial#)
+		</isEqual>
+	</isEqual>
+	<isEqual property="boCnfmStat" compareValue="10">
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="10"> 
+			(BO_BOSEQ = #agency_serial# AND (BO_CNFM_STAT = #boCnfmStat# or BO_CNFM_STAT is null))
+			OR (AO_BOSEQ = #agency_serial# AND (AO_CNFM_STAT = #aoCnfmStat# OR AO_CNFM_STAT is null))
+		</isEqual>
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="20"> 
+			(BO_BOSEQ = #agency_serial# AND (BO_CNFM_STAT = #boCnfmStat# or BO_CNFM_STAT is null))
+			OR (AO_CNFM_STAT = #aoCnfmStat# AND AO_BOSEQ = #agency_serial#)
+		</isEqual>
+		<isEqual prepend="AND" property="aoCnfmStat" compareValue="30"> 
+			(BO_BOSEQ = #agency_serial# AND (BO_CNFM_STAT = #boCnfmStat# or BO_CNFM_STAT is null))
+			OR (AO_CNFM_STAT = #aoCnfmStat# AND AO_BOSEQ = #agency_serial#)
+		</isEqual>
+		<isEqual  property="aoCnfmStat" compareValue="40" prepend="AND">
+			(BO_BOSEQ = #agency_serial# AND (BO_CNFM_STAT = #boCnfmStat# or BO_CNFM_STAT is null))
+			OR (AO_BOSEQ = #agency_serial#)
+		</isEqual>
+	</isEqual>
+	ORDER BY REGDT desc
+	</select>
+	
+	<!-- 독자 민원(민원테이블) 처리 -->
+	<update id="actionMinwon">
+		UPDATE 
+	 		TM_CVAPLC 
+	 	SET
+	 		<isNotEmpty property="boRemk"> 
+	 			BO_REMK = #boRemk# ,
+	 		</isNotEmpty>
+	 		BO_CNFDT = SYSDATE , <!-- 	지국확인일자 -->
+			BO_CNFMYN = 1 <!-- 지국확인여부 -->
+	 	WHERE 
+	 		APLCDT = #aplcDt# 
+	 		AND APLCNO = #aplcNo# 
+	 		AND APLCTYPECD = #aplcTypeCd#
+	 		<isNotEmpty property="agency_serial" prepend="AND">
+				BOCD = #agency_serial#
+			</isNotEmpty>
+	 </update>
+	 <insert id="saveRerocation">
+	 INSERT INTO TM_READER_MOVE 
+	 	(REGDT, REGNO, MOVEDT, DLVHPDT, STBGMM, READNO, NEWSCD, READNM, BO_BOSEQ, AO_BOSEQ, BO_ZIP, BO_ADRS1, BO_ADRS2, 
+		   BO_OFFNM, BO_HOMETEL1, BO_HOMETEL2, BO_HOMETEL3, BO_MOBILE1, BO_MOBILE2, BO_MOBILE3, AO_ZIP, AO_ADRS1, AO_ADRS2,
+		   AO_OFFNM, AO_HOMETEL1, AO_HOMETEL2, AO_HOMETEL3, AO_MOBILE1, AO_MOBILE2, AO_MOBILE3, BO_CNFM_STAT, BO_CNFM_DT, 
+		   BO_MSG, AO_CNFM_STAT, AO_CNFM_DT, AO_MSG, INDT, INPS, CHGDT, CHGPS, BO_QTY, AO_QTY) 
+	VALUES 
+		(TO_CHAR(SYSDATE,'YYYYMMDD'), FUNC_MOVE_REGNO_SEQ, #moveDt#, #dlvHpDt#, #stbgMm#, #readNo#, #newsCd#, #readNm#, #boSeq#, #aoSeq#, #boZip#, #boAdrs1#, #boAdrs2#,
+		#boOffNm#, #boHomeTel1#, #boHomeTel2#, #boHomeTel3#, #boMobile1#, #boMobile2#, #boMobile3#, #aoZip#, #aoAdrs1#, #aoAdrs2#,
+		#aoOffNm#, #aoHomeTel1#, #aoHomeTel2#, #aoHomeTel3#, #aoMobile1#, #aoMobile2#, #aoMobile3#, #boCnfmStat#, #boCnfmDt#,
+		#boMsg#, #aoCnfmStat#, #aoCnfmDt#, #aoMsg#, SYSDATE, #agency_serial#, SYSDATE, #agency_serial#, #boQty#, #aoQty#)  
+	 </insert>
+	 
+	 <update id="updateRerocation">
+	 UPDATE TM_READER_MOVE SET
+	 	MOVEDT = #moveDt#,
+	 	DLVHPDT = #dlvHpDt#,
+	 	STBGMM = #stbgMm#,
+		BO_BOSEQ = #boSeq#,
+		AO_BOSEQ = #aoSeq#,
+		BO_ZIP = #boZip#,
+		BO_ADRS1 = #boAdrs1#,
+		BO_ADRS2 = #boAdrs2#,
+		BO_OFFNM = #boOffNm#,
+		BO_HOMETEL1 = #boHomeTel1#,
+		BO_HOMETEL2 = #boHomeTel2#,
+		BO_HOMETEL3= #boHomeTel3#,
+		BO_MOBILE1 = #boMobile1#,
+		BO_MOBILE2 = #boMobile2#,
+		BO_MOBILE3 = #boMobile3#,
+		AO_ZIP = #aoZip#,
+		AO_ADRS1= #aoAdrs1#,
+		AO_ADRS2 = #aoAdrs2#,
+		AO_OFFNM = #aoOffNm#,
+		AO_HOMETEL1 = #aoHomeTel1#,
+		AO_HOMETEL2 = #aoHomeTel2#,
+		AO_HOMETEL3 = #aoHomeTel3#,
+		AO_MOBILE1 = #aoMobile1#,
+		AO_MOBILE2 = #aoMobile2#,
+		AO_MOBILE3 = #aoMobile3#,
+		READNM = #readNm#,
+		<isNotEmpty property="gbn">
+			<isEqual property="gbn" compareValue="1">
+				BO_CNFM_STAT = '30',
+				BO_CNFM_DT = SYSDATE,
+			</isEqual>
+			<isEqual property="gbn" compareValue="2">
+				BO_CNFM_STAT = '20',
+				BO_CNFM_DT = SYSDATE,
+			</isEqual>
+			<isEqual property="gbn" compareValue="3">
+				AO_CNFM_STAT = '30',
+				AO_CNFM_DT = SYSDATE,
+			</isEqual>
+			<isEqual property="gbn" compareValue="4">
+				AO_CNFM_STAT = '20',
+				AO_CNFM_DT = SYSDATE,
+			</isEqual>
+		</isNotEmpty>
+		BO_MSG = #boMsg#,
+		AO_MSG = #aoMsg#,
+		CHGDT = SYSDATE,
+		CHGPS= #agency_serial#,
+		BO_QTY = #boQty#,
+		AO_QTY = #aoQty#
+	WHERE 
+		REGDT = #regDt#
+		AND REGNO = #regNo#
+	 </update>  
+	
+	<!-- 독자 찾기 -->
+	<select id="getReaderList" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT 
+					READNO, <!-- 독자번호 -->	
+					NEWSCD, <!-- 신문코드 --> 
+					(SELECT YNAME FROM  TC_COMMON WHERE CDCLSF='100' AND CODE=NEWSCD) newsNm, <!-- 신문명 -->	
+					SEQ, <!-- 일련번호 --> 
+					BOSEQ, <!-- 지국일련번호 --> 
+					B.NAME JIKUKNM, <!-- 지국명 --> 
+					BOREADNO, <!-- 지국독자번호 -->
+					GNO, <!-- 구역 --> 
+					BNO, <!-- 배달번호 --> 
+					SNO, <!-- 사이번호 --> 
+					READTYPECD, <!-- 독자유형(일반,학생,기증,투입,강투) -->
+					READNM, <!-- 독자명 --> 
+					OFFINM, <!-- 사무실명 --> 
+					HOMETEL1, <!-- 전화번호1 --> 
+					HOMETEL2, <!-- 전화번호2 --> 
+					HOMETEL3, <!-- 전화번호3 -->
+					MOBILE1, <!-- 휴대폰1 --> 
+					MOBILE2, <!-- 휴대폰2 --> 
+					MOBILE3, <!-- 휴대폰3 --> 
+					DLVZIP, <!-- 배달우편번호 --> 
+					DLVADRS1, <!-- 배달지주소1(우편주소) -->
+					DLVADRS2, <!-- 배달지주소2 --> 
+					DLVSTRNM, <!-- 배달거리명 --> 
+					DLVSTRNO, <!-- 배달거리번호 --> 
+					APTCD, <!-- 아파트코드 --> 
+					APTDONG, <!-- 아파트동 -->
+					APTHO, <!-- 아파트호 --> 
+					SGTYPE, <!-- 수금방법 --> 
+					SGINFO, <!-- 수금지정보 --> 
+					SGTEL1, <!-- 수금자전화번호1 --> 
+					SGTEL2, <!-- 수금자전화번호2 -->
+					SGTEL3, <!-- 수금자전화번호3 --> 
+					UPRICE, <!-- 단가 -->
+					RECEIPT, <!-- 영수증 출력 여부  -->
+					QTY, <!-- 부수 --> 
+					RSDTYPECD, <!-- 주거구분 --> 
+					DLVTYPECD, <!-- 배달유형(직배,우송) -->
+					DLVPOSICD, <!-- 배달장소 --> 
+					HJPATHCD, <!-- 확장경로 --> 
+					HJTYPECD, <!-- 확장유형코드 --> 
+					HJPSREGCD, <!-- 확장자등록코드 --> 
+					HJPSNM, <!-- 확장자명 -->
+					HJDT, <!-- 확장일자 --> 
+					SGBGMM, <!-- 수금시작월 --> 
+					SGEDMM, <!-- 수금종료월 --> 
+					SGCYCLE, <!-- 수금주기(1~12) --> 
+					STDT, <!-- 중지일자 -->
+					STSAYOU, <!-- 중지사유 --> 
+					APLCDT, <!-- 신청일자 --> 
+					APLCNO, <!-- 신청번호 --> 
+					REMK, <!-- 비고 --> 
+					INDT, <!-- 입력일자 --> 
+					INPS, <!-- 입력자 -->
+					CHGDT, <!-- 변경일자 --> 
+					CHGPS, <!-- 변경자 --> 
+					SPGCD, <!-- 판촉물코드 --> 
+					BNSBOOKCD, <!-- 보너스북코드 -->
+					(SELECT BIDT FROM TM_READER WHERE A.READNO = READNO) BIDT, <!-- 생년월일 -->
+					TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), '구 ')+1,     LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2)  ADDR, <!-- 간략화면 주소 -->
+					NVL2 (HOMETEL1 , HOMETEL1 ||'-'|| HOMETEL2 ||'-'|| HOMETEL3 , NVL2(HOMETEL2 ,  HOMETEL2 ||'-'|| HOMETEL3 ,   NVL2 (HOMETEL3 , HOMETEL3 , '' ))) HOMETEL, <!-- 간략화면 전화번호 -->
+					NVL2 (MOBILE1 , MOBILE1 ||'-'|| MOBILE2 ||'-'|| MOBILE3 , NVL2(MOBILE2 ,  MOBILE2 ||'-'|| MOBILE3 ,   NVL2 (HOMETEL3 , MOBILE3 , '' ))) MOBILE, <!-- 간략화면 핸드폰 -->
+					(SELECT EMAIL FROM TM_READER WHERE A.READNO = READNO) EMAIL, <!-- 이메일 -->
+					 CASE WHEN LENGTH(A.BDMNGNO) > 1 then A.NEWADDR || ' ' || A.DLVADRS1
+	               ELSE A.DLVADRS1
+				   END AS NEWADDR, <!--  간략화면 주소 -->
+					(SELECT DLVADRS1 || ' ' || DLVADRS2 FROM CHG_SUCCESS_ADDR WHERE READNO = A.READNO  AND SEQ = A.SEQ  AND NEWSCD = A.NEWSCD) AS OLDADDR,
+					
+					(SELECT CASE WHEN SUM(AMT) IS NOT NULL THEN SUM(AMT) ELSE 0 END FROM TM_READER_SUGM WHERE READNO = A.READNO AND NEWSCD = A.NEWSCD AND SEQ = A.SEQ AND SGBBCD IN ('011' , '012' , '013' , '021' , '022' , '023' , '024' , '088')) SUMCOLLECT, <!-- 총 수금액 -->
+					(SELECT CASE WHEN SUM(BILLAMT) IS NOT NULL THEN SUM(BILLAMT) ELSE 0 END FROM TM_READER_SUGM WHERE READNO = A.READNO AND NEWSCD = A.NEWSCD AND SEQ = A.SEQ AND SGBBCD = '044') ACCOUNTDUE, <!-- 총 미수액 -->
+					
+					(SELECT NVL(COUNT(1),0) FROM TM_CALL_LOG WHERE READNO = A.READNO AND NEWSCD = A.NEWSCD AND SEQ = A.SEQ) CALL_CNT				
+		        FROM 
+		        	TM_READER_NEWS A, TM_AGENCY B
+		       WHERE A.BOSEQ = B.SERIAL
+                
+                <isNotEmpty property="AREA1" prepend="AND">
+                	B.AREA1 = #AREA1#
+                </isNotEmpty>
+				<isNotEmpty property="AREA" prepend="AND">
+                	B.AREA = #AREA#
+                </isNotEmpty>
+				<isNotEmpty property="AGENCYTYPE" prepend="AND">
+                	B.TYPE = #AGENCYTYPE#
+                </isNotEmpty>
+                <isNotEmpty property="PART" prepend="AND">
+                	B.PART = #PART#
+                </isNotEmpty>
+                <isNotEmpty property="AGENCYAREA" prepend="AND">
+                	B.ZONE = #AGENCYAREA#
+                </isNotEmpty>
+                <isNotEmpty property="MANAGER" prepend="AND">
+                	B.MANAGER = #MANAGER#
+                </isNotEmpty>
+                <isNotEmpty property="JIKUKNM" prepend="AND">
+					B.NAME = #JIKUKNM#
+				</isNotEmpty>
+				<isNotEmpty property="READTYPECD" prepend="AND">
+					A.READTYPECD = #READTYPECD#
+				</isNotEmpty>
+				<isNotEmpty property="SGTYPE" prepend="AND">
+					A.SGTYPE = #SGTYPE#
+				</isNotEmpty>
+				<isNotEmpty property="STATUS" prepend="AND">
+					<isEqual property="STATUS" compareValue='2'>
+						A.BNO != '999' AND A.STDT IS NULL AND A.STSAYOU IS NULL
+		        	</isEqual>
+		        	<isEqual property="STATUS" compareValue='3'>
+		        		A.BNO = '999' AND A.STDT IS NOT NULL AND A.STSAYOU IS NOT NULL
+		        	</isEqual>
+				</isNotEmpty>
+				<isNotEmpty property="DATETYPE" prepend="AND">
+					<isEqual property="DATETYPE" compareValue='1'>
+						A.HJDT BETWEEN #FROMDATE# AND #TODATE#
+					</isEqual>
+					<isEqual property="DATETYPE" compareValue='2'>
+						A.STDT BETWEEN #FROMDATE# AND #TODATE#
+					</isEqual>
+				</isNotEmpty>
+				<isNotEmpty property="NEWSCD" prepend="AND">
+					A.NEWSCD = #NEWSCD#
+				</isNotEmpty>
+				<isNotEmpty property="ADDR" prepend="AND">
+					A.DLVADRS1||A.DLVADRS2 LIKE '%'||#ADDR#||'%'
+				</isNotEmpty>
+				<isNotEmpty property="SEARCHVALUE" prepend="AND">
+					<isEqual property="SEARCHTYPE" compareValue='readnm'>
+						A.READNM LIKE '%'||#SEARCHVALUE#||'%'
+					</isEqual>
+					<isEqual property="SEARCHTYPE" compareValue='readno'>
+						A.READNO = #SEARCHVALUE#
+					</isEqual>
+					<isEqual property="SEARCHTYPE" compareValue='telno'>
+						(A.HOMETEL1||A.HOMETEL2||A.HOMETEL3 LIKE '%'||#SEARCHVALUE#||'%'
+						OR
+						A.MOBILE1||A.MOBILE2||A.MOBILE3 LIKE '%'||#SEARCHVALUE#||'%')
+					</isEqual>
+					<isEqual property="SEARCHTYPE" compareValue="all">
+						(UPPER(A.READNM) LIKE UPPER('%'||#SEARCHVALUE#||'%')
+						 OR
+						 A.READNO LIKE '%'||#SEARCHVALUE#||'%'
+						 OR
+						 A.HOMETEL1||A.HOMETEL2||A.HOMETEL3 LIKE '%'||#SEARCHVALUE#||'%'
+						 OR
+						 A.MOBILE1||A.MOBILE2||A.MOBILE3 LIKE '%'||#SEARCHVALUE#||'%')
+					</isEqual>
+					
+				</isNotEmpty>
+				
+				ORDER BY BOSEQ ASC, READNO ASC, DECODE(BNO, 999, NULL, SEQ) ASC, GNO ASC, BNO ASC, SNO ASC
+			)C
+		)D
+		where
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 지국 리스트 총 카운트 -->
+	<select id="getReaderListCnt" resultClass="int">
+		SELECT COUNT(1) COUNT
+          FROM TM_READER_NEWS A,
+		       TM_AGENCY B
+		 WHERE A.BOSEQ = B.SERIAL
+
+        <isNotEmpty property="AREA1" prepend="AND">
+        	B.AREA1 = #AREA1#
+        </isNotEmpty>
+				<isNotEmpty property="AREA" prepend="AND">
+        	B.AREA = #AREA#
+        </isNotEmpty>
+				<isNotEmpty property="AGENCYTYPE" prepend="AND">
+        	B.TYPE = #AGENCYTYPE#
+        </isNotEmpty>
+        <isNotEmpty property="PART" prepend="AND">
+        	B.PART = #PART#
+        </isNotEmpty>
+        <isNotEmpty property="AGENCYAREA" prepend="AND">
+        	B.ZONE = #AGENCYAREA#
+        </isNotEmpty>
+        <isNotEmpty property="MANAGER" prepend="AND">
+        	B.MANAGER = #MANAGER#
+        </isNotEmpty>
+        <isNotEmpty property="JIKUKNM" prepend="AND">
+			B.NAME = #JIKUKNM#
+		</isNotEmpty>
+		<isNotEmpty property="READTYPECD" prepend="AND">
+			A.READTYPECD = #READTYPECD#
+		</isNotEmpty>
+		<isNotEmpty property="SGTYPE" prepend="AND">
+			A.SGTYPE = #SGTYPE#
+		</isNotEmpty>
+		<isNotEmpty property="STATUS" prepend="AND">
+			<isEqual property="STATUS" compareValue='2'>
+				A.BNO != '999' AND A.STDT IS NULL AND A.STSAYOU IS NULL
+    		</isEqual>
+    		<isEqual property="STATUS" compareValue='3'>
+    			A.BNO = '999' AND A.STDT IS NOT NULL AND A.STSAYOU IS NOT NULL
+    		</isEqual>
+		</isNotEmpty>
+		<isNotEmpty property="DATETYPE" prepend="AND">
+			<isEqual property="DATETYPE" compareValue='1'>
+				A.HJDT BETWEEN #FROMDATE# AND #TODATE#
+			</isEqual>
+			<isEqual property="DATETYPE" compareValue='2'>
+				A.STDT BETWEEN #FROMDATE# AND #TODATE#
+			</isEqual>
+		</isNotEmpty>
+		<isNotEmpty property="NEWSCD" prepend="AND">
+			A.NEWSCD = #NEWSCD#
+		</isNotEmpty>
+		<isNotEmpty property="ADDR" prepend="AND">
+			A.DLVADRS1||A.DLVADRS2 LIKE '%'||#ADDR#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="SEARCHVALUE" prepend="AND">
+			<isEqual property="SEARCHTYPE" compareValue='readnm'>
+				A.READNM LIKE '%'||#SEARCHVALUE#||'%'
+			</isEqual>
+			<isEqual property="SEARCHTYPE" compareValue='readno'>
+				A.READNO = #SEARCHVALUE#
+			</isEqual>
+			<isEqual property="SEARCHTYPE" compareValue='telno'>
+				(A.HOMETEL1||A.HOMETEL2||A.HOMETEL3 LIKE '%'||#SEARCHVALUE#||'%'
+				OR
+				A.MOBILE1||A.MOBILE2||A.MOBILE3 LIKE '%'||#SEARCHVALUE#||'%')
+			</isEqual>
+			<isEqual property="SEARCHTYPE" compareValue="all">
+				(UPPER(A.READNM) LIKE UPPER('%'||#SEARCHVALUE#||'%')
+				 OR
+				 A.READNO LIKE '%'||#SEARCHVALUE#||'%'
+				 OR
+				 A.HOMETEL1||A.HOMETEL2||A.HOMETEL3 LIKE '%'||#SEARCHVALUE#||'%'
+				 OR
+				 A.MOBILE1||A.MOBILE2||A.MOBILE3 LIKE '%'||#SEARCHVALUE#||'%')
+			</isEqual>
+		</isNotEmpty>		
+
+	</select>
+
+	<!-- 지국 자동완성 -->
+	<select id="getJikukList" resultClass="java.util.HashMap">
+		SELECT USERID BOSEQ,
+			   NAME,
+			   JIKUK_TEL,
+			   JIKUK_HANDY
+		  FROM TM_AGENCY
+		 WHERE 1=1
+	   <isNotEmpty property="JIKUKNAME" prepend="AND">
+	   		NAME LIKE '%'||#JIKUKNAME#||'%'
+	   </isNotEmpty>
+	     AND ROWNUM &lt; '11'
+	</select>
+	
+	<select id="getReaderInfo" resultClass="java.util.HashMap">
+		SELECT A.READNO,	<!-- 독자번호 -->
+		       A.READNM,	<!-- 독자명 -->
+               A.NEWSCD,	<!-- 신문코드 -->
+               NVL2(A.NEWSCD, FUNC_COMMON_CDNM('100', NEWSCD), '') NEWSNM,	<!-- 신문명 -->
+               A.SEQ,		<!-- 시퀀스 -->
+               A.BOSEQ,	<!-- 지국코드 -->
+               FUNC_AGENT_NM(A.BOSEQ) JIKUKNM,	<!-- 지국명 -->
+               A.GNO,		<!-- 구역번호 -->
+               (SELECT GU_NM FROM TM_GUYUK WHERE BOSEQ = A.BOSEQ AND GU_NO = GNO) GNONM,	<!-- 구역명 -->
+               A.BNO,		<!-- 배달번호 -->
+               A.SNO,		<!-- 사이번호번호 -->
+               A.READTYPECD,	<!-- 독자유형코드 -->
+               FUNC_COMMON_CDNM('115', A.READTYPECD) READTYPENM,	<!-- 독자유형명 -->
+               NVL2 (A.DLVZIP, SUBSTR(A.DLVZIP, 0, 3)||'-'||SUBSTR(A.DLVZIP, 4, 3), '') DLVZIP,	<!-- 우편번호 -->
+               A.DLVADRS1,	<!-- 주소1 -->
+               A.DLVADRS2,	<!-- 상세주소 -->
+               CASE WHEN LENGTH(A.BDMNGNO) > 1 then A.NEWADDR || ' ' || A.DLVADRS1
+               ELSE A.DLVADRS1
+			   END AS NEWADDR, <!--  간략화면 주소 --> <!--  간략화면 주소 -->
+               A.SGTYPE,	<!-- 수금유형코드 -->
+			   FUNC_COMMON_CDNM('119', A.SGTYPE) SGTYPENM,	<!-- 수금유형명 -->
+               A.UPRICE,	<!-- 단가 -->
+               A.QTY,		<!-- 부수 -->
+               (SELECT SUM(NVL(E.UPRICE,0)) AS UPRICE FROM TM_READER_NEWS E 
+                WHERE A.BOSEQ=E.BOSEQ AND A.NEWSCD=E.NEWSCD AND A.READNO=E.READNO AND A.BNO!='999' AND E.BNO!='999') SUMUPRICE,
+			   (SELECT NVL(SUM(E.QTY), 0) AS QTY  FROM TM_READER_NEWS E 
+                 WHERE A.BOSEQ=E.BOSEQ AND A.NEWSCD=E.NEWSCD AND A.READNO=E.READNO AND A.BNO!='999' AND E.BNO!='999') SUMQTY,
+               A.RSDTYPECD,	<!-- 주거구분코드 -->
+               NVL2(A.RSDTYPECD, FUNC_COMMON_CDNM('114', A.RSDTYPECD), '') RSDTYPENM,	<!-- 주거구분명 -->
+               A.DLVTYPECD,	<!-- 배달유형코드 -->
+               NVL2(A.DLVTYPECD, FUNC_COMMON_CDNM('121', A.DLVTYPECD), '') DLVTYPENM,	<!-- 배달유형명 -->
+               A.DLVPOSICD,	<!-- 배달장소코드 -->
+               NVL2(A.DLVPOSICD, FUNC_COMMON_CDNM('120', A.DLVPOSICD), '') DLVPOSINM,	<!-- 배달장소명 -->
+               A.HJPATHCD,	<!-- 신청경로코드 -->
+               NVL2(A.HJPATHCD, FUNC_COMMON_CDNM('013', A.HJPATHCD), '') HJPATHNM,		<!-- 신청경로명 -->
+               A.HJTYPECD,
+               A.HJPSREGCD,
+               A.HJPSNM,	<!-- 확장자명 -->
+               NVL2(A.HJDT, SUBSTR(A.HJDT, 0, 4)||'-'||SUBSTR(A.HJDT, 5, 2)||'-'||SUBSTR(A.HJDT, 7, 2), '') HJDT,	<!-- 확장일자 -->
+               NVL2(A.SGBGMM, SUBSTR(A.SGBGMM, 0, 4)||'-'||SUBSTR(A.SGBGMM, 5, 2), '') SGBGMM,	<!-- 유가년월 -->
+               NVL2(A.SGEDMM, SUBSTR(A.SGEDMM, 0, 4)||'-'||SUBSTR(A.SGEDMM, 5, 2), '') SGEDMM,	<!-- 종료월 -->
+               NVL2(A.STDT, SUBSTR(A.STDT, 0, 4)||'-'||SUBSTR(A.STDT, 5, 2)||'-'||SUBSTR(A.STDT, 7, 2), '') STDT,	<!-- 해지일자 -->
+               A.STSAYOU,		<!-- 해지사유코드 -->
+               NVL2(A.STSAYOU, FUNC_COMMON_CDNM('118', A.STSAYOU), '') STSAYOUNM,	<!-- 해지사유명 -->
+               NVL2(A.APLCDT, SUBSTR(A.APLCDT, 0, 4)||'-'||SUBSTR(A.APLCDT, 5, 2)||'-'||SUBSTR(A.APLCDT, 7, 2), '') APLCDT,	<!-- 신청일자 -->
+               FUNC_GET_GUDOK_MONTH(A.READNO, A.NEWSCD) TERM,
+               B.TASKCD,	<!-- 직종코드 -->
+               NVL2(B.TASKCD, FUNC_COMMON_CDNM('117', B.TASKCD), '') TASKNM,	<!-- 직종명 -->
+               B.INTFLDCD, <!-- 관심코드 -->
+               NVL2(B.INTFLDCD, FUNC_COMMON_CDNM('116', B.INTFLDCD), '') INTFLDNM,	<!-- 관심분야명 -->
+               A.SPGCD, <!-- 판촉물코드 -->
+               NVL2(A.SPGCD, FUNC_COMMON_CDNM('130', A.SPGCD), '') SPGNM,	<!-- 판촉물명 -->
+               A.BNSBOOKCD, <!-- 보너스북코드 -->
+			   NVL2(A.BNSBOOKCD, FUNC_COMMON_CDNM('101', A.BNSBOOKCD), '') BNSBOOKNM,	<!-- 보너스북명 -->
+               A.REMK,	<!-- 비고 -->
+               NVL2(B.BIDT, SUBSTR(B.BIDT, 0, 4)||'-'||SUBSTR(B.BIDT, 5, 2)||'-'||SUBSTR(B.BIDT, 7, 2), '') BIDT,
+               TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), '구 ')+1,     LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2)  ADDR,
+               NVL2 (HOMETEL1 , HOMETEL1 ||'-'|| HOMETEL2 ||'-'|| HOMETEL3 , NVL2(HOMETEL2 ,  HOMETEL2 ||'-'|| HOMETEL3 ,   NVL2 (HOMETEL3 , HOMETEL3 , '' ))) HOMETEL,
+               NVL2 (MOBILE1 , MOBILE1 ||'-'|| MOBILE2 ||'-'|| MOBILE3 , NVL2(MOBILE2 ,  MOBILE2 ||'-'|| MOBILE3 ,   NVL2 (HOMETEL3 , MOBILE3 , '' ))) MOBILE,
+               B.EMAIL			
+          FROM TM_READER_NEWS A,
+          	   TM_READER B
+         WHERE 1=1
+           AND A.READNO = B.READNO
+           AND A.READNO = #readNo#
+           AND A.NEWSCD = #newsCd#
+           AND A.SEQ = NVL(#seq#, (SELECT MIN(SEQ) FROM TM_READER_NEWS WHERE READNO = #readNo#) )
+
+	</select>
+
+	<!-- 통화 내역 -->
+	<select id="getCallLog" resultClass="java.util.HashMap">
+		SELECT READNO,
+			   NEWSCD,
+			   SEQ,
+			   CALLSEQ,
+			   TO_CHAR(INDATE,'YYYY-MM-DD')||' '||TO_CHAR(INDATE, 'HH24:MI') INDATE,
+			   REMK
+		  FROM TM_CALL_LOG
+		 WHERE READNO = #readNo# AND NEWSCD = #newsCd# AND SEQ =#seq#
+		 ORDER BY CALLSEQ
+	</select>
+
+	<!-- 민원등록 기본정보 (임시)-->
+	<select id="getMinwonBasicInfo" resultClass="java.util.HashMap">
+		SELECT B.NAME JIKUKNM,
+		       B.MANAGER,
+		       A.READNM,
+		       A.READNO,
+		       A.READTYPECD,
+		       FUNC_COMMON_CDNM('115', A.READTYPECD) READTYPENM,
+		       A.SGTYPE,
+		       FUNC_COMMON_CDNM('119', A.SGTYPE) SGTYPENM,
+               NVL2(A.DLVZIP, SUBSTR(A.DLVZIP,0,3)||'-'||SUBSTR(A.DLVZIP,4,3)||' ', '')||A.DLVADRS1||' '||A.DLVADRS2 ADDR,
+               A.HOMETEL1||'-'||A.HOMETEL2||'-'||A.HOMETEL3 HOMETEL,
+               A.MOBILE1||'-'||A.MOBILE2||'-'||A.MOBILE3 MOBILE,     									 
+		       (SELECT NAME FROM TMP_USER WHERE USEYN = 'Y' AND ID = #userid# AND ROWNUM = 1) USERNM 
+		  FROM TM_READER_NEWS A,
+		  	   TM_AGENCY B
+		 WHERE 1=1
+		   AND A.BOSEQ = B.USERID
+		   AND A.READNO = #readno#
+		   AND A.SEQ = #seq#
+	</select>
+
+	<!-- 민원등록 기본정보 -->
+	<select id="getMinwonList" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+				SELECT A.MINWONNO,
+				       A.MINWONDT,
+				       CASE WHEN A.MINWONDT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+				       		THEN 'Y'
+				       		ELSE 'N' 
+				       END TODAYYN,
+				       TO_CHAR(A.INDT, 'MM"-"DD"/"HH24:MI') MINWONTM,
+				       A.READNM,
+				       A.ADDR,
+				 	   CASE WHEN A.TEL IS NULL
+				 	   		THEN ''
+				 	   		WHEN LENGTH(A.TEL) = 7
+				 	   		THEN SUBSTR(A.TEL, 0, 3)||'-'||SUBSTR(A.TEL, 4, 4)
+				 	   		WHEN LENGTH(A.TEL) = 8
+				 	   		THEN SUBSTR(A.TEL, 0, 4)||'-'||SUBSTR(A.TEL, 5, 4)
+				 	   		WHEN LENGTH(A.TEL) = 9
+				          	THEN SUBSTR(A.TEL, 0, 2)||'-'||SUBSTR(A.TEL, 3, 3)||'-'||SUBSTR(A.TEL, 6, 4)
+				            WHEN LENGTH(A.TEL) = 10
+				  			THEN CASE WHEN SUBSTR(A.TEL, 0, 2) = '02'
+				                      THEN SUBSTR(A.TEL, 0, 2)||'-'||SUBSTR(A.TEL, 3, 4)||'-'||SUBSTR(A.TEL, 7, 4)
+				                      ELSE SUBSTR(A.TEL, 0, 3)||'-'||SUBSTR(A.TEL, 4, 3)||'-'||SUBSTR(A.TEL, 7, 4)
+				                 END
+                            ELSE SUBSTR(A.TEL, 0, 3)||'-'||SUBSTR(A.TEL, 4, 4)||'-'||SUBSTR(A.TEL, 8, 4)
+				 	   END TEL,
+				 	   A.MINWONCD1,
+				       FUNC_COMMON_CDNM('131', A.MINWONCD1) MINWONNM1,
+				       A.MINWONCD2,
+				       FUNC_COMMON_CDNM('132', A.MINWONCD2) MINWONNM2,
+				       (SELECT REMK FROM TC_COMMON WHERE CDCLSF = '132' AND CODE = A.MINWONCD2) MINWONNM3,
+				       A.BOSEQ,
+				       A.CALLUSER,
+				       FUNC_COMMON_CDNM('133', A.CALLUSER) CALLUSERNM,
+				       A.CALLTM,
+				       A.MINWONDESC,
+				       A.INDT,
+				       (SELECT NAME FROM TMP_USER WHERE ID = A.INPS) INPS,
+				       A.CHGDT,
+				       A.CHGPS,
+				       A.SPCLYN,
+				       B.JIKUK_HANDY,
+				       B.JIKUK_TEL,
+				       B.NAME,
+				       B.MANAGER
+				  FROM TM_MINWON A,
+				       TM_AGENCY B
+				 WHERE A.BOSEQ = B.USERID(+)
+
+			<isNotEmpty property="search_value">
+				<isEqual property="search_type" compareValue="userName" prepend="AND">
+					A.READNM LIKE '%'||#search_value#||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="addr" prepend="AND">
+					A.ADDR LIKE '%'||#search_value#||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="telNo" prepend="AND">
+					A.TEL LIKE '%'||#search_value#||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="jikukNm" prepend="AND">
+					B.NAME LIKE '%'||#search_value#||'%'
+				</isEqual>
+				<isEqual property="search_type" compareValue="inPs" prepend="AND">
+					A.INPS = (SELECT ID FROM TMP_USER WHERE NAME = #search_value#)
+				</isEqual>
+
+			</isNotEmpty>
+
+		 	       AND A.MINWONDT BETWEEN #fromDate# AND #toDate#
+		 	     ORDER BY A.MINWONDT DESC, A.MINWONNO DESC
+			)C
+		)D
+		WHERE
+		RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+		AND
+		RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+ 	</select>
+ 	
+ 	<!-- 민원리스트 카운트 -->
+	<select id="getMinwonListCount" resultClass="int">
+		SELECT COUNT(1) COUNT
+		  FROM TM_MINWON A,
+		       TM_AGENCY B
+		 WHERE A.BOSEQ = B.USERID(+)
+		<isNotEmpty property="search_value">
+			<isEqual property="search_type" compareValue="userName" prepend="AND">
+				A.READNM LIKE '%'||#search_value#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="addr" prepend="AND">
+				A.ADDR LIKE '%'||#search_value#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="telNo" prepend="AND">
+				A.TEL LIKE '%'||#search_value#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="jikukNm" prepend="AND">
+				B.NAME LIKE '%'||#search_value#||'%'
+			</isEqual>
+			<isEqual property="search_type" compareValue="inPs" prepend="AND">
+				A.INPS = (SELECT ID FROM TMP_USER WHERE NAME = #search_value#)
+			</isEqual>
+		</isNotEmpty>
+ 	       AND A.MINWONDT BETWEEN #fromDate# AND #toDate#
+ 	</select>
+ 	
+	<select id="getMinwonTotalCount" resultClass="int">
+		SELECT COUNT(1) COUNT
+		  FROM TM_MINWON A
+		 WHERE 1=1
+		   AND SUBSTR(A.MINWONDT, 0, 4) = TO_CHAR(SYSDATE, 'YYYY') 
+ 	</select>
+ 	
+	<!-- 민원 등록 -->
+ 	<insert id="insertMinwon">
+		INSERT INTO TM_MINWON
+			   (MINWONNO, MINWONDT, READNM, ADDR, TEL,
+			   	MINWONCD1, MINWONCD2, BOSEQ, CALLUSER, CALLTM,
+			   	MINWONDESC, INDT, INPS, CHGDT, CHGPS)
+        VALUES ((SELECT LPAD(NVL(MAX(MINWONNO),0)+1, 4, '0') FROM TM_MINWON WHERE MINWONDT = TO_CHAR(SYSDATE, 'YYYYMMDD')), TO_CHAR(SYSDATE, 'YYYYMMDD'), #readNm#, #addr#, #telNo#,
+        	    #minwonCd1#, #minwonCd2#, #boseq#, #callPs#, #callTm#,
+        	    #minwonDesc#, SYSDATE, #inps#, '', '')
+ 	</insert>
+
+	<!-- 민원 수정 -->
+ 	<insert id="updateMinwon">
+		UPDATE TM_MINWON
+		   SET READNM = #readNm#,
+           	   ADDR = #addr#,
+               TEL = #telNo#,
+               MINWONCD1 = #minwonCd1#,
+               MINWONCD2 = #minwonCd2#,
+               BOSEQ = #boseq#,
+               CALLUSER = #callPs#,
+               CALLTM = #callTm#,
+               MINWONDESC = #minwonDesc#,
+               SPCLYN = #spcialYn#,
+               CHGDT = SYSDATE,
+               CHGPS = #chgPs#
+         WHERE 1=1
+           AND MINWONNO = #minwonNo#
+           AND MINWONDT = #minwonDt#
+ 	</insert>
+ 	
+ 	<!-- 민원 수정 -->
+ 	<delete id="deleteMinwon">
+ 		DELETE 
+ 		  FROM TM_MINWON
+ 		 WHERE MINWONNO = #minwonNo#
+           AND MINWONDT = #minwonDt#
+ 	</delete>
+ 	
+ 	<!-- 그룹코드 상위그룹기준 2차,3차 그룹 조회 -->
+	<select id="getMinwonCd2" resultClass="java.util.HashMap">
+		SELECT CODE,
+			   CNAME
+		  FROM TC_COMMON
+		 WHERE CDCLSF = '132'
+		   AND RESV1 = #minwonCd1#
+		 ORDER BY SORTFD, CODE
+	</select>
+	
+	
+	<!-- 독자 찾기 -->
+	<select id="getTotalReaderSearch" resultClass="java.util.HashMap">
+		SELECT ROWNUM RNUM , C.* FROM(
+			SELECT 
+				READNO, <!-- 독자번호 -->	
+				NEWSCD, <!-- 신문코드 --> 
+				FUNC_COMMON_CDNM('100', A.NEWSCD) newsNm, <!-- 신문명 -->	
+				(SELECT YNAME FROM  TC_COMMON WHERE CDCLSF='100' AND CODE=A.NEWSCD) newsShortNm, 
+				SEQ, <!-- 일련번호 --> 
+				BOSEQ, <!-- 지국일련번호 --> 
+				FUNC_AGENT_NM(BOSEQ) BOSEQNM, <!-- 지국명 --> 
+				BOREADNO, <!-- 지국독자번호 -->
+				GNO, <!-- 구역 --> 
+				BNO, <!-- 배달번호 --> 
+				SNO, <!-- 사이번호 --> 
+				READTYPECD, <!-- 독자유형(일반,학생,기증,투입,강투) -->
+				READNM, <!-- 독자명 --> 
+				OFFINM, <!-- 사무실명 --> 
+				HOMETEL1, <!-- 전화번호1 --> 
+				HOMETEL2, <!-- 전화번호2 --> 
+				HOMETEL3, <!-- 전화번호3 -->
+				MOBILE1, <!-- 휴대폰1 --> 
+				MOBILE2, <!-- 휴대폰2 --> 
+				MOBILE3, <!-- 휴대폰3 --> 
+				DLVZIP, <!-- 배달우편번호 --> 
+				DLVADRS1, <!-- 배달지주소1(우편주소) -->
+				DLVADRS2, <!-- 배달지주소2 --> 
+				DLVSTRNM, <!-- 배달거리명 --> 
+				DLVSTRNO, <!-- 배달거리번호 --> 
+				APTCD, <!-- 아파트코드 --> 
+				APTDONG, <!-- 아파트동 -->
+				APTHO, <!-- 아파트호 --> 
+				SGTYPE, <!-- 수금방법 --> 
+				(SELECT CNAME FROM TC_COMMON WHERE CDCLSF='119' AND USEYN='Y' AND CODE=A.SGTYPE) SGTYPENM,
+				SGINFO, <!-- 수금지정보 --> 
+				SGTEL1, <!-- 수금자전화번호1 --> 
+				SGTEL2, <!-- 수금자전화번호2 -->
+				SGTEL3, <!-- 수금자전화번호3 --> 
+				UPRICE, <!-- 단가 -->
+				RECEIPT, <!-- 영수증 출력 여부  -->
+				QTY, <!-- 부수 --> 
+				RSDTYPECD, <!-- 주거구분 --> 
+				DLVTYPECD, <!-- 배달유형(직배,우송) -->
+				DLVPOSICD, <!-- 배달장소 --> 
+				HJPATHCD, <!-- 확장경로 --> 
+				HJTYPECD, <!-- 확장유형코드 --> 
+				HJPSREGCD, <!-- 확장자등록코드 --> 
+				HJPSNM, <!-- 확장자명 -->
+				HJDT, <!-- 확장일자 --> 
+				SGBGMM, <!-- 수금시작월 --> 
+				SGEDMM, <!-- 수금종료월 --> 
+				SGCYCLE, <!-- 수금주기(1~12) --> 
+				STDT, <!-- 중지일자 -->
+				STSAYOU, <!-- 중지사유 --> 
+				(SELECT CNAME	FROM	TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '118' AND CODE = A.STSAYOU) STSAYOUNM,
+				APLCDT, <!-- 신청일자 --> 
+				APLCNO, <!-- 신청번호 --> 
+				REMK, <!-- 비고 --> 
+				INDT, <!-- 입력일자 --> 
+				INPS, <!-- 입력자 -->
+				CHGDT, <!-- 변경일자 --> 
+				CHGPS, <!-- 변경자 --> 
+				SPGCD, <!-- 판촉물코드 --> 
+				BNSBOOKCD, <!-- 보너스북코드 -->
+				(SELECT BIDT FROM TM_READER WHERE A.READNO = READNO) BIDT, <!-- 생년월일 -->
+				TRIM(SUBSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), INSTR(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))), '구 ')+1,     LENGTH(TRIM(SUBSTR(DLVADRS1, INSTR(DLVADRS1, ' ', 1, 2), LENGTH(DLVADRS1))))))||' '||TRIM(DLVADRS2)  ADDR, <!-- 간략화면 주소 -->
+				NVL2 (HOMETEL1 , HOMETEL1 ||'-'|| HOMETEL2 ||'-'|| HOMETEL3 , NVL2(HOMETEL2 ,  HOMETEL2 ||'-'|| HOMETEL3 ,   NVL2 (HOMETEL3 , HOMETEL3 , '' ))) HOMETEL, <!-- 간략화면 전화번호 -->
+				NVL2 (MOBILE1 , MOBILE1 ||'-'|| MOBILE2 ||'-'|| MOBILE3 , NVL2(MOBILE2 ,  MOBILE2 ||'-'|| MOBILE3 ,   NVL2 (HOMETEL3 , MOBILE3 , '' ))) MOBILE, <!-- 간략화면 핸드폰 -->
+				(SELECT EMAIL FROM TM_READER WHERE A.READNO = READNO) EMAIL, <!-- 이메일 -->
+				 CASE WHEN LENGTH(A.BDMNGNO) > 1 then A.NEWADDR || ' ' || A.DLVADRS1
+               ELSE A.DLVADRS1
+			   END AS NEWADDR, <!--  간략화면 주소 -->
+				(SELECT DLVADRS1 || ' ' || DLVADRS2 FROM CHG_SUCCESS_ADDR WHERE READNO = A.READNO  AND SEQ = A.SEQ  AND NEWSCD = A.NEWSCD) AS OLDADDR,
+				
+				(SELECT CASE WHEN SUM(AMT) IS NOT NULL THEN SUM(AMT) ELSE 0 END FROM TM_READER_SUGM WHERE READNO = A.READNO AND NEWSCD = A.NEWSCD AND SEQ = A.SEQ AND SGBBCD IN ('011' , '012' , '013' , '021' , '022' , '023' , '024' , '088')) SUMCOLLECT, <!-- 총 수금액 -->
+				(SELECT CASE WHEN SUM(BILLAMT) IS NOT NULL THEN SUM(BILLAMT) ELSE 0 END FROM TM_READER_SUGM WHERE READNO = A.READNO AND NEWSCD = A.NEWSCD AND SEQ = A.SEQ AND SGBBCD = '044') ACCOUNTDUE, <!-- 총 미수액 -->
+				
+				(SELECT NVL(COUNT(1),0) FROM TM_CALL_LOG WHERE READNO = A.READNO AND NEWSCD = A.NEWSCD AND SEQ = A.SEQ) CALL_CNT				
+	        FROM TM_READER_NEWS A, TM_AGENCY B
+	       WHERE A.BOSEQ = B.SERIAL
+	        <isNotEmpty property="SEARCHVALUE" prepend="AND">
+				<isEqual property="SEARCHTYPE" compareValue="readnm">
+   			  		A.READNM LIKE '%'||#SEARCHVALUE#||'%'
+   			  	</isEqual>
+				<isEqual property="SEARCHTYPE" compareValue="readno">
+					 A.READNO LIKE '%'||#SEARCHVALUE#||'%'
+				</isEqual>
+				<isEqual property="SEARCHTYPE" compareValue="telno">
+					 (A.HOMETEL1||A.HOMETEL2||A.HOMETEL3 LIKE '%'||#SEARCHVALUE#||'%'
+					 OR
+					 A.MOBILE1||A.MOBILE2||A.MOBILE3 LIKE '%'||#SEARCHVALUE#||'%')
+				</isEqual>
+				<isEqual property="SEARCHTYPE" compareValue="addr">
+					 A.DLVADRS1||A.DLVADRS2 LIKE '%'||#SEARCHVALUE#||'%'
+				</isEqual>
+			</isNotEmpty>
+			ORDER BY BOSEQ ASC, READNO ASC, DECODE(BNO, 999, NULL, SEQ) ASC, GNO ASC, BNO ASC, SNO ASC
+		)C
+	</select>
+ 	
+ 	<!-- 지국 리스트 총 카운트 -->
+	<select id="getTotalReaderSearchTotCnt" resultClass="int">
+		   SELECT COUNT(1) COUNT
+            FROM TM_READER_NEWS A,
+		             TM_AGENCY B
+		   WHERE A.BOSEQ = B.SERIAL
+			 <isNotEmpty property="SEARCHVALUE" prepend="AND">
+				<isEqual property="SEARCHTYPE" compareValue="readnm">
+   			  		A.READNM LIKE '%'||#SEARCHVALUE#||'%'
+   			  	</isEqual>
+				<isEqual property="SEARCHTYPE" compareValue="readno">
+					 A.READNO LIKE '%'||#SEARCHVALUE#||'%'
+				</isEqual>
+				<isEqual property="SEARCHTYPE" compareValue="telno">
+					 (A.HOMETEL1||A.HOMETEL2||A.HOMETEL3 LIKE '%'||#SEARCHVALUE#||'%'
+					 OR
+					 A.MOBILE1||A.MOBILE2||A.MOBILE3 LIKE '%'||#SEARCHVALUE#||'%')
+				</isEqual>
+				<isEqual property="SEARCHTYPE" compareValue="addr">
+					 A.DLVADRS1||A.DLVADRS2 LIKE '%'||#SEARCHVALUE#||'%'
+				</isEqual>
+			</isNotEmpty>
+	</select>
+	
+</sqlMap>

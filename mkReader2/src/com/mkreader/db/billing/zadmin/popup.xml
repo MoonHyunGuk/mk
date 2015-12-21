@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="billing.zadmin.popup">
+
+
+	<!-- 유저정보 불러오기 -->
+	<select id="getUserInfo" resultClass="java.util.HashMap">
+		SELECT 
+		  A.*,
+		  B.* 
+		FROM 
+		  TM_READER_NEWS A
+		  ,(SELECT * FROM TBL_USERS WHERE JIKUK=#boseq# AND SERIAL=#serial# AND ROWNUM=1) B
+		WHERE 
+			A.READNO = B.READNO
+			AND
+			A.NEWSCD='100'
+			AND
+			ROWNUM = 1
+	</select>
+	
+	<select id="getUserStuInfo" resultClass="java.util.HashMap">
+		SELECT 
+		  A.*,
+		  B.* 
+		FROM 
+		  TM_READER_NEWS A
+		  ,(SELECT * FROM TBL_USERS_STU WHERE NUMID=#serial#) B
+		WHERE 
+			A.READNO = B.READNO
+			AND
+			A.NEWSCD='100'
+			AND
+			ROWNUM = 1
+	</select>
+	
+	<!-- 지국리스트 불러오기 -->
+	<select id="getJikukList" resultClass="java.util.HashMap">
+		SELECT 
+			SERIAL
+			, NAME 
+		FROM 
+			TM_AGENCY 
+		WHERE 
+			SERIAL IS NOT NULL
+			<isNotEmpty property="SERIAL" prepend=" AND">
+				SERIAL = #SERIAL# 
+			</isNotEmpty> 
+		ORDER BY NAME
+	</select>
+	
+	<!-- 은행정보 불러오기 -->
+	<select id="getBankList" resultClass="java.util.HashMap">
+		SELECT 
+			BANKNUM
+			, BANKNAME 
+		FROM 
+			TBL_BANK 
+		ORDER BY 
+			BANKNUM
+	</select>
+	
+	<!-- 은행 시리얼넘버 불러오기 -->
+	<select id="getTopSerial" resultClass="string">
+		SELECT 
+			TOP 1 SERIAL 
+		FROM 
+			TBL_USERS
+		WHERE 
+			JIKUK = #JIKUK#
+		ORDER BY 
+			SERIAL DESC
+	</select>
+	
+	<!-- 통화기록 불러오기 -->
+	<select id="getCallList" resultClass="java.util.HashMap">
+		SELECT 
+		  TO_CHAR(A.INDATE,'YYYY-MM-DD HH24:MI:SS') INDATE
+		  , A.REMK 
+		FROM 
+		  TBL_CALL_LOG A
+		  ,(SELECT * FROM TBL_USERS WHERE READNO = #READNO# AND ROWNUM=1) B
+		WHERE 
+			A.NUMID = B.NUMID
+			AND 
+			A.TYPECD = #TYPECD#
+		ORDER BY 
+			A.CALLSEQ ASC
+	</select>
+	
+	<!-- 회원정보수정 -->
+	<update id="updateMeberInfo">
+		UPDATE 
+			TBL_USERS 
+		SET 
+			BANK = #BANK#
+			, BANK_NUM = #BANK_NUM#
+			, SAUP = #BANK_OWN#
+		WHERE 
+			READNO = #READNO#
+	</update>
+	
+</sqlMap>

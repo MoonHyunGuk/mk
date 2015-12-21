@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="management.agencyManage">
+
+	<!-- 지국정보 조회 -->
+	<select id="getAgencyInfo" resultClass="java.util.HashMap">
+	   SELECT NUMID,         <!-- 일련번호 -->
+	   			  USERID,         <!-- 지국아이디 -->
+  		          PASSWD,       <!-- 비밀번호 -->
+		          SERIAL,          <!-- 지국번호 -->
+		          NAME,           <!-- 지국명 -->
+		          NAME_SUB,    <!-- 지국명2 -->
+		          NAME2,         <!-- 지국장명 -->
+		          FUNC_SPLIT_TELNO(JIKUK_TEL, 1) JIKUK_TEL1,             	 <!-- 지국전화번호1 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_TEL, 2) JIKUK_TEL2,             	 <!-- 지국전화번호2 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_TEL, 3) JIKUK_TEL3,            		 <!-- 지국전화번호3 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_HANDY, 1) JIKUK_HANDY1,      <!-- 지국장휴대폰번호1 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_HANDY, 2) JIKUK_HANDY2,      <!-- 지국장휴대폰번호2 -->
+		          FUNC_SPLIT_TELNO(JIKUK_HANDY, 3) JIKUK_HANDY3,      <!-- 지국장휴대폰번호3 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_FAX, 1) JIKUK_FAX1,             	  <!-- 지국팩스번호1 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_FAX, 2) JIKUK_FAX2,            	  <!-- 지국팩스번호2 -->
+		   	      FUNC_SPLIT_TELNO(JIKUK_FAX, 3) JIKUK_FAX3,             	  <!-- 지국팩스번호3 -->
+		          MANAGER,     <!-- 지국담당자 -->
+		          AREA1,          <!-- 부서 -->
+		          NVL2(AREA1, FUNC_COMMON_CDNM('002',AREA1),'') AREA1_NM,          <!-- 부서명 -->
+		          JIKUK_EMAIL,  <!-- 지국장이메일 -->
+		          ZIP,               <!-- 우편번호 -->
+		          ADDR1,         <!-- 주소1 -->
+		          IDEN_NO,      <!--  사업자번호 -->
+		          GIRO_NO,       <!-- 지로번호 -->
+		          APPROVAL_NO,      <!-- 승인번호 -->
+		          BANK,      	  <!-- 은행코드 -->
+		          BANK_NUM,      <!-- 계좌번호 -->
+		          SDATE,           <!-- 계약일 -->
+		          EDATE,           <!-- 해약일 -->
+		          RDATE,           <!-- 등록일 -->
+		          ADMIN,          <!-- 등록자 -->
+		          MEMO            <!-- 메모 -->
+ 	     FROM TM_AGENCY
+	   WHERE 1=1
+       AND NUMID= #numId#
+
+	</select>
+	
+	
+	<!-- 지국정보 수정(지국) -->
+	<update id="updateAgencyInfo"  parameterClass="java.util.HashMap">
+		UPDATE TM_AGENCY
+		      SET PASSWD = #passwd#,
+		      		NAME_SUB = #nameSub#,
+			        NAME2 = #name2#,
+			        JIKUK_TEL = #jikuk_Tel#,
+			   	    JIKUK_HANDY = #jikuk_Handy#,
+			   	    JIKUK_FAX = #jikuk_Fax#,
+			        JIKUK_EMAIL = #jikuk_Email#,
+			        ZIP = #zip#,
+			        ADDR1 = #addr1#,
+			        IDEN_NO = #iden_No#,
+			        GIRO_NO = #giro_No#,
+			        APPROVAL_NO = #approval_No#,
+			        BANK = #bank#,
+			        BANK_NUM = #bankNum#,
+			        DELIVERY_NM1 = #name2#,
+			        DELIVERY_NUM1 = #jikuk_Handy#
+		 WHERE NUMID = #numId#
+ 	</update>
+ 
+ 	<!-- 공통코드 조회 -->
+	<select id="getCode" resultClass="java.util.HashMap">
+		SELECT CDCLSF, 
+				   CODE,
+				   CNAME 
+		  FROM TC_COMMON
+		WHERE  USEYN = 'Y'
+	 	    AND CDCLSF = #cdclsf#
+		ORDER BY SORTFD, CODE
+
+	</select>
+	
+</sqlMap>

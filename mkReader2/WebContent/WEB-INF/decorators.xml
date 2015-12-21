@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<decorators>
+
+	<excludes>
+		<pattern>/main/index.*</pattern>
+		<pattern>/main/login*</pattern>
+		<pattern>/main/logout*</pattern>
+		
+		<pattern>/billing/tmadmin/index.*</pattern>
+		<pattern>/billing/tmadmin/login.do</pattern>
+		<pattern>/billing/tmadmin/pop*</pattern>
+		
+		<pattern>/billing/zadmin/index.*</pattern>
+		<pattern>/billing/zadmin/login.do</pattern>
+		<pattern>/billing/zadmin/pop*</pattern>
+		<pattern>/billing/student/pop*</pattern>
+		
+		<pattern>/reader/billing/billingInfo.do*</pattern>
+		<pattern>/reader/billingStu/billingInfo.do*</pattern>
+		<pattern>/reader/billingAdmin/billingInfo.do*</pattern>
+		<pattern>/reader/billingStuAdmin/billingInfo.do*</pattern>
+		<pattern>/reader/billingAdmin/pop*</pattern>
+		
+		<pattern>/reader/education/educationInfo.do*</pattern>
+		
+		<pattern>/reader/employeeAdmin/employeeInfo.do*</pattern>
+		
+		<pattern>/reader/alienation/alienationInfo.do*</pattern>
+		<pattern>/reader/alienation/NIInfo.do*</pattern>
+		
+		<pattern>/reader/education/educationUnpaid.do</pattern>
+		
+		<pattern>/reader/card/cardReaderEdit.do*</pattern>
+		<pattern>/reader/card/cardAplcReaderInfo.do*</pattern>
+		
+		<pattern>/management/readerRestore/selectReaderSugmNHistoryData.do*</pattern>
+		<pattern>/management/adminManage/agencyInfo.do*</pattern>
+		
+		<pattern>/billing/zadmin/cmsrequest/err13.do*</pattern>
+		<pattern>/billing/zadmin/cmsbank/err12.do*</pattern>
+		<pattern>/billing/student/cmsrequest/err13_stu.do*</pattern>
+		
+		<pattern>/billing/zadmin/cmsget/err21.do*</pattern>
+		<pattern>/billing/student/cmsget/err21_stu.do*</pattern>
+		
+		<pattern>/reader/readerManage/retrieveApplyReader*</pattern>
+		<pattern>/reader/minwon/minwon*</pattern>
+		<pattern>/reader/minwon/pop*</pattern>
+		<pattern>/output/billOutput/pop*</pattern>
+		<pattern>/reader/readerManage/pop*</pattern>
+		<pattern>/reader/readerAplc/pop*</pattern>
+		<pattern>/reader/billing/pop*</pattern>
+		<pattern>/reader/billingStu/pop*</pattern>
+		<pattern>/reader/billingStuAdmin/pop*</pattern>
+		<pattern>/reader/minwon/rerocation.do</pattern>
+		<pattern>/reader/readerManage/searchAddr.do</pattern>
+		<pattern>/collection/collection/agencyDupChk.do</pattern>
+		<pattern>/reader/subscriptionform/*</pattern>
+		<pattern>/reader/education/pop*</pattern>
+		<pattern>/reader/alienation/pop*</pattern>
+		<pattern>/reader/card/pop*</pattern>
+		<pattern>/reader/empExtd/pop*</pattern>
+		<pattern>/community/bbs/pop*</pattern>
+		<pattern>*oz*</pattern>
+		<pattern>*ajax*</pattern>
+		<pattern>*excel*</pattern>
+		<pattern>/common/common/pop*</pattern>
+		<pattern>/mobile/jidae/*</pattern>
+		<pattern>/mobile/*</pattern>
+		<pattern>/community/bbs/mainNoticeList.do</pattern>
+	</excludes>
+
+    <decorator name="main" page="/decorators/mainDeco.jsp">
+		<pattern>/admin*</pattern>
+		<pattern>/agency*</pattern>
+		<pattern>/billing*</pattern>
+		<pattern>/collection*</pattern>
+		<pattern>/reader*</pattern>
+		<pattern>/management*</pattern>
+		<pattern>/output*</pattern>
+		<pattern>/print*</pattern>
+		<pattern>/statistics*</pattern>
+		<pattern>/etc*</pattern>
+		<pattern>/community*</pattern>
+		<pattern>/test*</pattern>		
+		<pattern>/card*</pattern>
+    </decorator>
+    
+</decorators>

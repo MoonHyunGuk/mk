@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="management.code">
+	
+	<!-- 코드 step1 조회 -->
+	<select id="selectCodeStep1List" resultClass="java.util.HashMap">
+		SELECT CODE
+		        , CNAME
+		 FROM TC_COMMON
+		WHERE CDCLSF = '001'
+		   AND CODE != '009'
+		   AND USEYN = 'Y'
+		ORDER BY CNAME
+	</select>
+	
+	<!-- 코드 step2 조회 -->
+	<select id="selectCodeStep2List" resultClass="java.util.HashMap">
+		SELECT CODE
+		       , CNAME
+		       , YNAME
+		       , REMK
+		       , RESV1
+		       , RESV2
+		       , RESV3
+		 FROM TC_COMMON
+	   WHERE USEYN = 'Y'
+	      AND CDCLSF = #CODE#
+		ORDER BY CNAME
+	</select>
+	
+	<!-- 코드 step2 조회 -->
+	<select id="getCodeView" resultClass="java.util.HashMap">
+		SELECT CNAME
+		       , YNAME
+		       , REMK
+		       , RESV1
+		       , RESV2
+		       , RESV3
+		       , USEYN
+		       , SORTFD
+		FROM TC_COMMON
+	   WHERE CDCLSF = #CODE#
+	      AND CODE = #SUBCODE# 
+	</select>
+	
+	<!-- 코드 중복 조회 -->
+	<select id="chkCodeValidate" resultClass="java.util.HashMap">
+		SELECT CASE WHEN CNT > 0 THEN 'Y'
+			            ELSE 'N'	
+				   END AS CHKYN
+			  FROM (
+			        SELECT COUNT(*) AS CNT 
+			          FROM TC_COMMON
+			         WHERE CODE = #CODE#
+			           AND CDCLSF = '001'
+			           AND USEYN = 'Y'
+			        ) 
+	</select>
+	
+	<!-- 코드명 중복 조회 -->
+	<select id="chkCodeNameValidate" resultClass="java.util.HashMap">
+		SELECT CASE WHEN CNT > 0 THEN 'Y'
+			            ELSE 'N'	
+				   END AS CHKYN
+			  FROM (
+			        SELECT COUNT(*) AS CNT 
+			          FROM TC_COMMON
+			         WHERE CNAME = #CNAME#
+			           AND CDCLSF = '001'
+			           AND USEYN = 'Y'
+			        ) 
+	</select>
+	
+	<!-- 코드 등록 -->
+	<insert id="insertCodeData">
+		INSERT INTO TC_COMMON (
+				   CDCLSF
+				 , CODE 
+			     , CNAME
+			     , USEYN
+			     , INDT
+			     , INPS
+			     , CHGDT
+			     , CHGPS
+				) VALUES (
+				   #CDCLSF#
+			     , #CODE#
+			     , #CNAME#
+			     , 'Y'
+			     , SYSDATE
+			     , #userId#
+			     , SYSDATE
+			     , #userId#
+				)
+	</insert>
+	
+	<!-- 코드 수정 -->
+	<update id="updateCodeData">
+		UPDATE TC_COMMON SET
+			CNAME	= #CNAME#,
+			YNAME	= #YNAME#,
+			REMK		= #REMK#,
+			RESV1		= #RESV1#,
+			RESV2		= #RESV2#,
+			RESV3		= #RESV3#,
+			USEYN	= #USEYN#,
+			SORTFD	= #SORTFD#,
+			CHGPS 	= #userId#,
+			CHGDT 	= SYSDATE
+		WHERE CDCLSF = #CDCLSF#
+	       AND CODE = #CODE# 
+	</update>
+	
+	<!-- 코드 등록 -->
+	<insert id="insertTopCodeData">
+		INSERT INTO TC_COMMON (
+				   CDCLSF
+				 , CODE 
+			     , CNAME
+			     , USEYN
+			     , INDT
+			     , INPS
+			     , CHGDT
+			     , CHGPS
+				) VALUES (
+				   #CDCLSF#
+			     , #CODE#
+			     , #CNAME#
+			     , 'Y'
+			     , SYSDATE
+			     , #userId#
+			     , SYSDATE
+			     , #userId#
+				)
+	</insert>
+	
+	<!-- 코드 삭제 -->
+	<delete id="deleteTopCodeData">
+		UPDATE TC_COMMON SET
+			USEYN 	= 'N', 
+			CHGPS 	= #userId#,
+			CHGDT 	= SYSDATE
+		WHERE CDCLSF = #CDCLSF#
+		   AND CODE = #CODE#
+	</delete>
+</sqlMap>

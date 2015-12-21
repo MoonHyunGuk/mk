@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="collection.edi">
+
+	<!-- upload 된 파일정보 추출 -->
+	<select id="getUploadFileInfo" resultClass="java.util.HashMap" >
+		SELECT *
+		FROM 
+			FILE_T
+		WHERE 
+			FILENAME = #FILENAME#
+			AND
+			TYPE = #TYPE#
+	</select>
+	
+	<!-- 독자번호로 지국코드 추출 -->
+	<select id="getAgencyCodeFromReadno" resultClass="string" >
+		SELECT BOSEQ 
+		FROM 
+			TM_READER_NEWS 
+		WHERE 
+			NEWSCD = #NEWSCD# 
+			AND READNO = #READNO# 
+			AND SEQ = '0001'
+	</select>
+	
+	<!-- 구역, 구독자번호로 신문코드 추출 -->
+	<select id="getNewsCode" resultClass="string" >
+		SELECT NEWSCD
+		  FROM (SELECT * 
+					  FROM TM_READER_NEWS 
+					WHERE 	BOSEQ = #BOSEQ#
+						AND GNO = #GNO# 
+						AND BOREADNO = #BOREADNO#
+					ORDER BY INDT
+					)
+		WHERE  ROWNUM = 1
+	</select>
+	
+	<!-- 지국정보 상세 -->
+	<select id="getAgencyInfo" resultClass="int" >
+		SELECT count(*)
+		FROM 
+			TM_AGENCY
+		WHERE 
+			SERIAL = #SERIAL#
+			AND
+			ROWNUM = 1
+	</select>
+	
+	<!-- 수납대행 지국 지로번호 확인 -->
+	<select id="getAgencyJiro" resultClass="int" >
+		SELECT count(*)
+		FROM 
+			TM_AGENCY_JIRO
+		WHERE 
+			SERIAL = #SERIAL#
+			AND 
+			GIRO_NO = #E_JIRO#
+	</select>
+	
+	<!-- 금융결재원 등록 지로번호 목록 -->
+	<select id="getJiroList" resultClass="java.util.HashMap" >
+			SELECT GIRO_NO
+			          ,NAME
+			  FROM TM_AGENCY_JIRO
+			 ORDER BY NUMID
+	</select>
+
+	<!-- GR15 데이터 저장 -->
+	<insert id="insertEdiGR15">
+		<selectKey keyProperty="E_NUMID" resultClass="int" type="pre">
+			SELECT nvl(max(E_NUMID), 0)+1
+			FROM EDI
+		</selectKey>
+		INSERT INTO EDI (
+			E_NUMID
+			, E_NUMBER
+			, E_SDATE
+			, E_EDATE
+			, E_SCODE
+			, E_INFO
+			, E_INDEXINFO
+			, E_CHECK
+			, E_SGUBUN
+			, E_MONEY
+			, E_CHARGE
+			, E_JCODE
+			, E_WDATE
+			, E_RCODE
+			, E_ERROR
+			, E_JGUBUN
+			, E_ALL
+			, E_JIRO
+		) VALUES ( 
+			#E_NUMID#
+			, #E_NUMBER#
+			, #E_SDATE#
+			, #E_EDATE#
+			, #E_SCODE#
+			, #E_INFO#
+			, #E_INDEXINFO#
+			, #E_CHECK#
+			, #E_SGUBUN#
+			, #E_MONEY#
+			, #E_CHARGE#
+			, #E_JCODE#
+			, to_char(sysdate, 'YYYYMMDD')
+			, #E_RCODE#
+			, #E_ERROR#
+			, #E_JGUBUN#
+			, #E_ALL#
+			, #E_JIRO#
+		)
+	</insert>
+	
+	
+	<!-- upload 된 파일명 저장 -->
+	<insert id="insertFile_t">
+		<selectKey keyProperty="NUMID" resultClass="int" type="pre">
+			SELECT nvl(max(NUMID), 0)+1
+			FROM FILE_T
+		</selectKey>
+		INSERT INTO FILE_T (
+			NUMID
+			, FILENAME
+			, I_DATE
+			, TYPE
+		) VALUES ( 
+			#NUMID#
+			, #FILENAME#
+			, sysdate
+			, #TYPE#
+		)
+	</insert>
+	
+	<!-- 지로에서 수금처리하기 위한 조건절 -->
+	<sql id="ediSugmWhere">
+		AND
+		NEWSCD = #NEWSCD#
+	    AND
+	    BOSEQ = #BOSEQ#
+	    <isNotEmpty property="SGBBCD">
+	    	AND SGBBCD = #SGBBCD#
+	    </isNotEmpty>
+	    	AND NVL(SGGBCD,' ') NOT IN ('021','023','024','033','099')
+	    AND 
+	    READNO IN (
+	    	SELECT READNO 
+	    	FROM TM_READER_NEWS 
+	    	WHERE 
+	    		NEWSCD = #NEWSCD# 
+	    		AND 
+	    		BOSEQ = #BOSEQ#
+	    		<isNotEmpty property="READNO">
+	    			AND READNO = #READNO#
+	    		</isNotEmpty>
+	    		<isEmpty property="READNO">
+	    			AND GNO = #GNO#
+	    			AND BOREADNO = #BOREADNO#
+	    		</isEmpty>
+	    )
+	    <isNotEmpty property="SDATE">
+		    <isNotEmpty property="EDATE">
+		    	AND YYMM BETWEEN #SDATE# AND #EDATE#
+		    </isNotEmpty>
+	    </isNotEmpty>
+	</sql>
+	
+	
+	<!-- 수금테이블 정보 -->
+	<select id="getSugmInfo" resultClass="java.util.HashMap" >
+		SELECT 
+			NEWSCD, BOSEQ, READNO, SUM(BILLAMT) AS TOTALAMT
+		FROM 
+			TM_READER_SUGM
+		WHERE
+			1=1
+			<include refid="ediSugmWhere" />
+		GROUP BY 
+			NEWSCD, BOSEQ, READNO
+		ORDER BY 
+			NEWSCD, BOSEQ, READNO
+	</select>
+	
+	<!-- 수금테이블 정보 -->
+	<select id="getSugmMap" resultClass="java.util.HashMap" >
+		SELECT 
+			*
+		FROM 
+			TM_READER_SUGM
+		WHERE
+			READNO = #READNO#
+			AND
+			NEWSCD = #NEWSCD#
+			AND
+			YYMM = #YYMM#
+			AND
+			SEQ = #SEQ#
+	</select>
+	
+	
+	<!-- 수금정보 목록 -->
+	<select id="getSugmList" resultClass="java.util.HashMap" >
+		SELECT *
+		FROM 
+			TM_READER_SUGM
+		WHERE
+			1=1
+			<include refid="ediSugmWhere" />
+		ORDER BY 
+			YYMM ASC, SEQ ASC
+	</select>
+	
+	
+	<!-- 구독정보테이블 목록 -->
+	<select id="getNewsList" resultClass="java.util.HashMap" >
+		SELECT * 
+    	FROM 
+    		TM_READER_NEWS 
+    	WHERE 
+    		NEWSCD = #NEWSCD# 
+    		AND 
+    		BOSEQ = #BOSEQ#
+    		<isNotEmpty property="READNO">
+    			AND READNO = #READNO#
+    		</isNotEmpty>
+    		<isEmpty property="READNO">
+    			AND GNO = #GNO#
+    			AND BOREADNO = #BOREADNO#
+    		</isEmpty>
+    		AND
+    		BNO != '999'
+    		AND
+    		SGBGMM &lt;= #YYMM#
+	</select>
+	
+	
+	<!-- 구독정보테이블 정보 -->
+	<select id="getNewsMap" resultClass="java.util.HashMap" >
+		SELECT *
+		FROM (
+			SELECT * 
+	    	FROM 
+	    		TM_READER_NEWS 
+	    	WHERE 
+	    		NEWSCD = #NEWSCD# 
+	    		AND 
+	    		BOSEQ = #BOSEQ#
+	    		<isNotEmpty property="READNO">
+	    			AND READNO = #READNO#
+	    		</isNotEmpty>
+	    		<isEmpty property="READNO">
+	    			AND GNO = #GNO#
+	    			AND BOREADNO = #BOREADNO#
+	    		</isEmpty>
+	    		AND
+	    		BNO != '999'
+	    		AND
+	    		SGBGMM &lt;= #YYMM#
+	    	ORDER BY
+	    		SEQ
+	    )
+	    WHERE
+	    	ROWNUM = 1
+	</select>
+	
+	
+	<!-- 수금정보 중 가장 마지막 수금의 구독년월 -->
+	<select id="getSugmLastYYMM" resultClass="string" >
+		SELECT YYMM
+		FROM (
+			SELECT 
+				*
+			FROM 
+				TM_READER_SUGM
+			WHERE
+				1=1
+				<include refid="ediSugmWhere" />
+			ORDER BY 
+				YYMM DESC
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	<!-- edi 테이블 수정(에러처리) -->
+	<update id="updateEdiError">
+		UPDATE EDI
+		SET 
+			E_ERROR = #E_ERROR#
+		WHERE 
+			E_SDATE = #E_SDATE#
+			AND
+			E_EDATE = #E_EDATE#
+			AND 
+			E_NUMBER = #E_NUMBER#
+			AND 
+			E_NUMID = #E_NUMID#
+	</update>
+	
+	<!-- edi 테이블 수정(변경처리) -->
+	<update id="updateEdi">
+		UPDATE EDI
+		SET 
+			E_RCODE = #E_RCODE#
+			, E_JCODE = #E_JCODE#
+			, E_ERROR = #E_ERROR#
+		WHERE 
+			E_WDATE = #E_WDATE#
+			AND 
+			E_NUMBER = #E_NUMBER#
+			AND 
+			E_NUMID = #E_NUMID#
+	</update>
+	
+	
+	<!-- 수금처리 -->
+	<update id="updateSugm">
+		UPDATE TM_READER_SUGM
+		SET
+			SGBBCD = #SGBBCD_NEW#
+			,AMT = #AMT#
+			<isNotEmpty property="SGYYMM">
+				,SGYYMM = #SGYYMM#
+			</isNotEmpty>
+			<isNotEmpty property="LOSSAMT">
+				,LOSSAMT = #LOSSAMT#
+			</isNotEmpty>
+			<isNotEmpty property="SNDT">
+				,SNDT = #SNDT#
+			</isNotEmpty>
+			<isNotEmpty property="ICDT">
+				,ICDT = #ICDT#
+			</isNotEmpty>
+			<isNotEmpty property="CLDT">
+				,CLDT = #CLDT#
+			</isNotEmpty>
+			,EDIPROCNO = #EDIPROCNO#
+			,CHGDT = SYSDATE
+			,CHGPS = #CHGPS#
+		WHERE
+			READNO = #READNO#
+			AND
+			NEWSCD = #NEWSCD#
+			AND
+			YYMM = #YYMM#
+			AND
+			SEQ = #SEQ#
+			AND
+			BOSEQ = #BOSEQ#
+			AND
+			SGBBCD = #SGBBCD#
+			AND
+			NVL(SGGBCD, ' ') NOT IN ('021','023','024','033','099')
+	</update>
+	
+	
+	<!-- 선입금 처리를 위한 구독정보 조회 -->
+	<select id="getNewsInfoForPreSugm" resultClass="java.util.HashMap" >
+		SELECT *
+		FROM (
+			SELECT *
+			FROM
+				TM_READER_NEWS
+			WHERE
+				NEWSCD = #NEWSCD# 
+	    		AND 
+	    		BOSEQ = #BOSEQ#
+	    		<isNotEmpty property="READNO">
+	    			AND READNO = #READNO#
+	    		</isNotEmpty>
+	    		<isEmpty property="READNO">
+	    			AND GNO = #GNO#
+	    			AND BOREADNO = #BOREADNO#
+	    		</isEmpty>
+	    	ORDER BY SEQ
+	    )
+	    WHERE
+	    	ROWNUM = 1
+	</select>
+	
+	
+	<!-- 선입금 처리 -->
+	<insert id="insertPreSugm">
+		INSERT INTO TM_READER_SUGM (
+			READNO
+			, NEWSCD
+			, YYMM
+			, SEQ
+			, BOSEQ
+			, SGBBCD
+			, SGGBCD
+			, BILLAMT
+			, BILLQTY
+			, SGYYMM
+			, AMT
+			<isNotEmpty property="LOSSAMT">
+				, LOSSAMT
+			</isNotEmpty>
+			, FEE1
+			, FEE2
+			, FEE3
+			, EDIPROCNO
+			, SNDT
+			, ICDT
+			, CLDT
+			, INDT
+			, INPS
+			, CHGDT
+			, CHGPS
+		) VALUES ( 
+			#READNO#
+			, #NEWSCD#
+			, #YYMM#
+			, #SEQ#
+			, #BOSEQ#
+			, #SGBBCD#
+			, #SGGBCD#
+			, #BILLAMT#
+			, #BILLQTY#
+			, #SGYYMM#
+			, #AMT#
+			<isNotEmpty property="LOSSAMT">
+				, #LOSSAMT#
+			</isNotEmpty>
+			, '0'
+			, '0'
+			, '0'
+			, #EDIPROCNO#
+			, #SNDT#
+			, #ICDT#
+			, #CLDT#
+			, sysdate
+			, #INPS#
+			, sysdate
+			, #CHGPS#
+		)
+	</insert>
+		
+	
+	<!-- 과입금 저장 -->
+	<insert id="insertEdiOver">
+		<selectKey keyProperty="NUMID" resultClass="int" type="pre">
+			SELECT nvl(max(NUMID), 0)+1
+			FROM EDI_OVER
+		</selectKey>
+		INSERT INTO EDI_OVER (
+			NUMID
+			, EDINUMID
+			, OVERMONEY
+			, REGDATE
+		) VALUES ( 
+			#NUMID#
+			, #EDINUMID#
+			, #OVERMONEY#
+			, sysdate
+		)
+	</insert>
+	
+		
+	<!-- GR15 log 목록 -->
+	<select id="getGR15List" resultClass="java.util.HashMap" >
+		SELECT 
+	        A.e_jiro, A.e_jcode, A.e_edate, 
+	        COUNT(A.e_jcode) AS count, SUM(A.e_money) AS money, SUM(A.e_charge) AS charge,	        
+	        FUNC_AGENT_NM(A.e_jcode) NAME
+	    FROM 
+	    	(
+	    		SELECT * 
+	    		FROM edi 
+	    		WHERE e_error = '0' and e_edate BETWEEN #sdate# AND #edate# 
+	    	) A 
+	    WHERE 
+	    	1=1
+	    	<isNotEmpty property="type">
+	    		<isEqual property="type" compareValue="1" prepend=" AND ">
+   					A.e_jiro = #MK_JIRO_NUMBER#
+   					AND A.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="2" prepend=" AND ">
+   					A.e_jiro != #MK_JIRO_NUMBER#
+   					AND A.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="3" prepend=" AND ">
+   					A.E_INDEXINFO = 'DUZON'
+   				</isEqual>
+	    	</isNotEmpty>
+	    	<isNotEmpty property="jiroNum">
+   					AND A.e_jiro = #jiroNum#
+	    	</isNotEmpty>
+	    GROUP BY 
+	    	A.e_jiro, A.e_jcode, A.e_edate
+	    ORDER BY 
+	    	A.e_jiro, A.e_jcode, A.e_edate
+	</select>
+	
+	
+	<!-- GR15 에러 목록 -->
+	<select id="getGR15ErrList" resultClass="java.util.HashMap" >
+	    SELECT 
+	    	A.*
+	    FROM 
+	    	(
+	    		SELECT * 
+	    		FROM edi 
+	    		WHERE e_error != '0' and e_edate BETWEEN #sdate# AND #edate# 
+	    	) A 
+	    where 
+	    	1=1
+	    	<isNotEmpty property="type">
+	    		<isEqual property="type" compareValue="1" prepend=" AND ">
+   					A.e_jiro = #MK_JIRO_NUMBER#
+   					AND A.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="2" prepend=" AND ">
+   					A.e_jiro != #MK_JIRO_NUMBER#
+   					AND A.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="3" prepend=" AND ">
+   					A.E_INDEXINFO = 'DUZON'
+   				</isEqual>
+	    	</isNotEmpty>
+	    	<isNotEmpty property="jiroNum">
+   					AND A.e_jiro = #jiroNum#
+	    	</isNotEmpty>
+	</select>
+	
+	
+	<!-- GR15 log 목록(excel 출력용) -->
+	<select id="getGR15ExcelList" resultClass="java.util.HashMap" >
+		SELECT 
+	        A.e_jiro, A.e_jcode, 
+	        COUNT(A.e_jcode) AS count, SUM(A.e_money) AS money, SUM(A.e_charge) AS charge,	        
+	        FUNC_AGENT_NM(A.e_jcode) NAME
+	    FROM 
+	    	(
+	    		SELECT * 
+	    		FROM edi 
+	    		WHERE e_error = '0' and e_edate BETWEEN #sdate# AND #edate# 
+	    	) A 
+	    WHERE 
+	    	1=1
+	    	<isNotEmpty property="type">
+	    		<isEqual property="type" compareValue="1" prepend=" AND ">
+   					A.e_jiro = #MK_JIRO_NUMBER#
+   					AND A.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="2" prepend=" AND ">
+   					A.e_jiro != #MK_JIRO_NUMBER#
+   					AND A.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="3" prepend=" AND ">
+   					A.E_INDEXINFO = 'DUZON'
+   				</isEqual>
+	    	</isNotEmpty>
+	    	<isNotEmpty property="jiroNum">
+   					AND A.e_jiro = #jiroNum#
+	    	</isNotEmpty>
+	    GROUP BY 
+	    	A.e_jiro, A.e_jcode
+	    ORDER BY 
+	    	A.e_jiro, A.e_jcode
+	</select>
+	
+	
+	<!-- GR15 에러 목록(excel 출력용) -->
+	<select id="getGR15ErrExcelList" resultClass="java.util.HashMap" >
+	    SELECT 
+	    	A.*, B.* 
+	    FROM 
+	    	(
+	    		SELECT * 
+	    		FROM edi 
+	    		WHERE e_error != '0' and e_edate BETWEEN #sdate# AND #edate# 
+	    	) A 
+	    	,(
+	    		SELECT * 
+	    		FROM tm_agency 
+	    		where 
+	    			1=1
+	    			<isNotEmpty property="agencyType">
+	    				<isEqual property="agencyType" compareValue="1" prepend=" AND ">
+	    					substr(type, 0, 1) = '1'
+	    				</isEqual>
+	    				<isEqual property="agencyType" compareValue="2" prepend=" AND ">
+	    					substr(type, 0, 1) = '1'
+	    				</isEqual>
+	    				<isEqual property="agencyType" compareValue="3" prepend=" AND ">
+	    					substr(type, 0, 1) &lt;&gt; '1'
+	    				</isEqual>
+	    				<isEqual property="agencyType" compareValue="12" prepend=" AND ">
+	    					substr(type, 0, 1) = '1'
+	    				</isEqual>
+	    			</isNotEmpty>
+	    	) B
+	    where 
+	    	1=1
+	    	<isNotEmpty property="agencyType">
+	    		<isEqual property="agencyType" compareValue="1" prepend=" AND ">
+   					A.e_jcode = B.serial
+   					AND
+   					substr(A.e_rcode, 0, 2) &lt;&gt; '98'
+   				</isEqual>
+   				<isEqual property="agencyType" compareValue="2" prepend=" AND ">
+   					A.e_jcode = B.serial
+   					AND
+   					substr(A.e_rcode, 0, 2) = '98'
+   				</isEqual>
+   				<isEqual property="agencyType" compareValue="3" prepend=" AND ">
+   					A.e_jcode = B.serial
+   				</isEqual>
+   				<isEqual property="agencyType" compareValue="12" prepend=" AND ">
+   					A.e_jcode = B.serial
+   				</isEqual>
+   				<isEqual property="agencyType" compareValue="13" prepend=" AND ">
+   					A.e_jcode = B.serial
+   					AND
+   					substr(A.e_rcode, 0, 2) &lt;&gt; '98'
+   				</isEqual>
+   				<isEqual property="agencyType" compareValue="23" prepend=" AND ">
+   					A.e_jcode = B.serial
+   					AND
+   					(
+   						(substr(A.e_rcode, 0, 2) = '98' AND substr(B.type, 0, 1) = '1')
+   						OR
+   						(substr(A.e_rcode, 0, 2) &lt;&gt; '98' AND substr(type, 0, 1) &lt;&gt; '1')
+   					)
+   				</isEqual>
+	    		<isEqual property="agencyType" compareValue="123" prepend=" AND ">
+	    			A.e_jcode = B.serial(+)
+	    		</isEqual>
+	    	</isNotEmpty>
+	    	<isEmpty property="agencyType" prepend=" AND ">
+	    		A.e_jcode = B.serial
+	    	</isEmpty>
+	    ORDER BY 
+	    	A.e_jcode
+	</select>
+	
+	
+	<!-- GR15 에러 합산 금액 -->
+	<select id="getGR15ErrTotalMoney" resultClass="java.util.HashMap" >
+	    SELECT
+	    	count(A.e_number) as ERRCOUNT 
+	    	, sum(A.e_money) as SUMMONEY
+	    	, sum(A.e_charge) as SUMCHARGE
+	    	, (sum(A.e_money) - sum(A.e_charge)) as SUMM
+	    FROM 
+	    	(
+	    		SELECT * 
+	    		FROM edi 
+	    		WHERE e_error != '0' and e_edate BETWEEN #sdate# AND #edate# 
+	    	) A 
+	    where 
+	    	1=1    	
+	    	<isNotEmpty property="type">
+	    		<isEqual property="type" compareValue="1" prepend=" AND ">
+   					A.e_jiro = #MK_JIRO_NUMBER#
+   					AND A.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="2" prepend=" AND ">
+   					A.e_jiro != #MK_JIRO_NUMBER#
+   					AND A.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="3" prepend=" AND ">
+   					A.E_INDEXINFO = 'DUZON'
+   				</isEqual>
+	    	</isNotEmpty>
+	    	<isNotEmpty property="jiroNum">
+   					AND A.e_jiro = #jiroNum#
+	    	</isNotEmpty>
+	</select>
+	
+	
+	<!-- GR15 과입금 목록 -->
+	<select id="getGR15OverList" resultClass="java.util.HashMap" >
+		SELECT 	FUNC_AGENT_NM(C.e_jcode) NAME, C.*
+	    FROM (
+		 		SELECT * 
+				FROM 
+					EDI_OVER A
+		            left outer JOIN EDI B
+		            ON A.edinumid = e_numid
+				WHERE 
+					A.edinumid in (
+						select e_numid from edi where e_edate BETWEEN #sdate# AND #edate#
+					)
+	        ) C
+		WHERE
+			1=1
+			<isNotEmpty property="JIKUK_CODE" prepend=" AND">
+               	C.e_jcode = #JIKUK_CODE#
+            </isNotEmpty>
+            <isNotEmpty property="snType">
+	    		<isEqual property="snType" compareValue="1" prepend=" AND ">
+   					C.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="snType" compareValue="2" prepend=" AND ">
+   					C.E_INDEXINFO = 'DUZON'
+   				</isEqual>
+	    	</isNotEmpty>
+			<isNotEmpty property="type">
+	    		<isEqual property="type" compareValue="1" prepend=" AND ">
+   					C.e_jiro = #MK_JIRO_NUMBER#
+   					AND C.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="2" prepend=" AND ">
+   					C.e_jiro != #MK_JIRO_NUMBER#
+   					AND C.E_INDEXINFO != 'DUZON'
+   				</isEqual>
+   				<isEqual property="type" compareValue="3" prepend=" AND ">
+   					C.E_INDEXINFO = 'DUZON'
+   				</isEqual>
+	    	</isNotEmpty>
+	    	<isNotEmpty property="jiroNum">
+   					AND C.e_jiro = #jiroNum#
+	    	</isNotEmpty>
+		ORDER BY
+    		C.e_jiro,C.e_jcode, C.e_edate
+	</select>
+	
+	<!-- MR15 바코드 수납 현황 통계 -->
+	<select id="getMR15List" resultClass="java.util.HashMap" >
+		SELECT E_EDATE, SUM(CASH_CNT) CASH_CNT, SUM(CASH_AMT) CASH_AMT, SUM(CASH_CHARGE) CASH_CHARGE, SUM(CASH_MONEY) CASH_MONEY, 
+			       SUM(BANK_CNT) BANK_CNT, SUM(BANK_AMT) BANK_AMT, SUM(BANK_CHARGE) BANK_CHARGE, SUM(BANK_MONEY) BANK_MONEY, 
+			       SUM(CARD_CNT) CARD_CNT, SUM(CARD_AMT) CARD_AMT, SUM(CARD_CHARGE) CARD_CHARGE, SUM(CARD_MONEY) CARD_MONEY 
+		  FROM (
+		        SELECT E_EDATE,
+			               DECODE(E_SGUBUN, '1', COUNT(E_MONEY)) CASH_CNT,
+			               DECODE(E_SGUBUN, '1', SUM(E_MONEY)) - DECODE(E_SGUBUN, '1', SUM(E_CHARGE)) AS CASH_AMT,
+			               DECODE(E_SGUBUN, '1', SUM(E_CHARGE)) CASH_CHARGE,
+			               DECODE(E_SGUBUN, '1', SUM(E_MONEY)) CASH_MONEY,
+			               DECODE(E_SGUBUN, '2', COUNT(E_MONEY)) BANK_CNT,
+			               DECODE(E_SGUBUN, '2', SUM(E_MONEY)) - DECODE(E_SGUBUN, '2', SUM(E_CHARGE)) AS BANK_AMT,
+			               DECODE(E_SGUBUN, '2', SUM(E_CHARGE)) BANK_CHARGE,
+			               DECODE(E_SGUBUN, '2', SUM(E_MONEY)) BANK_MONEY,
+			               DECODE(E_SGUBUN, '3', COUNT(E_MONEY)) CARD_CNT,
+			               DECODE(E_SGUBUN, '3', SUM(E_MONEY)) - DECODE(E_SGUBUN, '3', SUM(E_CHARGE)) AS CARD_AMT,
+			               DECODE(E_SGUBUN, '3', SUM(E_CHARGE)) CARD_CHARGE,
+			               DECODE(E_SGUBUN, '3', SUM(E_MONEY)) CARD_MONEY
+		          FROM EDI
+		         WHERE E_INDEXINFO = 'DUZON'
+		           AND E_EDATE BETWEEN #sdate#  AND #edate# 
+		           <isNotEmpty property="jiroNum">
+   					AND E_JIRO = #jiroNum#
+	    			</isNotEmpty>
+		         GROUP BY E_EDATE, E_SGUBUN
+		        )
+		 GROUP BY E_EDATE
+	     ORDER BY E_EDATE
+	</select>
+	
+	
+</sqlMap>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="util.address">
+	<!-- 최대 READNO -->
+	<select id="selectMaxReadno" resultClass="String">
+		SELECT MAX(READNO)+1 FROM TM_ADDRESS 
+	</select>
+	
+	<!-- 주소조회(numid) -->
+	<select id="selectAddressByNumId" resultClass="java.util.HashMap">
+		 SELECT ZIP1
+		         , ZIP2
+			     , JIBUNADDR
+			     , NEWADDR
+			     , SEQ
+			  FROM (
+				SELECT ROWNUM
+			    	 , SUBSTR(ZIPCODE, 0, 3) AS ZIP1
+                     , SUBSTR(ZIPCODE, 5, 3) AS ZIP2
+			         , JIBUNADDR
+			         , NEWADDR  
+			         , SEQ
+			   FROM TM_ADDRESS
+			  WHERE NUMID = #numId#
+			  ORDER BY INDATE DESC
+				) 
+			  WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 주소조회(Readno) -->
+	<select id="selectAddressByReadno" resultClass="java.util.HashMap">
+		 SELECT ZIP1
+		         , ZIP2
+			     , JIBUNADDR
+			     , NEWADDR
+			     , SEQ
+			  FROM (
+				SELECT ROWNUM
+			    	 , SUBSTR(ZIPCODE, 0, 3) AS ZIP1
+                     , SUBSTR(ZIPCODE, 5, 3) AS ZIP2
+			         , JIBUNADDR
+			         , NEWADDR  
+			         , SEQ
+			   FROM TM_ADDRESS
+			  WHERE READNO = #readNo#
+			  ORDER BY INDATE DESC
+				) 
+			  WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 주소등록 -->
+	<insert id="insertAddress">
+		<selectKey keyProperty="SEQ" resultClass="int" type="pre">
+			SELECT NVL(MAX(SEQ), 0)+1 AS maxSeq FROM TM_ADDRESS WHERE READNO = #readNo#
+		</selectKey>
+		 INSERT INTO TM_ADDRESS 
+		 	(READNO, NUMID, READSEQ, SEQ, ZIPCODE, JIBUNADDR, NEWADDR, INDATE, TYPE)
+		VALUES 
+			(#readNo#, #numId#, NVL((SELECT SEQ FROM TM_READER_NEWS WHERE READNO = #readNo# AND BNO != '099' AND STDT IS NULL), '0001'), #SEQ#, #zipcode#, #JIBUNADDR#, #NEWADDR#, SYSDATE, #TYPE#)  
+	 </insert>
+	 
+	 <!-- 주소등록(자동이체 처음등록) -->
+	<insert id="insertAddressForFirstSave">
+		 INSERT INTO TM_ADDRESS 
+		 	(READNO, NUMID, READSEQ, SEQ, ZIPCODE, JIBUNADDR, NEWADDR, INDATE, TYPE)
+		VALUES 
+			(#readNo#, #numId#, '0001', '1', #zipcode#, #JIBUNADDR#, #NEWADDR#, SYSDATE, #TYPE#)  
+	 </insert>
+	 
+	 <!-- 독자번호업데이트 -->
+	<update id="updateReadnoByNumId">
+		UPDATE 
+	 		TM_ADDRESS 
+	 	SET
+			READNO = #readNo#
+	 	WHERE NUMID = #numId#
+	 	   AND SEQ = #addrSeq#
+	 </update>
+</sqlMap>

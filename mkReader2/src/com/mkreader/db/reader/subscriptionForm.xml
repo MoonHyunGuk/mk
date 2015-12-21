@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="reader.subscriptionForm">
+	<!-- 자동이체 정보 등록 일반 -->
+	<insert id="savePayment">
+	INSERT INTO TBL_USERS
+		(INTYPE , NUMID , JIKUK , USERNAME , SAUP , EMAIL , ZIP1 , ZIP2 , ADDR1 , ADDR2 , BIRTHD , PHONE , HANDY , LEVELS , DIFF , INDATE ,
+		LASTDATE , COUNTERS , MEMO , WHOSTEP , BANK , BANK_NUM , BANK_NAME , BANK_MONEY , BUSU , STATUS, NEWADDR, BDMNGNO)
+	VALUES
+		(#inType# , (SELECT nvl(max(NUMID), 0)+1 FROM TBL_USERS) , #realJikuk# , #userName# , #saup# , #email# , #zip1#, #zip2#,
+		#addr1# , #addr2# , TO_DATE(#birth# , 'YYYYMMDD') , #phone# , #handy# , '3' , 'Y' , SYSDATE , SYSDATE , '0' , #memo# , #whoStep# , #bankInfo#,
+		#bankNum# , #bankName# , #bankMoney# , #busu# , 'EA00',  #addr3#, #bdMngNo# )
+	</insert>
+	
+	<!-- 자동이체 정보 등록 학생 -->
+	<insert id="savePaymentStu">
+	INSERT INTO TBL_USERS_STU
+		(INTYPE , NUMID , JIKUK , USERNAME , SAUP , EMAIL , ZIP1 , ZIP2 , ADDR1 , ADDR2 , PHONE , HANDY , LEVELS , DIFF , INDATE ,
+		LASTDATE , COUNTERS , MEMO , WHOSTEP , BANK , BANK_NUM , BANK_NAME , BANK_MONEY , BUSU , STATUS , REALJIKUK , STU_SCH , STU_PART ,
+		STU_CLASS , STU_PROF , SDATE, NEWADDR, BDMNGNO)
+	VALUES
+		(#inType# , (SELECT nvl(max(NUMID), 0)+1 FROM TBL_USERS_STU) , #realJikuk# , #userName# , #saup# , #email# , #zip1#, #zip2#,
+		#addr1# , #addr2# , #phone# , #handy# , '3' , 'Y' , SYSDATE , SYSDATE , '0' , #memo# , #whoStep# , #bankInfo#, #bankNum# , 
+		#bankName# , #bankMoney# , #busu# , 'EA00' , #realJikuk# , #stuSch# , #stuPart# , #stuClass# , #stuProf# ,
+		TO_DATE(#sdate# , 'YYYYMMDDHH'),  #addr3#, #bdMngNo# )
+	</insert>
+	
+	<!-- 자동이체 등록 여부 조회 일반 -->
+	<select id="searchBillInfo" resultClass="java.util.HashMap">
+	SELECT 
+		INTYPE , NUMID , JIKUK , USERNAME , SAUP , EMAIL , ZIP1 , ZIP2 , ADDR1 , ADDR2 , BIRTHD , PHONE , HANDY , LEVELS , DIFF , INDATE ,
+		LASTDATE , COUNTERS , MEMO , WHOSTEP , BANK , BANK_NUM , BANK_NAME , BANK_MONEY , BUSU , STATUS , REALJIKUK 
+	FROM 
+		TBL_USERS 
+	WHERE 
+		 TRIM(BANK_NUM) = #bankNum#
+		 AND SUBSTR(TRIM(SAUP) , -7) = #saup#
+	</select>
+	
+	<!-- 자동이체 등록 여부 조회 학생 -->
+	<select id="searchBillInfoStu" resultClass="java.util.HashMap">
+	SELECT 
+		INTYPE , NUMID , JIKUK , USERNAME , SAUP , EMAIL , ZIP1 , ZIP2 , ADDR1 , ADDR2 , BIRTHD , PHONE , HANDY , LEVELS , DIFF , INDATE ,
+		LASTDATE , COUNTERS , MEMO , WHOSTEP , BANK , BANK_NUM , BANK_NAME , BANK_MONEY , BUSU , STATUS , REALJIKUK 
+	FROM 
+		TBL_USERS_STU
+	WHERE 
+		 TRIM(BANK_NUM) = #bankNum#
+		 AND SUBSTR(TRIM(SAUP) , -7) = #saup#
+	</select>
+	
+	<!-- 신규신청 독자 저장 -->
+	<insert id="saveAplc">
+	INSERT INTO TM_READER_APLC
+		(APLCDT, APLCNO, READNM, BIDT, EMAIL, 
+		HOMETEL1, HOMETEL2, HOMETEL3, MOBILE1, MOBILE2, MOBILE3, DLVZIP, DLVADRS1, DLVADRS2, QTY,
+		INTFLDCD, REMK, INDT, INPS, DELYN, NEWADDR, BDMNGNO)
+	VALUES
+		(#aplcDt#, FUNC_APLC_APLCNO_SEQ(#aplcDt#), #userName#, #birth#, #email#, 
+		#phone1#, #phone2#, #phone3#, #handy1#, #handy2#, #handy3#, #zip#, #addr1#, #addr2#, #busu#, 
+		#intFldCd#, #memo#,SYSDATE, 'MKWEB', 'N', #addr3#, #bdMngNo# )
+	</insert>
+	
+	<!-- 학생 자동이체 신청 -->
+	<insert id="aplcPaymentStu">
+		INSERT INTO TBL_USERS_APLC
+			   (APLCDT, APLCNO, USERNAME, SAUP ,GUBUN
+			   , EMAIL, ZIP1, ZIP2 ,ADDR1 ,ADDR2 ,PHONE ,HANDY ,BIRTHD ,LOGS ,MEMO 
+			   ,BANK ,BANK_NUM ,BANK_NAME ,REL ,BANK_MONEY 
+			   ,BUSU ,STATUS ,TRASHS ,STU_SCH ,STU_PART ,STU_CLASS ,STU_PROF ,STU_ADM ,STU_CALLER ,FILE_YN ,FILE_NM ,USERNUMID ,INDT ,INPS ,CHGDT ,CHGPS, NEWADDR, BDMNGNO ) 
+         	   VALUES 
+       		   (#aplcDt#,  FUNC_TBL_USERS_APLC_APLCNO_SEQ(#aplcDt#), #userName#, #saup#, '013'
+       		   , #email#, #zip1#, #zip2#, #addr1#, #addr2#, #phone#, #handy#, '', '', #memo#
+       		   , #bankInfo#, #bankNum#, #bankName#, '', #bankMoney#
+                , #busu#, '', '', #stuSch#, #stuPart#, #stuClass#, #stuProf#, '', #stuCaller#, 'Y', #fileNm#, '', SYSDATE, '', '', '', #addr3#, #bdMngNo# )
+	</insert>	
+	
+	<!-- 대학교 명 조회 -->	
+	<select id="retrieveSchNm" resultClass="java.util.HashMap">
+		SELECT 
+			CODE,
+			CNAME,
+			YNAME
+		FROM 
+			TC_COMMON
+		WHERE 
+			USEYN = 'Y'
+			AND CDCLSF = '124'
+		ORDER BY CNAME
+	</select>
+	
+	<!-- 사원확장 현황 조회 -->	
+	<select id="empExtdList" resultClass="java.util.HashMap">
+		SELECT A.MEDIA,
+			   A.READNM,
+		       A.COMPNM,
+		       A.QTY,
+		       A.EMPNM,
+			   CASE WHEN (SELECT S2.STDT
+	       			    	FROM TM_READER_APLC S,
+	       			   			 TM_READER_NEWS S2
+	       			   	   WHERE S.READNO IS NOT NULL
+	       			     	 AND S.READNO = S2.READNO
+	       			     	 AND S.APLCDT = SUBSTR(A.APLCNO, 0, 8)
+	       			     	 AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) IS NOT NULL
+	       			THEN '4'
+	       			WHEN (SELECT S.READNO
+	       			    	FROM TM_READER_APLC S
+	       			   	   WHERE S.APLCDT = SUBSTR(A.APLCNO, 0, 8)
+	       			     	 AND S.APLCNO = SUBSTR(A.APLCNO, 9, 5) ) IS NOT NULL
+	       			THEN '3'
+	       			ELSE A.STATUS
+	       	    END STATUS,
+		       TO_DATE(A.APLCDT, 'YYYYMMDD') APLCDT
+		  FROM TM_EMP_EXTD A
+		 WHERE 1=1
+		   AND A.EMPNM = #empNm#
+		   AND A.EMPTEL = #empTel#
+		   AND STDT IS NULL
+		 ORDER BY A.APLCDT DESC
+	</select>
+	
+	<!-- 사원확장 통계 -->
+	<select id="getTotalCount" resultClass="java.util.HashMap">
+		SELECT (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '1' AND A.READERTYP = '1' AND A.EMPNM = #empNm# AND A.EMPTEL = #empTel# AND STDT IS NULL) PAPER,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '1' AND A.READERTYP = '2' AND A.EMPNM = #empNm# AND A.EMPTEL = #empTel# AND STDT IS NULL) PAPERSTU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '1' AND A.READERTYP = '3' AND A.EMPNM = #empNm# AND A.EMPTEL = #empTel# AND STDT IS NULL) PAPEREDU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '2' AND A.READERTYP = '1' AND A.EMPNM = #empNm# AND A.EMPTEL = #empTel# AND STDT IS NULL) ELEC,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '2' AND A.READERTYP = '2' AND A.EMPNM = #empNm# AND A.EMPTEL = #empTel# AND STDT IS NULL) ELECSTU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.MEDIA = '2' AND A.READERTYP = '3' AND A.EMPNM = #empNm# AND A.EMPTEL = #empTel# AND STDT IS NULL) ELECEDU,
+		       (SELECT NVL(SUM(A.QTY),0) FROM TM_EMP_EXTD A WHERE A.EMPNM = #empNm# AND A.EMPTEL = #empTel# AND STDT IS NULL) TOTAL
+		  FROM DUAL
+	</select>
+
+	<!-- 새주소리스트 카운트 조회 -->
+	<select id="searchNewAddrCount" resultClass="int">
+		SELECT COUNT(1) COUNT
+		  FROM TBL_ROAD_CD
+		 WHERE 1=1
+		<isEqual property="searchType" compareValue="1">
+			   AND ROAD_NM LIKE #searchValue#||'%'
+			<isNotEmpty property="bdNo1">
+			   AND BD_NO1 = #bdNo1#
+			</isNotEmpty>
+			<isNotEmpty property="bdNo2">
+			   AND BD_NO1 = #bdNo2#
+			</isNotEmpty>
+		</isEqual>
+		<isEqual property="searchType" compareValue="2">
+			<isNotEmpty property="addInfo">
+			   AND (LW_EPMNDNG_NM LIKE #addInfo#||'%' OR ROAD_NM LIKE #addInfo#||'%')
+			</isNotEmpty>
+			   AND (SGG_BD_NM LIKE #searchValue#||'%' OR MN_DLV_NM LIKE #searchValue#||'%')
+		</isEqual>
+		<isEqual property="searchType" compareValue="3">
+			   AND LW_EPMNDNG_NM LIKE #searchValue#||'%'
+			<isNotEmpty property="lotNo1">
+			   AND LOT_NO1 = #lotNo1#
+			</isNotEmpty>
+			<isNotEmpty property="lotNo2">
+			   AND LOT_NO2 = #lotNo2#
+			</isNotEmpty>
+		</isEqual>
+	</select>
+
+	<!-- 새주소리스트 조회 -->
+	<select id="searchNewAddr" resultClass="java.util.HashMap">
+		SELECT D.* FROM(
+			SELECT ROWNUM RNUM , C.* FROM(
+
+		SELECT ZIP_CD,
+			   LW_DNG_CD,
+			   SUBSTR(LW_DNG_CD, 9, 2) EMD_GB,
+		       CASE WHEN SUBSTR(LW_DNG_CD, 9, 2) = '00'
+		       		THEN SD_NM||' '||SGG_NM||' '||ROAD_NM||' '||BD_NO1||DECODE(BD_NO2, 0, '', '-'||BD_NO2 )
+		       		ELSE SD_NM||' '||SGG_NM||' '||LW_EPMNDNG_NM||''||ROAD_NM||' '||BD_NO1||DECODE(BD_NO2, 0, '', '-'||BD_NO2 )
+		       END AS ROADNM,
+			   NVL(SGG_BD_NM, MN_DLV_NM) SGG_BD_NM,
+			   MN_DLV_NM,
+			   CASE WHEN SUBSTR(LW_DNG_CD, 9, 2) = '00'
+		       		THEN LW_EPMNDNG_NM||' '||LOT_NO1||DECODE(LOT_NO2, 0, '', '-'||LOT_NO2)
+		       		ELSE LW_RI_NM||' '||LOT_NO1||DECODE(LOT_NO2, 0, '', '-'||LOT_NO2)
+		       END AS ADDR,
+		       BD_MNG_NO
+		  FROM TBL_ROAD_CD
+		 WHERE 1=1
+		<isEqual property="searchType" compareValue="1">
+			   AND ROAD_NM LIKE #searchValue#||'%'
+			<isNotEmpty property="bdNo1">
+			   AND BD_NO1 = #bdNo1#
+			</isNotEmpty>
+			<isNotEmpty property="bdNo2">
+			   AND BD_NO2 = #bdNo2#
+			</isNotEmpty>
+		</isEqual>
+		<isEqual property="searchType" compareValue="2">
+			<isNotEmpty property="addInfo">
+			   AND (LW_EPMNDNG_NM LIKE #addInfo#||'%' OR ROAD_NM LIKE #addInfo#||'%')
+			</isNotEmpty>
+			   AND (SGG_BD_NM LIKE #searchValue#||'%' OR MN_DLV_NM LIKE #searchValue#||'%')
+		</isEqual>
+		<isEqual property="searchType" compareValue="3">
+			   AND LW_EPMNDNG_NM LIKE #searchValue#||'%'
+			<isNotEmpty property="lotNo1">
+			   AND LOT_NO1 = #lotNo1#
+			</isNotEmpty>
+			<isNotEmpty property="lotNo2">
+			   AND LOT_NO2 = #lotNo2#
+			</isNotEmpty>
+		</isEqual>
+			ORDER BY ZIP_CD, ZIP_SEQ
+				)C
+			)D
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND	RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)		   
+	</select>
+	
+	
+	<!-- 자동이체 독자 여부 조회 -->
+	<select id="chkAutoBillReaderYn" resultClass="java.util.HashMap">
+		 SELECT JIKUK
+			     , REALJIKUK
+			     , USERNAME
+			     , SAUP
+			     , BANK
+			     , BANK_NUM
+			     , STATUS
+			     , READNO
+			     , 'ADULT' AS READERTYPE
+		  FROM TBL_USERS
+		 WHERE BANK_NAME = #bankNm#
+		    AND BANK_NUM LIKE #bankNumCode# || '%'
+		    AND STATUS IN ('EA00','EA21') 
+		 UNION ALL
+		 SELECT JIKUK
+			     , REALJIKUK
+			     , USERNAME
+			     , SAUP
+			     , BANK
+			     , BANK_NUM
+			     , STATUS
+			     , READNO
+			     , 'STU' AS READERTYPE
+		   FROM TBL_USERS_STU
+		 WHERE BANK_NAME = #bankNm#
+		    AND BANK_NUM LIKE #bankNumCode# || '%'
+		    AND STATUS IN ('EA00','EA21')
+	</select>
+
+	<!-- 자동이체 독자 여부 조회 -->
+	<select id="selectAutoBillReaderData" resultClass="java.util.HashMap">
+		 SELECT NUMID
+		         , JIKUK
+			     , REALJIKUK
+			     , USERNAME
+			     , SAUP
+			     , SUBSTR(BANK,0,3) BANK
+			     , BANK_NUM
+			     , BANK_NAME
+			     , NVL((SELECT BANKNAME FROM TBL_BANK WHERE BANKNUM = SUBSTR(A.BANK,0,3)),'') AS BANKNM
+			     , STATUS
+			     , READNO
+			     , 'ADULT' AS READERTYPE
+		  FROM TBL_USERS A
+		 WHERE REALJIKUK = #boseq#
+		    AND READNO = #readNo#
+		    AND STATUS IN ('EA00','EA21')
+	</select>
+	
+	<!-- 자동이체 독자 여부 조회 -->
+	<select id="selectAutoBillStuReaderData" resultClass="java.util.HashMap">
+		 SELECT NUMID
+		         , JIKUK
+			     , REALJIKUK
+			     , USERNAME
+			     , SAUP
+			     , SUBSTR(BANK,0,3) BANK
+			     , BANK_NUM
+			     , BANK_NAME
+			     , NVL((SELECT BANKNAME FROM TBL_BANK WHERE BANKNUM = SUBSTR(A.BANK,0,3)),'') AS BANKNM
+			     , STATUS
+			     , READNO
+			     , 'STU' AS READERTYPE
+		   FROM TBL_USERS_STU A
+		 WHERE REALJIKUK = #boseq#
+		    AND READNO = #readNo#
+		    AND STATUS IN ('EA00','EA21')
+	</select>
+	
+	<!-- 자동이체 독자 여부 조회 -->
+	<select id="selectAutoBillReaderSugmList" resultClass="java.util.HashMap">
+		 SELECT NEWSCD
+		         , SUBSTR(YYMM, 0,4) || '-' || SUBSTR(YYMM, 5,2) AS YYMM
+		         , SGGBCD
+		         , BILLAMT
+		         , SGYYMM
+		         , AMT
+		         , SUBSTR(SNDT, 0,4) || '-' || SUBSTR(SNDT, 5,2) || '-' || SUBSTR(SNDT, 7,2) AS SNDT
+		         , SGBBCD
+		         , SGGBCD
+		         , FUNC_COMMON_CDNM('119', SGBBCD) AS SGBBCDNM
+		  FROM TM_READER_SUGM
+		 WHERE BOSEQ = #boseq#
+		    AND READNO = #readNo#
+		 ORDER BY YYMM DESC
+	</select>
+	
+	<update id="updateBankInfoForAdult">
+		  UPDATE TBL_USERS
+			   SET BANK = #bank#
+			       , BANK_NUM = #newBankNum# 
+			       , BANK_NAME = #newBankName#
+		   WHERE REALJIKUK = #boseq#
+			  AND READNO = #readNo#
+			  AND NUMID = #numId#
+	</update>
+	
+	<update id="updateBankInfoForStu">
+		  UPDATE TBL_USERS_STU
+			   SET BANK = #bank#
+			       , BANK_NUM = #newBankNum# 
+			       , BANK_NAME = #newBankName#
+		   WHERE REALJIKUK = #boseq#
+			  AND READNO = #readNo#
+			  AND NUMID = #numId#
+	</update>
+</sqlMap>

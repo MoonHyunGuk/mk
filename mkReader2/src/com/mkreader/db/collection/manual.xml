@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="collection.manual">
+
+	<!-- 구독정보 목록 조회 -->
+	<select id="getNewsList" resultClass="java.util.HashMap">
+		SELECT *
+		FROM
+			TM_READER_NEWS
+		WHERE
+			NEWSCD = #NEWSCD#
+			AND 
+			BOSEQ = #BOSEQ#
+			<isNotEmpty property="READNO" prepend=" AND ">
+				READNO = #READNO#
+			</isNotEmpty>
+			<isNotEmpty property="GNO" prepend=" AND ">
+				GNO = #GNO#
+			</isNotEmpty>
+			<isNotEmpty property="BNO" prepend=" AND ">
+				BNO = #BNO#
+			</isNotEmpty>
+		ORDER BY
+			READNO, NEWSCD, SEQ
+	</select>
+	
+	
+	<!-- 개별/다부수 수금 목록 -->
+	<select id="getSugmListByEach" resultClass="java.util.HashMap">
+		SELECT 
+			SUBSTR(NVL(A.YYMM, '000000'), 0, 4) AS YYYY
+			,SUBSTR(NVL(A.YYMM, '000000'), 5, 2) AS MM  
+			,A.SGYYMM
+			,A.BILLAMT
+			,A.AMT
+			,A.SGBBCD
+			,A.SNDT
+			,A.ICDT
+			,( SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = A.SGBBCD) AS CNAME 
+		FROM 
+			TM_READER_SUGM A
+		WHERE 
+			A.READNO = #READNO# 
+			AND A.NEWSCD = #NEWSCD# 
+			AND A.SEQ = #SEQ# 
+			AND A.BOSEQ = #BOSEQ#
+			AND A.YYMM >= #SDATE#
+		ORDER BY 
+			A.YYMM 
+	</select>
+	
+	
+	<!-- 수금정보 조회 -->
+	<select id="getSugmInfo" resultClass="java.util.HashMap">
+		SELECT 
+			A.READNO, A.NEWSCD, A.SEQ, A.YYMM, A.BOSEQ, A.SGBBCD, A.BILLAMT, A.BILLQTY, A.SGYYMM, A.AMT
+			,B.GNO, B.BNO, B.READNM, B.DLVADRS1, B.DLVADRS2
+			,( SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = A.NEWSCD) AS NEWSNM 
+		FROM (
+				SELECT * 
+				FROM 
+					TM_READER_SUGM 
+				WHERE 
+					READNO = #READNO#
+					AND 
+					NEWSCD = #NEWSCD#
+					AND 
+					SEQ = #SEQ#
+					AND 
+					BOSEQ = #BOSEQ#
+					AND 
+					YYMM = #YYMM#
+			) A
+			, TM_READER_NEWS B
+		WHERE
+			A.READNO = B.READNO
+			AND 
+			A.NEWSCD = B.NEWSCD
+			AND 
+			A.SEQ = B.SEQ
+	</select>
+	
+	
+	<!-- 구독정보 조회 -->
+	<select id="getNewsInfo" resultClass="java.util.HashMap" >
+		SELECT 
+			A.*
+			,( SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '100' AND CODE = A.NEWSCD) AS NEWSNM
+			,( SELECT CNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = A.READTYPECD) AS READTYPENM
+		FROM
+			TM_READER_NEWS A
+		WHERE
+			A.READNO = #READNO#
+			AND
+			A.NEWSCD = #NEWSCD#
+			AND
+			A.SEQ = #SEQ# 
+    		AND 
+    		A.BOSEQ = #BOSEQ#
+    	ORDER BY
+    		SEQ
+	</select>
+	
+	
+	<!-- 선입금 처리 -->
+	<insert id="insertPreSugm">
+		INSERT INTO TM_READER_SUGM (
+			READNO
+			, NEWSCD
+			, YYMM
+			, SEQ
+			, BOSEQ
+			, SGBBCD
+			, SGGBCD
+			, BILLAMT
+			, BILLQTY
+			, SGYYMM
+			, AMT
+			, FEE1
+			, FEE2
+			, FEE3
+			, SNDT
+			, ICDT
+			, CLDT
+			, INDT
+			, INPS
+			, CHGDT
+			, CHGPS
+		) VALUES ( 
+			#READNO#
+			, #NEWSCD#
+			, #YYMM#
+			, #SEQ#
+			, #BOSEQ#
+			, #SGBBCD#
+			, #SGGBCD#
+			, #BILLAMT#
+			, #BILLQTY#
+			, #SGYYMM#
+			, #AMT#
+			, '0'
+			, '0'
+			, '0'
+			, #SNDT#
+			, #ICDT#
+			, #CLDT#
+			, sysdate
+			, #INPS#
+			, sysdate
+			, #CHGPS#
+		)
+	</insert>
+	
+
+	<!-- 구역별 수금 목록 -->
+	<select id="getSugmListByArea" resultClass="java.util.HashMap">
+		SELECT
+			C.READNO, C.NEWSCD, C.SEQ
+			,(SELECT GNO FROM TM_READER_NEWS WHERE READNO = C.READNO AND NEWSCD = C.NEWSCD AND SEQ = C.SEQ) as GNO
+			,(SELECT BNO FROM TM_READER_NEWS WHERE READNO = C.READNO AND NEWSCD = C.NEWSCD AND SEQ = C.SEQ) as BNO
+			,(SELECT READNM FROM TM_READER_NEWS WHERE READNO = C.READNO AND NEWSCD = C.NEWSCD AND SEQ = C.SEQ) as READNM
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_01) as SGBBCD_01
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_02) as SGBBCD_02
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_03) as SGBBCD_03
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_04) as SGBBCD_04
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_05) as SGBBCD_05
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_06) as SGBBCD_06
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_07) as SGBBCD_07
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_08) as SGBBCD_08
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_09) as SGBBCD_09
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_10) as SGBBCD_10
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_11) as SGBBCD_11
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_12) as SGBBCD_12
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_13) as SGBBCD_13
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_14) as SGBBCD_14
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_15) as SGBBCD_15
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_16) as SGBBCD_16
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_17) as SGBBCD_17
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_18) as SGBBCD_18
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_19) as SGBBCD_19
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_20) as SGBBCD_20
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_21) as SGBBCD_21
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_22) as SGBBCD_22
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_23) as SGBBCD_23
+			,(SELECT YNAME FROM TC_COMMON WHERE USEYN = 'Y' AND CDCLSF = '119' AND CODE = C.SGBBCD_24) as SGBBCD_24
+			,#YYYYMM_01# as YYMM_01
+			,#YYYYMM_02# as YYMM_02
+			,#YYYYMM_03# as YYMM_03
+			,#YYYYMM_04# as YYMM_04
+			,#YYYYMM_05# as YYMM_05
+			,#YYYYMM_06# as YYMM_06
+			,#YYYYMM_07# as YYMM_07
+			,#YYYYMM_08# as YYMM_08
+			,#YYYYMM_09# as YYMM_09
+			,#YYYYMM_10# as YYMM_10
+			,#YYYYMM_11# as YYMM_11
+			,#YYYYMM_12# as YYMM_12
+			,#YYYYMM_13# as YYMM_13
+			,#YYYYMM_14# as YYMM_14
+			,#YYYYMM_15# as YYMM_15
+			,#YYYYMM_16# as YYMM_16
+			,#YYYYMM_17# as YYMM_17
+			,#YYYYMM_18# as YYMM_18
+			,#YYYYMM_19# as YYMM_19
+			,#YYYYMM_20# as YYMM_20
+			,#YYYYMM_21# as YYMM_21
+			,#YYYYMM_22# as YYMM_22
+			,#YYYYMM_23# as YYMM_23
+			,#YYYYMM_24# as YYMM_24
+			,BILLAMT_01
+			,BILLAMT_02
+			,BILLAMT_03
+			,BILLAMT_04
+			,BILLAMT_05
+			,BILLAMT_06
+			,BILLAMT_07
+			,BILLAMT_08
+			,BILLAMT_09
+			,BILLAMT_10
+			,BILLAMT_11
+			,BILLAMT_12
+			,BILLAMT_13
+			,BILLAMT_14
+			,BILLAMT_15
+			,BILLAMT_16
+			,BILLAMT_17
+			,BILLAMT_18
+			,BILLAMT_19
+			,BILLAMT_20
+			,BILLAMT_21
+			,BILLAMT_22
+			,BILLAMT_23
+			,BILLAMT_24
+		FROM (
+				SELECT
+					B.READNO, B.NEWSCD, B.SEQ
+				    , max(nvl(decode(B.YYMM, #YYYYMM_01#, B.SGBBCD,'0'),'0')) as SGBBCD_01
+				    , max(nvl(decode(B.YYMM, #YYYYMM_02#, B.SGBBCD,'0'),'0')) as SGBBCD_02
+				    , max(nvl(decode(B.YYMM, #YYYYMM_03#, B.SGBBCD,'0'),'0')) as SGBBCD_03
+				    , max(nvl(decode(B.YYMM, #YYYYMM_04#, B.SGBBCD,'0'),'0')) as SGBBCD_04
+				    , max(nvl(decode(B.YYMM, #YYYYMM_05#, B.SGBBCD,'0'),'0')) as SGBBCD_05
+				    , max(nvl(decode(B.YYMM, #YYYYMM_06#, B.SGBBCD,'0'),'0')) as SGBBCD_06
+				    , max(nvl(decode(B.YYMM, #YYYYMM_07#, B.SGBBCD,'0'),'0')) as SGBBCD_07
+				    , max(nvl(decode(B.YYMM, #YYYYMM_08#, B.SGBBCD,'0'),'0')) as SGBBCD_08
+				    , max(nvl(decode(B.YYMM, #YYYYMM_09#, B.SGBBCD,'0'),'0')) as SGBBCD_09
+				    , max(nvl(decode(B.YYMM, #YYYYMM_10#, B.SGBBCD,'0'),'0')) as SGBBCD_10
+				    , max(nvl(decode(B.YYMM, #YYYYMM_11#, B.SGBBCD,'0'),'0')) as SGBBCD_11
+				    , max(nvl(decode(B.YYMM, #YYYYMM_12#, B.SGBBCD,'0'),'0')) as SGBBCD_12
+				    , max(nvl(decode(B.YYMM, #YYYYMM_13#, B.SGBBCD,'0'),'0')) as SGBBCD_13
+				    , max(nvl(decode(B.YYMM, #YYYYMM_14#, B.SGBBCD,'0'),'0')) as SGBBCD_14
+				    , max(nvl(decode(B.YYMM, #YYYYMM_15#, B.SGBBCD,'0'),'0')) as SGBBCD_15
+				    , max(nvl(decode(B.YYMM, #YYYYMM_16#, B.SGBBCD,'0'),'0')) as SGBBCD_16
+				    , max(nvl(decode(B.YYMM, #YYYYMM_17#, B.SGBBCD,'0'),'0')) as SGBBCD_17
+				    , max(nvl(decode(B.YYMM, #YYYYMM_18#, B.SGBBCD,'0'),'0')) as SGBBCD_18
+				    , max(nvl(decode(B.YYMM, #YYYYMM_19#, B.SGBBCD,'0'),'0')) as SGBBCD_19
+				    , max(nvl(decode(B.YYMM, #YYYYMM_20#, B.SGBBCD,'0'),'0')) as SGBBCD_20
+				    , max(nvl(decode(B.YYMM, #YYYYMM_21#, B.SGBBCD,'0'),'0')) as SGBBCD_21
+				    , max(nvl(decode(B.YYMM, #YYYYMM_22#, B.SGBBCD,'0'),'0')) as SGBBCD_22
+				    , max(nvl(decode(B.YYMM, #YYYYMM_23#, B.SGBBCD,'0'),'0')) as SGBBCD_23
+				    , max(nvl(decode(B.YYMM, #YYYYMM_24#, B.SGBBCD,'0'),'0')) as SGBBCD_24
+				    
+					, max(nvl(decode(B.YYMM, #YYYYMM_01#, B.BILLAMT,'0'),'0')) as BILLAMT_01
+					, max(nvl(decode(B.YYMM, #YYYYMM_02#, B.BILLAMT,'0'),'0')) as BILLAMT_02
+					, max(nvl(decode(B.YYMM, #YYYYMM_03#, B.BILLAMT,'0'),'0')) as BILLAMT_03
+					, max(nvl(decode(B.YYMM, #YYYYMM_04#, B.BILLAMT,'0'),'0')) as BILLAMT_04
+					, max(nvl(decode(B.YYMM, #YYYYMM_05#, B.BILLAMT,'0'),'0')) as BILLAMT_05
+					, max(nvl(decode(B.YYMM, #YYYYMM_06#, B.BILLAMT,'0'),'0')) as BILLAMT_06
+					, max(nvl(decode(B.YYMM, #YYYYMM_07#, B.BILLAMT,'0'),'0')) as BILLAMT_07
+					, max(nvl(decode(B.YYMM, #YYYYMM_08#, B.BILLAMT,'0'),'0')) as BILLAMT_08
+					, max(nvl(decode(B.YYMM, #YYYYMM_09#, B.BILLAMT,'0'),'0')) as BILLAMT_09
+					, max(nvl(decode(B.YYMM, #YYYYMM_10#, B.BILLAMT,'0'),'0')) as BILLAMT_10
+					, max(nvl(decode(B.YYMM, #YYYYMM_11#, B.BILLAMT,'0'),'0')) as BILLAMT_11
+					, max(nvl(decode(B.YYMM, #YYYYMM_12#, B.BILLAMT,'0'),'0')) as BILLAMT_12
+					, max(nvl(decode(B.YYMM, #YYYYMM_13#, B.BILLAMT,'0'),'0')) as BILLAMT_13
+					, max(nvl(decode(B.YYMM, #YYYYMM_14#, B.BILLAMT,'0'),'0')) as BILLAMT_14
+					, max(nvl(decode(B.YYMM, #YYYYMM_15#, B.BILLAMT,'0'),'0')) as BILLAMT_15
+					, max(nvl(decode(B.YYMM, #YYYYMM_16#, B.BILLAMT,'0'),'0')) as BILLAMT_16
+					, max(nvl(decode(B.YYMM, #YYYYMM_17#, B.BILLAMT,'0'),'0')) as BILLAMT_17
+					, max(nvl(decode(B.YYMM, #YYYYMM_18#, B.BILLAMT,'0'),'0')) as BILLAMT_18
+					, max(nvl(decode(B.YYMM, #YYYYMM_19#, B.BILLAMT,'0'),'0')) as BILLAMT_19
+					, max(nvl(decode(B.YYMM, #YYYYMM_20#, B.BILLAMT,'0'),'0')) as BILLAMT_20
+					, max(nvl(decode(B.YYMM, #YYYYMM_21#, B.BILLAMT,'0'),'0')) as BILLAMT_21
+					, max(nvl(decode(B.YYMM, #YYYYMM_22#, B.BILLAMT,'0'),'0')) as BILLAMT_22
+					, max(nvl(decode(B.YYMM, #YYYYMM_23#, B.BILLAMT,'0'),'0')) as BILLAMT_23
+					, max(nvl(decode(B.YYMM, #YYYYMM_24#, B.BILLAMT,'0'),'0')) as BILLAMT_24
+				FROM 
+					(
+				    	SELECT
+				        	READNO, NEWSCD, SEQ, BOSEQ, READNM
+						FROM 
+				        	TM_READER_NEWS
+				        WHERE 
+							NEWSCD = #NEWSCD# 
+							AND BOSEQ = #BOSEQ# 
+							<isNotEqual property="GNO" prepend=" AND" compareValue="ALL">
+								GNO = #GNO#
+							</isNotEqual>			
+							<isNotEmpty property="BNO_NOT" prepend=" AND ">	<!-- 중지독자 미포함 -->
+								BNO != #BNO_NOT#
+							</isNotEmpty>
+				    ) A 
+					,(
+						<isEmpty property="SGBBCD">		<!-- 전체독자 -->
+							SELECT
+								READNO, NEWSCD, SEQ, BOSEQ, YYMM, SGBBCD, BILLAMT
+							FROM 
+								TM_READER_SUGM
+							WHERE 
+								NEWSCD = #NEWSCD# 
+								AND BOSEQ = #BOSEQ#
+						</isEmpty>
+						<isNotEmpty property="SGBBCD">	<!-- 미수건이 있는 독자 -->
+							SELECT
+								S.READNO, S.NEWSCD, S.SEQ, S.BOSEQ, S.YYMM, S.SGBBCD, S.BILLAMT
+							FROM 
+								TM_READER_SUGM S
+								,(
+									SELECT READNO, NEWSCD, SEQ, BOSEQ
+									FROM TM_READER_SUGM
+									WHERE
+										NEWSCD = #NEWSCD#
+										AND BOSEQ = #BOSEQ#
+										AND SGBBCD = #SGBBCD#
+									GROUP BY
+										READNO, NEWSCD, SEQ, BOSEQ
+								) S2
+							WHERE 
+								S.READNO = S2.READNO
+								AND
+								S.NEWSCD = S2.NEWSCD
+								AND
+								S.SEQ = S2.SEQ
+								AND
+								S.BOSEQ = S2.BOSEQ
+						</isNotEmpty>
+					) B
+				WHERE
+					A.READNO = B.READNO
+				    AND
+				    A.NEWSCD = B.NEWSCD
+				    AND
+				    A.SEQ = B.SEQ
+				    AND
+				    A.BOSEQ = B.BOSEQ
+					AND
+				    B.YYMM BETWEEN #SDATE# AND #EDATE#
+				GROUP BY 
+					B.READNO, B.NEWSCD, B.SEQ
+		) C
+		ORDER BY
+			GNO, BNO, C.READNO, C.NEWSCD
+	</select>
+	
+	
+	<!-- 입금처리 -->
+	<update id="updateSugm">
+		UPDATE TM_READER_SUGM
+		SET
+			SGBBCD = #SGBBCD#
+			<isEmpty property="AMT">
+				,AMT = BILLAMT
+			</isEmpty>
+			<isNotEmpty property="AMT">
+				,AMT = #AMT#
+			</isNotEmpty>
+			,SGYYMM = #SGYYMM#	
+			<isNotEmpty property="LOSSAMT">
+				,LOSSAMT = #LOSSAMT#
+			</isNotEmpty>
+			<isNotEmpty property="BILLAMT_TO_LOSSAMT">
+				,LOSSAMT = BILLAMT
+			</isNotEmpty>			
+			,SNDT = #SNDT#
+			,ICDT = #ICDT#
+			,CLDT = (SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') FROM DUAL)
+			,CHGDT = sysdate
+			,CHGPS = #CHGPS#
+		WHERE
+			READNO = #READNO#
+			AND NEWSCD = #NEWSCD#
+			AND SEQ = #SEQ#
+			AND YYMM = #YYMM#
+			AND BOSEQ = #BOSEQ#
+	</update>
+	
+	<!-- 방문 수금 장표 조회 -->
+	<select id="visitSugmForm" resultClass="java.util.HashMap" >
+		SELECT A.BOSEQ,
+		       FUNC_AGENT_NM(A.BOSEQ) NAME,
+		       A.READNO,
+		       A.GNO,
+		       A.BNO,
+		       A.NEWSCD,
+		       FUNC_COMMON_CDYNM('100', A.NEWSCD) NEWSNM,
+		       A.READNM,
+		       SUBSTR(B.YYMM, 0, 4)||'-'||SUBSTR(B.YYMM, 5, 2) YYMM,
+		       B.AMT,
+		       SUBSTR(B.SNDT, 0, 4)||'-'||SUBSTR(B.SNDT, 5, 2)||'-'||SUBSTR(B.SNDT, 7, 2) SNDT
+		  FROM TM_READER_NEWS A,
+		       TM_READER_SUGM B
+		 WHERE A.READNO = B.READNO
+		   AND A.SEQ = B.SEQ
+		   AND A.NEWSCD = B.NEWSCD
+		   AND B.SGBBCD = '012'
+		   AND A.BOSEQ = #boseq#
+		   AND B.SNDT BETWEEN #fromDate# AND #toDate#
+		 ORDER BY A.BOSEQ, B.SNDT, A.GNO, A.READNO, A.BNO, B.YYMM
+	</select>
+	
+</sqlMap>

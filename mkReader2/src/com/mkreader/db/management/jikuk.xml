@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="management.jikuk">
+	<!-- 폐국지국조회 -->
+	<select id="getJiKukCode" resultClass="string">
+		SELECT USERID
+		 FROM TM_AGENCY 
+		WHERE name = #JIKUKNAME#
+	</select>
+	
+	<!-- 통합지국조회 -->
+	<select id="getCombineJiKukCode" resultClass="string">
+		SELECT USERID
+		 FROM TM_AGENCY 
+		WHERE name = #COMBINEJIKUKNAME#
+	</select>
+	
+	<!-- 카드독자조회 -->
+	<select id="selectCardReaderList" resultClass="java.util.HashMap">
+		SELECT CASE WHEN STDT is not null THEN 'Y'
+            	  ELSE 'N' END  AS USEYN
+            	, READNO
+            	, READNM
+         FROM (
+			SELECT B.READNO
+					, B.READNM
+					, B.STDT
+			 FROM TBL_CARD_READER A,
+			         TM_READER_NEWS b
+			WHERE a.readno = b.readno
+			   AND a.BOSEQ = #BOSEQ# 
+			ORDER BY B.STDT DESC, B.READNM
+			  )
+	</select>
+	
+	<!-- 교육용독자조회 -->
+	<select id="selectEduReaderList" resultClass="java.util.HashMap">
+		SELECT CASE WHEN STDT is not null THEN 'Y'
+            	  ELSE 'N' END  AS USEYN
+            	, READNO
+            	, READNM
+         FROM (
+			 SELECT B.READNO
+					 , B.READNM
+					 , B.STDT
+			  FROM TM_READER_EDUCATION A,
+			       	  TM_READER_NEWS b
+			WHERE a.readno = b.readno
+			   AND a.BOSEQ = #BOSEQ#
+			ORDER BY B.STDT DESC, B.READNM 
+			   )
+	</select>
+	
+	<!-- 소외계층독자조회 -->
+	<select id="selectAlienationReaderList" resultClass="java.util.HashMap">
+		SELECT CASE WHEN STDT is not null THEN 'Y'
+            	  ELSE 'N' END  AS USEYN
+            	, READNO
+            	, READNM
+         FROM (
+			 SELECT READNO
+					 , READNM
+					 , STDT
+			  FROM TM_READER_NEWS 
+			 WHERE BOSEQ = #BOSEQ#
+			    AND READTYPECD IN ('016', '017')
+			 ORDER BY STDT DESC, READNM			    
+			    )
+	</select>
+	
+	<!-- 일반자동이체독자조회 -->
+	<select id="selectTransferReaderList" resultClass="java.util.HashMap">
+		SELECT CASE WHEN STDT is not null THEN 'Y'
+            	  ELSE 'N' END  AS USEYN
+            	, READNO
+            	, READNM
+         FROM (
+			 SELECT A.READNO
+					 , A.READNM
+					 , A.STDT
+			  FROM TM_READER_NEWS A, 
+			          TBL_USERS B 
+			 WHERE A.READNO = B.READNO 
+			    AND B.REALJIKUK = #BOSEQ#
+			 ORDER BY A.STDT DESC, A.READNM
+			    )
+	</select>
+	
+	<!-- 학생자동이체독자조회 -->
+	<select id="selectTransferStuReaderList" resultClass="java.util.HashMap">
+		SELECT CASE WHEN STDT is not null THEN 'Y'
+            	  ELSE 'N' END  AS USEYN
+            	, READNO
+            	, READNM
+         FROM (
+			 SELECT A.READNO
+					 , A.READNM
+					 , A.STDT
+			  FROM TM_READER_NEWS A, 
+			          TBL_USERS_stu B 
+			 WHERE A.READNO = B.READNO
+			    AND B.REALJIKUK = #BOSEQ#
+			 ORDER BY A.STDT DESC, A.READNM
+			    )
+	</select>
+	
+	<!-- 우편번호 조회 -->
+	<select id="selectZipcodeList" resultClass="java.util.HashMap">
+		SELECT ZIP
+		       , SIDO
+		       , GUGUN
+		       , UPDONG
+		       , RI
+		       , DOSU
+		       , BUNJI
+		       , APT
+		       , TXT
+		 FROM tm_zipcode 
+	    WHERE JISERIAL = #BOSEQ#
+	       AND DELYN = 'N' 
+	    ORDER BY GUGUN, UPDONG, RI, DOSU, BUNJI
+	</select>
+	
+	<!-- 우편번호 개수조회 -->
+	<select id="getZipcodeCount" resultClass="int">
+		SELECT COUNT(*)
+		 FROM tm_zipcode 
+	    WHERE JISERIAL = #BOSEQ#
+	       AND DELYN = 'N' 
+	</select>
+	
+	<!-- 우편번호 이전 -->
+	<update id="updateZipcodeData">
+		UPDATE TM_ZIPCODE SET 
+				   JISERIAL = #combineJikukCode#
+				 , JIKUK = #combineJikukNm#
+		 WHERE JISERIAL = #closeJikukCode#
+		    AND JIKUK = #closeJikukNm#
+	</update>
+	
+	<!-- 카드독자 수금이전 -->
+	<update id="updateCardReaderSugmData">
+	  UPDATE TM_READER_SUGM
+		   SET BOSEQ = #combineJikukCode#
+		WHERE READNO IN (
+		SELECT B.readno
+		  FROM TBL_CARD_READER A,
+		       TM_READER_NEWS b
+		WHERE a.readno = b.readno
+		   AND a.BOSEQ = #closeJikukCode#)
+	</update>
+	
+	<!-- 카드독자 이전 -->
+	<update id="updateCardReaderData">
+	  UPDATE TM_READER_NEWS
+		   SET BOSEQ = #combineJikukCode#
+			<isEqual property="bnoChgYn" compareValue="Y">
+		      	, GNO = #cardGno#
+			</isEqual>
+		WHERE READNO IN (
+		SELECT B.readno
+		  FROM TBL_CARD_READER A,
+		       TM_READER_NEWS b
+		WHERE a.readno = b.readno
+		   AND a.BOSEQ = #closeJikukCode#)
+	</update>
+	
+	<!-- 카드 테이블 이전 -->
+	<update id="updateCardTableData">
+	  UPDATE TBL_CARD_READER
+		   SET BOSEQ = #combineJikukCode#
+		WHERE BOSEQ = #closeJikukCode#
+	</update>
+	
+	<!-- 카드 수금 상세 테이블 이전 -->
+	<update id="updateCardSugmDetailData">
+	  UPDATE TBL_CARD_DTL_PAYMENT
+		   SET BOSEQ = #combineJikukCode#
+		WHERE BOSEQ = #closeJikukCode#
+	</update>
+	
+	<!-- 교육용독자 수금이전 -->
+	<update id="updateEduReaderSugmData">
+		  UPDATE TM_READER_SUGM
+			   SET BOSEQ = #combineJikukCode#
+			WHERE READNO IN (
+			   SELECT B.readno
+			  FROM TM_READER_EDUCATION A,
+			       TM_READER_NEWS b
+			WHERE a.readno = b.readno
+			   AND a.BOSEQ = #closeJikukCode# )
+	</update>
+	
+	<!-- 교육용독자 이전 -->
+	<update id="updateEduReaderData">
+	  UPDATE TM_READER_NEWS
+		   SET BOSEQ = #combineJikukCode#
+			<isEqual property="bnoChgYn" compareValue="Y">
+		      , GNO = #eduGno#
+			</isEqual>
+		WHERE READNO IN (
+		   SELECT B.readno
+		  FROM TM_READER_EDUCATION A,
+		       TM_READER_NEWS b
+		WHERE a.readno = b.readno
+		   AND a.BOSEQ = #closeJikukCode# )
+	</update>
+	
+	<!-- 교육용 테이블 이전 -->
+	<update id="updateEduTableData">
+		UPDATE TM_READER_EDUCATION
+	  		 SET BOSEQ = #combineJikukCode#
+		WHERE BOSEQ = #closeJikukCode#
+	</update>
+	
+	<!-- 소외계층독자 이전 -->
+	<update id="updateAlienationReaderData">
+		UPDATE TM_READER_NEWS 
+		     SET BOSEQ = #combineJikukCode#
+		     <isEqual property="bnoChgYn" compareValue="Y">
+		      	 , GNO = #alienationGno# 
+			</isEqual>
+		 WHERE READNO IN (
+		 	SELECT READNO 
+		 	 FROM TM_READER_NEWS 
+		 	WHERE BOSEQ = #closeJikukCode#
+		 	   AND READTYPECD IN ('016', '017') )
+	</update>
+	
+	<!-- 일반자동이체 수금이전 -->
+	<update id="updateTransferReaderSugmData">
+		  UPDATE TM_READER_SUGM
+			   SET BOSEQ = #combineJikukCode#
+			WHERE READNO IN (
+			   SELECT a.readno
+			    FROM TM_READER_NEWS A,
+			       		TBL_USERS b
+			   WHERE a.readno = b.readno
+			   	  AND B.REALJIKUK = #closeJikukCode# )
+	</update>
+	
+	<!-- 일반자동이체독자 이전 -->
+	<update id="updateTransferReaderData">
+	  UPDATE TM_READER_NEWS
+		   SET BOSEQ = #combineJikukCode#
+			<isEqual property="bnoChgYn" compareValue="Y">
+		      , GNO = #transferGno#
+			</isEqual>
+		WHERE READNO IN (
+			SELECT a.readno
+			 FROM TM_READER_NEWS A,
+			         TBL_USERS b
+			WHERE a.readno = b.readno
+			   AND B.REALJIKUK = #closeJikukCode# )
+	</update>
+	
+	<!-- 일반자동이체 이전 -->
+	<update id="updateTransferTableData">
+	  UPDATE TBL_USERS
+		   SET REALJIKUK = #combineJikukCode#
+		WHERE REALJIKUK = #closeJikukCode#
+		   AND TRIM(READNO) IS NOT NULL
+	</update>
+	
+	<!-- 학생자동이체 수금이전 -->
+	<update id="updateTransferStuReaderSugmData">
+	   UPDATE TM_READER_SUGM
+		    SET BOSEQ = #combineJikukCode#
+		WHERE READNO IN (
+			   SELECT a.readno
+			  FROM TM_READER_NEWS A,
+			       TBL_USERS_STU b
+			WHERE a.readno = b.readno
+			   AND B.REALJIKUK = #closeJikukCode# ) 
+	</update>
+	
+	<!-- 학생자동이체독자 이전 -->
+	<update id="updateTransferStuReaderData">
+      UPDATE TM_READER_NEWS
+		    SET BOSEQ = #combineJikukCode#
+			<isEqual property="bnoChgYn" compareValue="Y">		    
+               , GNO = #transferStuGno#
+			</isEqual>
+		WHERE READNO IN (
+			SELECT a.readno
+			  FROM TM_READER_NEWS A,
+			          TBL_USERS_STU b
+			WHERE a.readno = b.readno
+			   AND B.REALJIKUK = #closeJikukCode# ) 
+	</update>
+	
+	<!-- 학생자동이체 이전 -->
+	<update id="updateTransferStuTableData">
+	   UPDATE TBL_USERS_STU
+		    SET REALJIKUK = #combineJikukCode# 
+			   , JIKUK = #combineJikukCode# 
+		WHERE REALJIKUK = #closeJikukCode#
+   		   AND TRIM(READNO) IS NOT NULL
+	</update>
+	
+	<!-- 폐국지국 정보 수정 -->
+	<update id="deleteCloseJikukData">
+		UPDATE TM_AGENCY 
+		     SET NAME = NAME || #txtClosed#
+		        , USEAGP = ''
+		        , TYPE = ''
+		        , ZONE = '' 
+		 WHERE USERID = #closeJikukCode#
+	</update>
+	
+	<!-- 카드독자백업 -->
+	<insert id="insertBackupCardReaders">
+		INSERT INTO TM_OLDJIKUK
+		  (	READNO
+		    , OLDJIKUK
+		    , BACKUP_DATE
+		  ) 
+	      SELECT B.READNO
+	       	      , #BOSEQ#
+	    		  , SYSDATE
+	       FROM TBL_CARD_READER A,
+	               TM_READER_NEWS b
+	      WHERE a.readno = b.readno
+	         AND a.BOSEQ = #BOSEQ# 
+	      ORDER BY B.STDT DESC, B.READNM
+	</insert>
+	  
+	<!-- 교육용독자백업 -->
+	<insert id="insertBackupEduReaders">
+		INSERT INTO TM_OLDJIKUK
+		  (	READNO
+		    , OLDJIKUK
+		    , BACKUP_DATE
+		  ) 
+	     SELECT B.READNO
+		        , #BOSEQ#
+		        , SYSDATE
+	      FROM TM_READER_EDUCATION A,
+	              TM_READER_NEWS b
+	    WHERE a.readno = b.readno
+	       AND a.BOSEQ = #BOSEQ#
+	    ORDER BY B.STDT DESC, B.READNM 
+	</insert>
+	
+	<!-- 소외계층독자백업 -->
+	<insert id="insertBackupAlienationReaders">
+		INSERT INTO TM_OLDJIKUK
+		  (	READNO
+		    , OLDJIKUK
+		    , BACKUP_DATE
+		  ) 
+	     SELECT READNO
+	     		, #BOSEQ#
+	    		, SYSDATE
+	      FROM TM_READER_NEWS 
+	     WHERE BOSEQ = #BOSEQ#
+	        AND READTYPECD IN ('016', '017')
+	     ORDER BY STDT DESC, READNM			    
+	</insert>  
+	    
+	<!-- 일반자동이체독자백업 -->
+	<insert id="insertBackupTransferReaders">
+		INSERT INTO TM_OLDJIKUK
+		  (	READNO
+		    , OLDJIKUK
+		    , BACKUP_DATE
+		  ) 
+	     SELECT A.READNO
+	     		 , #BOSEQ#
+	    		 , SYSDATE
+	      FROM TM_READER_NEWS A, 
+	              TBL_USERS B 
+	     WHERE A.READNO = B.READNO 
+	        AND B.REALJIKUK = #BOSEQ#
+	     ORDER BY A.STDT DESC, A.READNM			    
+	</insert>
+	
+	<!-- 학생자동이체독자백업 -->
+	<insert id="insertBackupTransferStuReaders">
+		INSERT INTO TM_OLDJIKUK
+		  (	READNO
+		    , OLDJIKUK
+		    , BACKUP_DATE
+		  )
+	     SELECT A.READNO
+	      		 , #BOSEQ#
+	   			 , SYSDATE
+	      FROM TM_READER_NEWS A, 
+	              TBL_USERS_stu B 
+	     WHERE A.READNO = B.READNO
+	        AND B.REALJIKUK = #BOSEQ#
+	     ORDER BY A.STDT DESC, A.READNM			    
+	</insert>
+</sqlMap>

@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="collection.ediElect">
+
+<!-- result map -->
+	<resultMap id="GR65LogMap" class="hashmap">
+		<result property="NUMID" column="NUMID" />
+		<result property="FILENAME" column="FILENAME" />
+		<result property="COUNTS" column="COUNTS" />
+		<result property="MONEY" column="MONEY" />
+		<result property="INDT" column="INDT" />
+		<result property="ADMINID" column="ADMINID" />
+	</resultMap>
+
+	<!-- GR65 log 목록 -->
+	<select id="getGR65LogList" resultClass="map" resultMap="GR65LogMap">
+		SELECT 
+			C.*
+		FROM
+			(
+				SELECT 
+					ROWNUM AS RNUM
+					, B.*
+	  			FROM
+					(
+						SELECT 
+							*
+						FROM 
+							TM_GR65_LOG A 
+						WHERE 
+							NUMID is not null
+						ORDER BY 
+							numid desc
+					) B
+			) C
+		WHERE
+			RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+			AND
+			RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+
+	</select>
+	
+	<!-- GR65 log 갯수 -->
+	<select id="getGR65LogCount" resultClass="int">
+		SELECT 
+			count(*) as recCount
+		FROM 
+			TM_GR65_LOG
+		WHERE 
+			numid IS NOT NULL
+	</select>
+	
+	<!-- GR65 log 정보 -->
+	<select id="getGR65LogInfo" resultClass="map" resultMap="GR65LogMap">
+		SELECT *
+		FROM (
+			SELECT 
+				*
+			FROM 
+				TM_GR65_LOG 
+			WHERE 
+				numid = #numid#
+		)
+		WHERE
+			ROWNUM = 1
+	</select>
+	
+	<!-- result map -->
+	<resultMap id="GiroSugmMap" class="hashmap">
+		<result property="BOSEQ" column="BOSEQ" />			<!-- 지국번호 -->
+		<result property="GIRO_NO" column="GIRO_NO" />		<!-- 지로번호 -->
+		<result property="NEWSCD" column="NEWSCD" />		<!-- 매체코드 -->
+		<result property="READNO" column="READNO" />		<!-- 독자번호 -->
+		<result property="READNM" column="READNM" />		<!-- 독자명 -->
+		<result property="ADDR" column="ADDR" />				<!-- 주소 -->
+		<result property="BILLQTY" column="BILLQTY" />		<!-- 부수 -->
+		<result property="BILLAMT" column="BILLAMT" />		<!-- 금액 -->
+		<result property="YYMM" column="YYMM" />			<!-- 월분 -->
+		<result property="GUBUN" column="GUBUN" />			<!-- 고지발행구분 -->
+		<result property="PERIOD" column="PERIOD" />			<!-- 체납기간 -->
+		<result property="MONTHS" column="MONTHS" />		<!-- 체납개월수 -->
+		<result property="EXPIRE" column="EXPIRE" />			<!-- 고지마감월 -->
+		<result property="READBAND" column="READBAND" />		<!-- 고객조회번호 -->
+	</resultMap>
+	
+	<select id="getSugmList" resultClass="java.util.HashMap" resultMap="GiroSugmMap">
+	SELECT * FROM (
+    SELECT BOSEQ, GIRO_NO, NEWSCD, READNO, SUBSTR(READNM,1,8) READNM, SUBSTR(ADDR,1,40) ADDR, BILLQTY, BILLAMT, YYMM, GUBUN, PERIOD, MONTHS, TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM') AS EXPIRE, READBAND
+      FROM ( 
+         SELECT X.BOSEQ, '3146440' GIRO_NO, X.NEWSCD, X.READNO, SUBSTR(MIN(X.READNM),1,8) READNM, SUBSTR(MIN(X.ADDR),1,40) ADDR, X.BILLQTY, SUM(X.BILLAMT) BILLAMT, YYMM, '0' GUBUN, '00000000' PERIOD, '000' MONTHS,
+                '99' || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(YYMM,3,4) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(YYMM, 'YYYYMM'), TO_DATE(YYMM, 'YYYYMM'))+1),2,0)  
+                || FUNC_CHECK_DIGIT_CUST('99' || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(YYMM,3,4) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(YYMM, 'YYYYMM'), TO_DATE(YYMM, 'YYYYMM'))+1),2,0)) READBAND
+           FROM (SELECT B.BOSEQ,   
+                        B.NEWSCD,  
+                        SUM(B.QTY) BILLQTY,   
+                        B.READNO,   
+                        MIN(TRIM(B.READNM)) READNM,  
+                        REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))),  
+                                     INSTR(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))), #gu#)+1,  
+                                     LENGTH(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))))))||' '||TRIM(MIN(REPLACE(REPLACE(B.DLVADRS2,chr(39),''),'·',''))),#apt#,'A') AS ADDR,   
+                        TO_CHAR(SYSDATE,'YYYYMM') YYMM,  
+                        SUM(B.UPRICE) BILLAMT    
+                  FROM TM_READER_NEWS B
+                 WHERE 1=1 
+                   AND (B.READNO, B.NEWSCD, B.SEQ) NOT IN(SELECT READNO, NEWSCD, SEQ   
+                                                            FROM TM_READER_SUGM  
+                                                           WHERE BOSEQ IN (SELECT USERID FROM TM_AGENCY WHERE TYPE IN('101','102'))
+                                                             AND YYMM = TO_CHAR(SYSDATE,'YYYYMM')
+                                                             AND (TRIM(SGBBCD) !='044' AND SGBBCD IS NOT NULL))  
+                   AND B.SGTYPE IN('011','012','013')  
+                   AND ((B.BOSEQ = '521050' AND B.READTYPECD IN('011','012','015')) OR (B.BOSEQ IN (SELECT USERID FROM TM_AGENCY WHERE TYPE IN('101','102')) AND B.READTYPECD IN('011','012')))  
+                   <isNotEmpty property="jcode" prepend=" AND ">
+						B.BOSEQ = #jcode#
+					</isNotEmpty>
+                   AND B.UPRICE IS NOT NULL AND B.UPRICE != 0
+                   AND B.BNO != '999'  
+                   AND B.SGBGMM &lt;= TO_CHAR(SYSDATE,'YYYYMM')
+                 GROUP BY B.BOSEQ, B.NEWSCD, B.READNO 
+                 ) X  
+          GROUP BY X.BOSEQ, X.READNO, X.NEWSCD, X.YYMM, X.BILLQTY
+    ) UNION ALL (
+         SELECT X.BOSEQ, '3146440' GIRO_NO, X.NEWSCD, X.READNO, SUBSTR(MIN(X.READNM),1,8) READNM, SUBSTR(MIN(X.ADDR),1,40) ADDR, X.BILLQTY, SUM(X.BILLAMT) BILLAMT, MAX(X.YYMM) YYMM, 
+               '4' GUBUN, SUBSTR(MIN(X.YYMM),3,4)||SUBSTR(MAX(X.YYMM),3,4) PERIOD, LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(MAX(X.YYMM), 'YYYYMM'), TO_DATE(MIN(X.YYMM), 'YYYYMM'))+1),3,0) MONTHS, TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM') EXPIRE,
+               '99' || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(MIN(X.YYMM),3,4) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(MAX(X.YYMM), 'YYYYMM'), TO_DATE(MIN(X.YYMM), 'YYYYMM'))+1),2,0)
+               || FUNC_CHECK_DIGIT_CUST('99' || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(MIN(X.YYMM),3,4) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(MAX(X.YYMM), 'YYYYMM'), TO_DATE(MIN(X.YYMM), 'YYYYMM'))+1),2,0)) READBAND
+           FROM (SELECT B.BOSEQ, 
+                        B.NEWSCD,
+                        SUM(B.QTY) BILLQTY,  
+                        B.READNO,      
+                        MIN(TRIM(B.READNM)) READNM,  
+                        REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))), 
+                                INSTR(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))), #gu#)+1, 
+                                LENGTH(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))))))||' '||TRIM(MIN(REPLACE(REPLACE(B.DLVADRS2,chr(39),''),'·',''))),#apt#,'A') AS ADDR,
+                        A.YYMM,
+                        SUM(A.BILLAMT) BILLAMT  
+                   FROM TM_READER_SUGM A, TM_READER_NEWS B
+                  WHERE A.READNO = B.READNO
+                    AND A.NEWSCD = B.NEWSCD
+                    AND A.SEQ = B.SEQ
+                    AND A.SGBBCD = '044'
+                    AND A.BILLAMT IS NOT NULL AND A.BILLAMT != 0
+                    AND A.SGGBCD IN('011','012','013')
+                    AND ((B.BOSEQ = '521050' AND B.READTYPECD IN('011','012','015')) OR (B.BOSEQ IN (SELECT USERID FROM TM_AGENCY WHERE TYPE IN('101','102')) AND B.READTYPECD IN('011','012')))
+                    <isNotEmpty property="jcode" prepend=" AND ">
+						B.BOSEQ = #jcode#
+					</isNotEmpty>
+                    AND A.YYMM &lt; TO_CHAR(SYSDATE,'YYYYMM')
+                  GROUP BY B.BOSEQ, B.READNO, B.NEWSCD, A.YYMM 
+                ) X
+          GROUP BY X.BOSEQ, X.READNO, X.NEWSCD, X.BILLQTY
+        )	
+    ORDER BY BOSEQ, READNO, NEWSCD, GUBUN  )
+UNION ALL 
+SELECT * FROM (
+    SELECT BOSEQ, GIRO_NO, NEWSCD, READNO, SUBSTR(READNM,1,8) READNM, SUBSTR(ADDR,1,40) ADDR, BILLQTY, BILLAMT, YYMM, GUBUN, PERIOD, MONTHS, TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM') AS EXPIRE, READBAND
+      FROM ( 
+             SELECT X.BOSEQ, X.GIRO_NO, X.NEWSCD, X.READNO, SUBSTR(MIN(X.READNM),1,8) READNM, SUBSTR(MIN(X.ADDR),1,40) ADDR, X.BILLQTY, SUM(X.BILLAMT) BILLAMT, YYMM, '0' GUBUN, '00000000' PERIOD, '000' MONTHS,
+                    X.GB || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(YYMM,3,4) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(YYMM, 'YYYYMM'), TO_DATE(YYMM, 'YYYYMM'))+1),2,0)  
+                    || FUNC_CHECK_DIGIT_CUST(X.GB || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(YYMM,3,4) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(YYMM, 'YYYYMM'), TO_DATE(YYMM, 'YYYYMM'))+1),2,0)) READBAND
+               FROM (SELECT B.BOSEQ,   
+                            C.GIRO_NO,
+                            C.GB,
+                            B.NEWSCD,  
+                            SUM(B.QTY) BILLQTY,   
+                            B.READNO,   
+                            MIN(TRIM(B.READNM)) READNM,  
+                            REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))),  
+                                         INSTR(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))), #gu#)+1,  
+                                         LENGTH(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))))))||' '||TRIM(MIN(REPLACE(REPLACE(B.DLVADRS2,chr(39),''),'·',''))),#apt#,'A') AS ADDR,   
+                            TO_CHAR(SYSDATE,'YYYYMM') YYMM,  
+                            SUM(B.UPRICE) BILLAMT    
+                      FROM TM_READER_NEWS B, (SELECT A.SERIAL, A.GIRO_NO, B.TYPE, DECODE(B.TYPE, '101', '98', '102', '98', '99') GB FROM TM_AGENCY_JIRO A, TM_AGENCY B WHERE A.SERIAL = B.USERID) C
+                     WHERE B.BOSEQ = C.SERIAL
+                       AND (B.READNO, B.NEWSCD, B.SEQ) NOT IN(SELECT READNO, NEWSCD, SEQ   
+                                                                FROM TM_READER_SUGM  
+                                                               WHERE BOSEQ IN (SELECT SERIAL FROM TM_AGENCY_JIRO WHERE SERIAL IS NOT NULL)
+                                                                 AND YYMM = TO_CHAR(SYSDATE,'YYYYMM')
+                                                                 AND (TRIM(SGBBCD) !='044' AND SGBBCD IS NOT NULL))
+					<isNotEmpty property="jcode" prepend=" AND ">
+						B.BOSEQ = #jcode#
+					</isNotEmpty>  
+                       AND B.SGTYPE IN('011','012','013')  
+                       AND B.READTYPECD IN('011','012')  
+                       AND B.UPRICE IS NOT NULL AND B.UPRICE != 0
+                       AND B.BNO != '999'  
+                       AND B.SGBGMM &lt;= TO_CHAR(SYSDATE,'YYYYMM')
+                     GROUP BY B.BOSEQ, C.GIRO_NO, C.GB, B.NEWSCD, B.READNO 
+                     ) X  
+              GROUP BY X.BOSEQ, X.GIRO_NO, X.GB, X.READNO, X.NEWSCD, X.YYMM, X.BILLQTY
+        ) UNION ALL (
+             SELECT X.BOSEQ, X.GIRO_NO, X.NEWSCD, X.READNO, SUBSTR(MIN(X.READNM),1,8) READNM, SUBSTR(MIN(X.ADDR),1,40) ADDR, X.BILLQTY, SUM(X.BILLAMT) BILLAMT, MAX(X.YYMM) YYMM, 
+                   '4' GUBUN, SUBSTR(MIN(X.YYMM),3,4)||SUBSTR(MAX(X.YYMM),3,4) PERIOD, LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(MAX(X.YYMM), 'YYYYMM'), TO_DATE(MIN(X.YYMM), 'YYYYMM'))+1),3,0) MONTHS, TO_CHAR(ADD_MONTHS(SYSDATE, 1), 'YYYYMM') EXPIRE,
+                   X.GB || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(MIN(X.YYMM),3,4) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(MAX(X.YYMM), 'YYYYMM'), TO_DATE(MIN(X.YYMM), 'YYYYMM'))+1),2,0)
+                   || FUNC_CHECK_DIGIT_CUST(X.GB || SUBSTR(X.NEWSCD,2,2) || X.READNO || SUBSTR(MIN(X.YYMM),3,4) || LPAD(TRUNC(MONTHS_BETWEEN(TO_DATE(MAX(X.YYMM), 'YYYYMM'), TO_DATE(MIN(X.YYMM), 'YYYYMM'))+1),2,0)) READBAND
+               FROM (SELECT B.BOSEQ, 
+                            C.GIRO_NO,
+                            C.GB,
+                            B.NEWSCD,
+                            SUM(B.QTY) BILLQTY,  
+                            B.READNO,      
+                            MIN(TRIM(B.READNM)) READNM,  
+                            REPLACE(TRIM(SUBSTR(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))), 
+                                    INSTR(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))), #gu#)+1, 
+                                    LENGTH(TRIM(SUBSTR(MIN(B.DLVADRS1), INSTR(MIN(B.DLVADRS1), ' ', 1, 2), LENGTH(MIN(B.DLVADRS1)))))))||' '||TRIM(MIN(REPLACE(REPLACE(B.DLVADRS2,chr(39),''),'·',''))),#apt#,'A') AS ADDR,
+                            A.YYMM,
+                            SUM(A.BILLAMT) BILLAMT  
+                       FROM TM_READER_SUGM A, TM_READER_NEWS B, (SELECT A.SERIAL, A.GIRO_NO, B.TYPE, DECODE(B.TYPE, '101', '98', '102', '98', '99') GB FROM TM_AGENCY_JIRO A, TM_AGENCY B WHERE A.SERIAL = B.USERID) C
+                      WHERE A.READNO = B.READNO
+                        AND A.NEWSCD = B.NEWSCD
+                        AND A.SEQ = B.SEQ
+                        AND A.BOSEQ = C.SERIAL
+                        <isNotEmpty property="jcode" prepend=" AND ">
+							B.BOSEQ = #jcode#
+						</isNotEmpty>
+                        AND A.SGBBCD = '044'
+                        AND A.BILLAMT IS NOT NULL AND A.BILLAMT != 0
+                        AND A.SGGBCD IN('011','012','013')
+                        AND B.READTYPECD IN('011','012')
+                        AND A.YYMM &lt; TO_CHAR(SYSDATE,'YYYYMM')
+                      GROUP BY B.BOSEQ, C.GIRO_NO, C.GB, B.READNO, B.NEWSCD, A.YYMM 
+                    ) X
+              GROUP BY X.BOSEQ, X.GIRO_NO, X.GB, X.READNO, X.NEWSCD, X.BILLQTY
+            )	
+      ORDER BY BOSEQ, READNO, NEWSCD, GUBUN   
+    )
+	</select>
+	
+		<insert id="insertGR65Log">
+		<selectKey keyProperty="numid" resultClass="int" type="pre">
+			SELECT nvl(max(numid), 0)+1
+			FROM TM_GR65_LOG
+		</selectKey>
+		INSERT INTO TM_GR65_LOG ( 
+			NUMID
+			, FILEDT
+			, FILENAME
+			, COUNTS
+			, MONEY
+			, INDT
+			, ADMINID
+		) VALUES ( 
+			#numid#
+			, #filedt#
+			, #filename#
+			, #counts#
+			, #money#
+			, sysdate
+			, #userid#
+		)
+	</insert>
+	
+	
+</sqlMap>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="billing.branch.cmsget">
+
+	<!-- 이체내역조회 결과 -->
+	<select id="getStatResult" resultClass="java.util.HashMap">
+		SELECT 
+			COUNT(1) AS R_COUNT
+			,SUM(CAST(( CASE WHEN CMSRESULT = '00000' THEN CMSMONEY ELSE '0' END) AS INT)) AS TOTALS
+		FROM 
+			TBL_EA_LOG A
+		WHERE 
+			( A.CMSTYPE='EA21' AND RDATE IS NOT NULL AND A.RDATE BETWEEN #S_CMSDATE# AND #E_CMSDATE#
+			<isNotEqual property="CHBX" compareValue="all">
+				<isEqual property="CHBX" compareValue="on" prepend=" AND">
+					CMSRESULT = '00000'
+				</isEqual>
+				<isEqual property="CHBX" compareValue="off" prepend=" AND">
+					CMSRESULT &lt;&gt; '00000'
+				</isEqual>
+			</isNotEqual>
+			)
+			AND 
+			A.usernumid in (
+				select numid from tbl_users where realjikuk = #JIKUK#
+			)
+	</select>
+	
+	
+	<!-- 이체내역조회 리스트 -->
+	<select id="getStatResultList" resultClass="java.util.HashMap">
+	SELECT 
+		E.*
+	FROM
+		(
+			SELECT 
+				ROWNUM AS RNUM
+				, D.*
+  			FROM
+  				(
+  					SELECT
+  						C.*
+						,(SELECT MAX(NAME) FROM TM_AGENCY WHERE SERIAL = C.REALJIKUK and rownum=1) as JIKUK_NAME
+					FROM 
+						(
+						SELECT 
+							A.NUMID
+							, A.SERIALNO
+							, A.FILENAME
+							, A.CMSTYPE
+							, A.CMSDATE
+							, A.CMSMONEY
+							, A.CMSRESULT
+							, A.USERID
+							, A.USERNUMID
+							, A.CODENUM
+							, A.RDATE
+							, A.SUBSMONTH
+							, A.ORDERNO
+							, A.CHECKED
+							, substr(A.CODENUM,0,6) as JIKUK
+							, B.USERNAME AS USERNAME
+							, B.LEVELS AS LEVELS
+							, B.ADDR1 AS ADDR1
+							, B.ADDR2 AS ADDR2
+							, B.HANDY AS HANDY
+							, B.PHONE AS PHONE
+							, B.INDATE
+							, B.READNO
+							, B.REALJIKUK
+						FROM 
+							TBL_EA_LOG A 
+							LEFT OUTER JOIN 
+							TBL_USERS B 
+							ON A.USERNUMID = B.NUMID
+						WHERE 
+							( A.CMSTYPE='EA21' AND A.RDATE IS NOT NULL AND A.RDATE BETWEEN #S_CMSDATE# AND #E_CMSDATE#
+							<isNotEqual property="CHBX" compareValue="all">
+								<isEqual property="CHBX" compareValue="on" prepend=" AND">
+									CMSRESULT = '00000'
+								</isEqual>
+								<isEqual property="CHBX" compareValue="off" prepend=" AND">
+									CMSRESULT &lt;&gt; '00000'
+								</isEqual>
+							</isNotEqual>
+							)
+						) C
+					WHERE 
+						C.REALJIKUK = #JIKUK#
+					ORDER BY 
+						C.CMSDATE
+						, C.SERIALNO 
+					) D
+				) E
+		<dynamic prepend="WHERE">
+			<isNotEmpty property="PAGE_NO"> 
+				<isNotEmpty property="PAGE_SIZE">
+					RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+					AND
+					RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+				</isNotEmpty>
+			</isNotEmpty>
+		</dynamic>
+	</select>
+	
+</sqlMap>

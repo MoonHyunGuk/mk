@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="billing.student.refund">
+
+
+	<!-- 지국목록 -->
+	<select id="getStatStuJikukList" resultClass="java.util.HashMap">
+		SELECT 
+			DISTINCT(JIKUK)  
+		FROM 
+			TBL_EA_REFUND_ALL 
+		WHERE 
+			( CHASU &gt; 0 ) 
+			AND 
+			( REFUND_DATE BETWEEN #SDATE# AND #EDATE# )
+		ORDER BY 
+			JIKUK
+	</select>
+	
+	<!-- 지국이름 가져오기 -->
+	<select id="getJikukName" resultClass="string">
+		SELECT FUNC_AGENT_NM(#SERIAL#) AS NAME FROM DUAL
+	</select>
+	
+	<!-- count, refund price 정보 가져오기 -->
+	<select id="getRefundPriceResult" resultClass="java.util.HashMap">
+	SELECT 
+		COUNT(1) AS COUNT
+		,SUM( REFUND_PRICE ) AS REFUND_PRICE
+	FROM 
+		TBL_EA_REFUND_ALL 
+	WHERE 
+		( CHASU &gt; 0 ) 
+		AND 
+		( REFUND_DATE BETWEEN #SDATE# AND #EDATE# )
+		AND
+		TYPECD = #TYPECD#
+		<isEqual property="JIKUK_CHECK" compareValue="Y" prepend=" AND">
+			JIKUK = #JIKUK#
+		</isEqual> 
+	</select>
+	
+	<!-- 환불내역 조회 리스트 -학생 -->
+	<select id="getResultList" resultClass="java.util.HashMap" remapResults="true">
+		SELECT 
+			C.* 
+		FROM 
+			(
+				SELECT 
+					B.* 
+					, ROWNUM AS RNUM 
+				FROM 
+					(
+						SELECT 
+							A.NUMID
+							, A.CHASU
+							, A.GUBUN
+							, A.USERNUMID
+							, A.USERNAME
+							, A.JUMIN
+							, A.JIKUK
+							, A.BANK_NAME
+							, A.BANK_NUM
+							, A.BANK_USERNAME
+							, A.REFUND_PRICE
+							, A.REFUND_DATE
+							, A.REGDATE
+							, A.TXT
+							, (SELECT NAME FROM TM_AGENCY WHERE SERIAL=SUBSTR(A.JIKUK,0,7)) AS JIKUK_NAME
+							, (SELECT READNO FROM TBL_USERS_STU WHERE NUMID = A.USERNUMID) AS READNO
+						FROM 
+							TBL_EA_REFUND_ALL A
+						WHERE 
+							( CHASU &gt; 0 ) 
+							AND 
+							( REFUND_DATE BETWEEN #SDATE# AND #EDATE# )
+							AND
+							TYPECD = #TYPECD#
+							<isEqual property="JIKUK_CHECK" compareValue="Y" prepend=" AND">
+								JIKUK = #JIKUK#
+							</isEqual>
+						ORDER BY 
+							REFUND_DATE
+							, JIKUK
+							, NUMID DESC
+					) B
+				) C
+			WHERE 
+				RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+				AND
+				RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 환불내역 조회 리스트 - 일반-->
+	<select id="getResultList2" resultClass="java.util.HashMap" remapResults="true">
+		SELECT 
+			C.* 
+		FROM 
+			(
+				SELECT 
+					B.* 
+					, ROWNUM AS RNUM 
+				FROM 
+					(
+						SELECT 
+							A.NUMID
+							, A.CHASU
+							, A.GUBUN
+							, A.USERNUMID
+							, A.USERNAME
+							, A.JUMIN
+							, A.JIKUK
+							, A.BANK_NAME
+							, A.BANK_NUM
+							, A.BANK_USERNAME
+							, A.REFUND_PRICE
+							, A.REFUND_DATE
+							, A.REGDATE
+							, A.TXT
+							, (SELECT NAME FROM TM_AGENCY WHERE SERIAL=SUBSTR(A.JIKUK,0,7)) AS JIKUK_NAME
+							, (SELECT READNO FROM TBL_USERS WHERE NUMID = A.USERNUMID) AS READNO
+						FROM 
+							TBL_EA_REFUND_ALL A
+						WHERE 
+							( CHASU &gt; 0 ) 
+							AND 
+							( REFUND_DATE BETWEEN #SDATE# AND #EDATE# )
+							AND
+							TYPECD = #TYPECD#
+							<isEqual property="JIKUK_CHECK" compareValue="Y" prepend=" AND">
+								JIKUK = #JIKUK#
+							</isEqual>
+						ORDER BY 
+							REFUND_DATE
+							, JIKUK
+							, NUMID DESC
+					) B
+				) C
+			WHERE 
+				RNUM &gt; ((#PAGE_NO# - 1) * #PAGE_SIZE#)
+				AND
+				RNUM &lt;= (#PAGE_NO# * #PAGE_SIZE#)
+	</select>
+	
+	<!-- 유저정보 불러오기 -->
+	<select id="getUserInfo" resultClass="java.util.HashMap"  remapResults="true">
+		SELECT 
+			USERNAME
+			, READNO 
+		FROM 
+			$TB$ 
+		WHERE 
+			NUMID = #NUMID#
+	</select>
+	
+	<!-- 유저번호 불러오기 -->
+	<select id="getNumid" resultClass="int" remapResults="true">
+		SELECT 
+			C.NUMID
+		FROM
+			(
+			SELECT 
+				B.NUMID
+				, ROWNUM AS RNUM
+			FROM
+				(
+				SELECT 
+					NUMID
+				FROM
+					$DBTB$
+				WHERE
+					USERNAME = #USERNAME#
+					AND
+					JIKUK = #JIKUK#
+					<isNotEmpty property="BANK_NUM" prepend=" AND">
+						BANK_NUM = #BANK_NUM#
+					</isNotEmpty>
+				ORDER BY 
+					RDATE DESC
+				) B
+			) C
+		WHERE 
+			C.RNUM = 1
+	</select>
+	
+	<!-- 환불내역 insert -->
+	<insert id="insertRefund">
+		<selectKey keyProperty="NUMID" resultClass="int" type="pre">
+			SELECT NVL(MAX(NUMID), 0)+1 AS NUMID
+			FROM TBL_EA_REFUND_ALL
+		</selectKey>
+		INSERT INTO 
+			TBL_EA_REFUND_ALL 
+			( 
+				NUMID
+				, CHASU
+				, GUBUN
+				, USERNUMID
+				, USERNAME
+				, JUMIN
+				, JIKUK
+				, JIKUK_NAME
+				, BANK_NAME
+				, BANK_NUM
+				, REFUND_PRICE
+				, REFUND_DATE
+				, TXT
+				, REGDATE
+				, TYPECD
+			) 
+			VALUES 
+			(
+				#NUMID#
+				, #CHASU#
+				, #GUBUN#
+				, #USERNUMID#
+				, #USERNAME#
+				, #JUMIN#
+				, #JIKUK#
+				, #JIKUK_NAME#
+				, #BANK_NAME#
+				, #BANK_NUM#
+				, #REFUND_PRICE#
+				, #REFUND_DATE#
+				, #TXT#
+				, SYSDATE
+				, #TYPECD#
+			)
+	</insert>
+	
+</sqlMap>

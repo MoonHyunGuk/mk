@@ -1,0 +1,56 @@
+1. 테이블 및 데이터 mig
+2. 자동이체독자백업테이블생성.sql 실행
+3. TM_READER_NEWS 테이블에 TM_READER_NEWS_PK_II 제약조건 삭제(BOSEQ,BOREADNO 를 Unique로 가지는 제약조건)
+4. UPDATE TBL_USERS SET handy = '010-111-1111' WHERE handy LIKE '%ㅇ%';
+5. 자동이체.sql 실행
+6. 자동이체독자이전.sql 실행
+
+<확인>
+SELECT 
+	--DISTINCT readtypecd
+    *
+FROM 
+	TM_READER_NEWS A
+    , (
+    	SELECT *
+        from tbl_users 
+        where 
+            status != 'EA99' 
+            and status != 'XX' 
+            and trim(jikuk) is not null 
+        order by 
+            rdate
+    ) B
+WHERE
+	A.readno = B.readno
+    AND
+    A.seq = '0001'
+    AND 
+    (A.readtypecd = '013' OR TRIM(readtypecd) IS null)
+
+SELECT DISTINCT readtypecd
+FROM 
+	TM_READER_NEWS A
+    , (
+    	SELECT *
+        from tbl_users_stu 
+        where 
+            status != 'EA99' 
+            and status != 'XX' 
+            and trim(jikuk) is not null 
+        order by 
+            rdate
+    ) B
+WHERE
+	A.readno = B.readno
+    AND
+    A.seq = '0001'
+    
+    
+7. 자동이체독자이전후.sql 실행
+8. 자동이체수금이전.sql 실행
+9. 인덱스추가.sql 실행
+10. 수금.sql 실행
+11. 기타데이터이전및컬럼수정.sql 실행(각 쿼리 각각 실행해야됨.)
+12. 학생독자EB21선불처리 월마감기능.sql 실행
+13. INSERT INTO TM_MONTHCLOSE_HIST (seq, sgyymm, sdate, edate, regdate) VALUES (1, '201112', '20111221', '20120120', SYSDATE);

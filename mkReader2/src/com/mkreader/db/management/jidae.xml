@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="management.jidae">
+	<!-- 지대통지서조회 -->
+	<select id="selectJidaeNoticeByJikuk"  resultClass="java.util.HashMap">
+		 SELECT A.TYPE
+		         , SUBSTR(YYMM, 5, 2) AS MONTH
+		         , SUBSTR(TO_CHAR(ADD_MONTHS(TO_DATE(A.YYMM, 'YYYY-MM'),-1), 'YYYYMM'),5,2) PREVMONTH
+		         , FUNC_AGENT_NM(BOSEQ) AS BOSEQNM
+		         , BOSEQ AS BOSEQCODE                
+				 , MISU       
+				 , CUSTOM     
+				 , BUSUGRANT  
+				 , STUGRANT   
+				 , ETCGRANT   
+				 , EDU        
+				 , CARD       
+				 , AUTOBILL   
+				 , STU        
+				 , SUBTOTAL   
+				 , A.TMP1       
+				 , A.TMP2
+			 	 , A.TMP3
+			 	 , A.TMP4
+			 	 , A.TMP5
+			 	 , A.TMP6
+			     , A.TMP7				    
+				 , J_REALAMT  
+				 , J_OVERDATE 
+				 , J_OKGRANT1 
+				 , J_OKGRANT2 
+				 , J_DUEDATE  
+				 , J_PAYAMT   
+				 , D_MISU     
+				 , D_HAPPEN   
+				 , D_MINUS    
+				 , D_BALANCE  
+				 , ECONOMY
+				 , CITY
+				 , A.BANK
+				 , GIRO
+				 , (SELECT NAME2 FROM tm_agency WHERE USERID=A.BOSEQ AND USEAGP='Y') AS AGENCYNM
+				 , B.JIDAE_BANK1
+				 , B.JIDAE_BANK2
+				 , B.JIDAE_BANK3
+				 , B.JIDAE_BANK4
+		  FROM TM_JIDAE_NOTICE A
+		         , TM_AGENCY B 
+		 WHERE A.BOSEQ = #boseq#
+		    AND A.YYMM =  #yymm#
+		    AND B.USERID = A.BOSEQ          
+	</select>
+	
+	<!-- 지대통지서조회(이메일/문자) -->
+	<select id="selectJidaeNoticeForSms"  resultClass="java.util.HashMap">
+		 SELECT A.TYPE
+		         , SUBSTR(YYMM, 5, 2) AS MONTH
+		         , SUBSTR(TO_CHAR(ADD_MONTHS(TO_DATE(A.YYMM, 'YYYY-MM'),-1), 'YYYYMM'),5,2) PREVMONTH
+		         , FUNC_AGENT_NM(BOSEQ) AS BOSEQNM
+		         , BOSEQ AS BOSEQCODE                
+				 , MISU       
+				 , CUSTOM     
+				 , BUSUGRANT  
+				 , STUGRANT    
+				 , ETCGRANT   
+				 , EDU        
+				 , CARD       
+				 , AUTOBILL   
+				 , STU        
+				 , SUBTOTAL   
+				 , A.TMP1       																						
+				 , A.TMP2																						
+			 	 , A.TMP3																					
+			 	 , A.TMP4																						
+			 	 , A.TMP5																					
+			 	 , A.TMP6			    
+				 , J_REALAMT  
+				 , J_OVERDATE 
+				 , J_OKGRANT1 
+				 , J_OKGRANT2 
+				 , J_DUEDATE  
+				 , J_PAYAMT   
+				 , D_MISU     
+				 , D_HAPPEN   
+				 , D_MINUS    
+				 , D_BALANCE  
+				 , ECONOMY
+				 , CITY
+				 , A.BANK
+				 , GIRO
+				 , (SELECT NAME2 FROM tm_agency WHERE USERID=A.BOSEQ AND USEAGP='Y') AS AGENCYNM
+				 , B.JIDAE_BANK1
+				 , B.JIDAE_BANK2
+				 , B.JIDAE_BANK3
+				 , B.JIDAE_BANK4
+				 , A.TMP7
+		  FROM TM_JIDAE_NOTICE A
+		         , TM_AGENCY B 
+		 WHERE A.BOSEQ = #boseq#
+		    AND A.YYMM =  #yymm#
+		    AND B.USERID = A.BOSEQ          
+	</select>
+	
+	<!-- 지대통지서입력(1팀) -->
+	<insert id="insertJidaeNoticeDataForDirect" >
+		INSERT INTO TM_JIDAE_NOTICE ( 
+			TYPE, BOSEQ, YYMM, MISU, CUSTOM, TMP6,   ETCGRANT, EDU, CARD, AUTOBILL, STU, TMP1, TMP3, BANK, GIRO, J_REALAMT, ECONOMY, CITY 
+		) VALUES (
+		  #type#
+		 , #boseq#
+		 , #yymm#
+		 , #misu#
+		 , #custom#
+		 , #tmp6#
+		 , #etcgrant#
+		 , #edu#
+		 , #card#
+		 , #autobill#
+		 , #stu#
+		 , #tmp1#
+		 , #tmp3#
+		 , #bank#
+		 , #giro#
+		 , #jRealamt#
+		 , #economy#
+		 , #city# )
+	</insert>
+	
+	<!-- 지대통지서입력(2팀) -->
+	<insert id="insertJidaeNoticeData" >
+		INSERT INTO TM_JIDAE_NOTICE ( 
+			TYPE,BOSEQ,YYMM
+		   ,MISU,CUSTOM,BUSUGRANT,STUGRANT,ETCGRANT,EDU,CARD,AUTOBILL,STU,SUBTOTAL,TMP1,TMP2,TMP3,TMP4,TMP5,TMP6
+		   ,J_REALAMT,J_OVERDATE,J_OKGRANT1,J_OKGRANT2,J_DUEDATE,J_PAYAMT
+		   ,D_MISU,D_HAPPEN,D_MINUS,D_BALANCE, TMP7
+		) VALUES (
+		  #type#
+		 , #boseq#
+		 , #yymm#
+		 , #misu#
+		 , #custom#
+		 , #busugrant#
+		 , #stugrant#
+		 , #etcgrant#
+		 , #edu#
+		 , #card#
+		 , #autobill#
+		 , #stu#
+		 , #subtotal#
+		 , #tmp1#
+		 , #tmp2#
+		 , #tmp3#
+		 , #tmp4#
+		 , #tmp5#
+		 , #tmp6#
+		 , #jRealamt#
+		 , #jOverdate#
+		 , #jOkgrant1#
+		 , #jOkgrant2#
+		 , #jDuedate#
+		 , #jPayamt#
+		 , #dMisu#
+		 , #dHappen#
+		 , #dMinus#
+		 , #dBalance#
+		 , #tmp7#)
+	</insert>
+	
+	<!-- 지사여부확인 -->
+	<select id="chkJisaYn" resultClass="String">
+	  SELECT CASE WHEN CHKCNT>0 THEN 'Y'
+		       ELSE 'N' 
+		       END AS CHKYN
+		  FROM (
+		        SELECT COUNT(*) AS CHKCNT
+		          FROM TMP_USER
+		         WHERE PWD = 'J'||#boseq#
+		  )
+	</select>
+	
+	<!-- 영업담당자확인 -->
+	<select id="chkSellerYn" resultClass="String">
+	  SELECT CASE WHEN CHKCNT>0 THEN 'Y'
+		       ELSE 'N' 
+		       END AS CHKYN
+		  FROM (
+		         SELECT COUNT(*) AS CHKCNT
+		          FROM tmp_user
+		         WHERE ID = #userId#
+                    AND COMPCD IN ('82104', '82105', '82106')
+		  )
+	</select>
+	
+	<!-- 관리팀확인 -->
+	<select id="chkAdminMngYn" resultClass="String">
+	  SELECT CASE WHEN CHKCNT>0 THEN 'Y'
+		       ELSE 'N' 
+		       END AS CHKYN
+		  FROM (
+		         SELECT COUNT(*) AS CHKCNT
+		          FROM tmp_user
+		         WHERE ID = #userId#
+                    AND COMPCD='82101'
+		  )
+	</select>
+	
+	<!-- 담당코드 가져오기 -->
+	<select id="selectLocalCode" resultClass="String">
+	  SELECT LOCALCODE
+		  FROM TMP_USER
+		 WHERE PWD = 'J'||#boseq#
+	</select>
+	
+	<!-- 담당코드 가져오기 -->
+	<select id="selectLocalCodeBySeller" resultClass="String">
+	  SELECT LOCALCODE
+		  FROM TMP_USER
+		 WHERE ID = #userId#
+	</select>
+	
+	<!-- 담당부서 -->
+	<select id="selectCompcdBySeller" resultClass="String">
+	  SELECT COMPCD
+		  FROM TMP_USER
+		 WHERE ID = #userId#
+	</select>
+	
+	<select id="searchJidaeNotice"  resultClass="java.util.HashMap">
+		 SELECT A.TYPE
+		         , YYMM
+		         , FUNC_AGENT_NM(BOSEQ) AS BOSEQNM
+		         , BOSEQ AS BOSEQCODE                
+				 , MISU       
+				 , CUSTOM     
+				 , BUSUGRANT  
+				 , STUGRANT   
+				 , ETCGRANT   
+				 , EDU        
+				 , CARD       
+				 , AUTOBILL   
+				 , STU        
+				 , SUBTOTAL   
+				 , A.TMP1
+				 , A.TMP2
+			 	 , A.TMP3
+			 	 , A.TMP4
+			 	 , A.TMP5
+			 	 , A.TMP6
+				 , J_REALAMT  
+				 , J_OVERDATE 
+				 , J_OKGRANT1 
+				 , J_OKGRANT2 
+				 , J_DUEDATE  
+				 , J_PAYAMT   
+				 , D_MISU     
+				 , D_HAPPEN   
+				 , D_MINUS    
+				 , D_BALANCE
+				 , A.ECONOMY
+				 , A.CITY
+				 , A.BANK
+				 , A.GIRO
+				 , (NVL(ETCGRANT,0) + NVL(A.BANK,0) + NVL(EDU,0) + NVL(GIRO,0) + NVL(CARD,0) + NVL(AUTOBILL,0) + NVL(STU,0) + NVL(TMP1,0) + NVL(TMP6,0) + NVL(TMP3,0))||'' AS TOTAL
+				 , (SELECT NAME2 FROM tm_agency WHERE USERID=A.BOSEQ AND USEAGP='Y') AS AGENCYNM
+				 , B.JIDAE_BANK1
+				 , B.JIDAE_BANK2
+				 , B.JIDAE_BANK3
+				 , B.JIDAE_BANK4
+				 , B.JIKUK_EMAIL
+                 , B.JIKUK_EMAIL2
+                 , (SELECT COUNT(seq) FROM TM_JIDAE_MAILING WHERE boseq=A.BOSEQ AND yymm=A.YYMM AND send_type=#send_type#) AS MAIL_COUNT
+                 , NVL2(B.AREA1, FUNC_COMMON_CDNM('002',B.AREA1),'') AREA1_NM          <!-- 부서명 -->
+				 , NVL2(B.TYPE, FUNC_COMMON_CDNM('017',B.TYPE),'') TYPE_NM          <!-- 구분명 -->
+				 , NVL2(B.ZONE, FUNC_COMMON_CDNM('019',B.ZONE),'') ZONE_NM          <!-- 지역명 -->
+				 , B.NAME           <!-- 지국명 -->
+				 , B.NAME2         <!-- 지국장명 -->
+				 , B.MANAGER     <!-- 지국담당자 -->
+				 , B.JIKUK_HANDY
+				 , A.TMP7
+		  FROM TM_JIDAE_NOTICE A
+		         , TM_AGENCY B 
+		 WHERE A.YYMM =  #yymm#
+		    AND B.USERID = A.BOSEQ
+			<isNotEmpty property="boseq">
+				AND A.BOSEQ IN ($boseq$)
+			</isNotEmpty>
+			<isNotEmpty property="area1" prepend="AND">
+				B.AREA1 = #area1#
+			</isNotEmpty>
+			<isNotEmpty property="manager" prepend="AND">
+				B.MANAGER = #manager#
+			</isNotEmpty>
+			<isNotEmpty property="txt" prepend="AND">
+				B.NAME LIKE #txt#||'%' 		
+			</isNotEmpty>
+			<isNotEmpty property="opName2" prepend="AND">
+				B.NAME2 LIKE #opName2#||'%' 		
+			</isNotEmpty>
+			<isNotEmpty property="agencyType" prepend="AND">
+				B.TYPE = #agencyType#
+			</isNotEmpty>
+			<isNotEmpty property="agencyArea" prepend="AND">
+				B.ZONE = #agencyArea#
+			</isNotEmpty>
+			<isNotEmpty property="part" prepend="AND">
+				B.PART = #part#
+			</isNotEmpty>
+		 ORDER BY BOSEQCODE ASC
+	</select>
+	
+	<insert id="insertJidaeMailData" >
+		<selectKey keyProperty="SEQ" resultClass="int" type="pre">
+			SELECT nvl(max(SEQ), 0)+1
+			FROM TM_JIDAE_MAILING
+		</selectKey>
+		INSERT INTO TM_JIDAE_MAILING ( 
+			SEQ,BOSEQ,YYMM,SEND_ADDR,CONTENT,SEND_TYPE,SENDDT,SENDER) VALUES (
+			  #SEQ#
+			, #boseq#
+			, #yymm#
+			, #send_addr#
+			, #content#
+			, #send_type#
+			, sysdate
+			, #sender#)
+	</insert>
+	
+	<!-- 지대통지서 마지막 년월가져오기 -->
+	<select id="getJidaeLastYymm" resultClass="String">
+		 SELECT YYMM
+		  FROM (
+		        SELECT ROWNUM
+		             , YYMM
+		          FROM (
+		              SELECT yymm 
+		                FROM tm_jidae_notice 
+		               GROUP BY yymm 
+		               ORDER BY yymm desc
+		               )
+		          WHERE ROWNUM = 1
+		  		) 
+	</select>
+</sqlMap>

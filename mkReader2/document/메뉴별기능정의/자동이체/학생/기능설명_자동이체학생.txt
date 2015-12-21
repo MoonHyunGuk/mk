@@ -1,0 +1,93 @@
+<상태>
+EA00  : 신규
+EA13  : 신규신청중
+EA13- : 해지신청중
+EA14  : 신규신청오류
+EA14- : 해지신청오류
+EA21  : 정상
+EA99  : 중지
+
+
+1. 이체신청(EB13)
+	1) 파일이 있으면 처리안됨(하루 한건만 입력가능)
+	2) Header Record 생성
+	3) Data Record 생성
+		A) TBL_USERS 테이블에 신청오류(EA14)를 신규(EA00)로 상태전환
+		B) TBL_USERS 테이블에 해지오류(EA14-)를 해지신청(EA13-)로 상태전환
+		C) 신규독자(EA00) 신청
+			a) TBL_EA_LOG 테이블에 전문에 사용되는 row data를 상태가 EA13+, 신청결과가 신청확인중(EEEEE)으로 저장
+			b) TBL_USERS 테이블에 신규신청중(EA13) 상태전환
+		D) 해지독자(EA13-) 신청
+			a) TBL_EA_LOG 테이블에 전문에 사용되는 row data를 상태가 EA13-, 신청결과가 신청확인중(EEEEE)으로 저장
+		※) 일반,학생 차이점
+			①.일반일 경우 납부자번호 = 지국+시리얼번호 이고
+			학생에서는 납부자번호가 지국에 들어가는 자리에 999999를 넣고 numid를 붙여서 사용한다.
+			즉, 납부자번호=999999+numid가 된다
+			②.일반일 경우 tbl_ea_log테이블의 CODENUM에 지국번호가 포함되 있지만,
+			학생에서는 납부자번호에 지국정보가 없고, JIKUK이라는 컬럼이 하나 더 있어
+			여기에 JIKUK코드를 INSERT한다.
+	4) Trailer Record 생성
+	5) EB13 파일 저장
+	6) TBL_EA13_LOG 테이블에 CMS File Layout 저장
+
+2. 신청결과(EB14)
+	1) 업로드된 EB14 파일 저장
+	2) Header Record 처리
+		A) TBL_EA_LOG 테이블에 신규신청중(EA13) 상태의 신청결과를 다 성공(00000)으로 만든다.
+		B) TBL_USERS 테이블에 신규신청중(EA13) 상태를 정상(EA21) 상태로 만든다.
+		C) TBL_USERS 테이블에 해지신청중(EA13-) 상태를 중지(EA99) 상태로 만든다.
+	3) Data Record 처리
+		A) TBL_EA_LOG 테이블에 신청데이터에서 에러 건만 에러값 셋팅(에러 건만 넘어옴)
+		B) TBL_CMSEA14DATA 테이블에 에러건 row data 저장
+	4) Trailer Record 처리
+		A) TBL_CMSEA14DATA_LOG 테이블에 EB14 파일정보 저장
+	5) TBL_EA_LOG 테이블에 신청결과가 성공(00000) 이고 해지신청(EA13-) 건이면 TBL_USERS 테이블에 중지(EA99) 처리
+	6) TBL_EA_LOG 테이블에 신청결과가 성공(00000) 이 아니고 CMS상태가 EA13+ 이면 신규신청오류(EA14) 처리
+	7) TBL_EA_LOG 테이블에 신청결과가 성공(00000) 이 아니고 CMS상태가 EA13- 이면 해지신청오류(EA14-) 처리
+	8) TBL_EA_LOG 테이블에 신청결과가 성공(00000) 이고 신규신청(EA13) 건이면 TBL_USERS 테이블에 정상(EA21) 처리
+	
+3. 이체청구(EB21)
+	1) 파일이 있으면 처리안됨(하루 한건만 입력가능)
+	2) Header Record 생성
+	3) Data Record 생성
+		A) 수금목록 추출(결제방법이 자동이체이면서 미수인 건들)
+		B) TBL_USERS 테이블에 상태가 정상(EA21) 이 아니거나 LEVELS 가 3이 아니면 수금정보를 방문으로 변경후 통과
+		C) TBL_EA_LOG 테이블에 전문에 사용되는 row data를 상태가 EA21, 신청결과가 신청확인중(EEEEE)으로 저장
+		※) 일반,학생 차이점
+			①.일반일 경우 납부자번호 = 지국+시리얼번호 이고
+			학생에서는 납부자번호가 지국에 들어가는 자리에 999999를 넣고 numid를 붙여서 사용한다.
+			즉, 납부자번호=999999+numid가 된다
+			②.일반일 경우 tbl_ea_log테이블의 CODENUM에 지국번호가 포함되 있지만,
+			학생에서는 납부자번호에 지국정보가 없고, JIKUK이라는 컬럼이 하나 더 있어
+			여기에 JIKUK코드를 INSERT한다.
+			③.BANK_MONEY가 기록되는 부분이 총 파일기록,TBL_EA_LOG_STU의 CMSMONEY가 있는데,
+			여기에서는 파일기록,TBL_EA_LOG_STU의 CMSMONEY 이 기록되고,
+			일반일 경우 BANK_MONEY는 수금테이블에서 불러온 정보를 이용해 기록하지만,
+			학생일 경우 BANK_MONEY는 7500원으로 기록한다.
+	3) Trailer Record 생성
+	4) EB21 파일 저장
+	5) TBL_EA21_LOG 테이블에 CMS File Layout 저장
+
+4. 청구결과(EB22)
+	1) 업로드된 EB22 파일 저장
+	2) Header Record 처리
+		A) TBL_EA_LOG 테이블에 정상(EA21) 상태의 신청결과를 다 성공(00000)으로 만든다.
+	3) Data Record 처리
+		A) TBL_EA_LOG 테이블에 신청데이터에서 에러 건만 에러값 셋팅(에러 건만 넘어옴)
+		B) B) TBL_CMSDATA 테이블에 에러건 row data 저장
+	4) Trailer Record 처리
+		A) TBL_CMSDATA_LOG 테이블에 EB22 파일정보 저장
+		B) 월마감 마지막 수금년월을 가져와서 TBL_EA_LOG 테이블에 정상처리 되어있는 건들을 수금처리
+		※) 일반,학생 차이점
+			①.일반에서 TM_READER_SUGM테이블의 AMT는 같은 ROW의 BILLAMT를 UPDATE를 하지만
+			학생에서는 TM_AGENCY의 TYPE이 101일 경우는 0,
+			102,201,202,203,301일 경우는 4500원으로 UPDATE한다.
+			즉 직영(순수)지국일 경우엔 0원
+			직영(청약),청약(분리),청약(단독),청약(청약),지방(청약)일 경우 4500원으로 UPDATE한다.
+
+5. 이체내역조회
+	- EB21, EB22 의 기간별 결과를 볼수 있는 화면
+
+6. 미수독자조회
+	- TBL_EA_LOG 테이블에서 상태가 정상(EA21)이면서 신청결과가 성공(00000)이 아니면서 가장 최근 전문통신을 한 데이터를 가져와서 노출.
+	- 결국 정상적으로 자동이체 수금이 되지 않은 목록
